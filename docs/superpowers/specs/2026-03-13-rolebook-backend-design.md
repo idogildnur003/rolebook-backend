@@ -62,6 +62,22 @@ rolebook-backend/
 
 ---
 
+## IDs
+
+All resource IDs are **UUID v4 strings** generated server-side. MongoDB documents use the UUID as the `_id` field (stored as a string). This is consistent with the client's local UUID generation for offline-first pre-sync IDs.
+
+No `createdAt` field is stored — this matches the API.md spec which defines only `updatedAt` on all resources.
+
+---
+
+## Admin Model
+
+**There is exactly one admin**, determined by `ADMIN_EMAIL`. Any user registering with that email gets `role: "admin"`; all others get `role: "player"`. There is no role-escalation endpoint.
+
+**Admin access is global** — admins are not scoped by ownership. An admin can read and mutate any resource regardless of which admin or user created it. The `ownerUserId` concept does not apply to admin queries; the store skips ownership filters entirely when the requester has role `"admin"`.
+
+---
+
 ## Database Layout
 
 **Database name:** `rolebook`
@@ -81,18 +97,42 @@ rolebook-backend/
 | Collection | Index |
 |---|---|
 | `users` | unique on `email` |
-| `campaigns` | `userId` |
-| `players` | `campaignId`, `userId` |
+| `campaigns` | `linkedUserId` |
+| `players` | `campaignId`, `linkedUserId` |
 | `inventory` | `playerId` |
 | `spells` | `playerId` |
 
 ### Key design decisions
 
-- **Sessions embedded in campaign** — sessions have no independent queries; always accessed through a campaign. Embedding avoids a join and matches the API shape exactly.
+- **Sessions embedded in campaign** — sessions have no independent queries; always accessed through a campaign. Embedding avoids a join and matches the API shape exactly. When a session is created, patched, or deleted, the campaign document's `updatedAt` is also updated — this ensures the client can detect session changes during sync pull via the campaign's `updatedAt`.
 - **Players, inventory, spells as separate collections** — queried independently and can be large.
-- **`userId` on every document** — every query filters by `userId` to prevent cross-user data leaks. Returns `404` (not `403`) when a resource exists but belongs to another user.
-- **IDs:** MongoDB `ObjectID` internally, serialized as hex strings to the client.
 - **`updatedAt`:** always set server-side on every write — clients cannot forge it.
+- **Arsenal is never cascade-deleted** — it is a global catalog unrelated to any campaign or user.
+- **No MongoDB multi-document transactions** — cascade deletes run as sequential single-collection operations. If the server crashes mid-cascade, orphaned documents may remain. This is an accepted risk for this application tier; no transaction wrapper is required.
+
+---
+
+## Player Ownership Model
+
+Player documents carry a `linkedUserId` field (nullable) — the user account ID of the player-role user who owns this character.
+
+- Set by admin via optional `linkedUserId` field in `POST /players` body
+- Can be updated later via `PATCH /players/:id` (admin-only, since only admins can PATCH players they don't own — but any admin can patch any player per the global admin access rule above)
+- If `linkedUserId` is null, no player-role user can access the character; only admins can
+
+**Inventory and spell documents** are stamped with both `playerId` and `linkedUserId` (copied from the player document at creation time). If the player's `linkedUserId` is later changed via PATCH, existing inventory/spell documents retain the old `linkedUserId` until explicitly updated — this is an accepted limitation.
+
+**Ownership checks for player-role requests:**
+- The store always applies `{ linkedUserId: requester.userId }` as a filter
+- Returns `404` if not found or not owned — never `403` (avoids leaking existence of other users' data)
+- For `GET /campaigns/:campaignId/players`: filter is `{ campaignId: X, linkedUserId: requester.userId }` — both conditions required
+
+---
+
+## Campaign Visibility
+
+- **Admin**: no ownership filter — sees all campaigns
+- **Player**: store performs a lookup: find all player documents where `linkedUserId = requester.userId`, collect their `campaignId`s, then return those campaigns. If no characters exist, returns an empty array.
 
 ---
 
@@ -116,8 +156,9 @@ rolebook-backend/
 ### JWT
 
 - Algorithm: HS256
-- Claims: `sub` (userId), `exp` (now + 7 days)
+- Claims: `sub` (userId), `role`, `exp` (now + 7 days)
 - Secret: `JWT_SECRET` env var
+- No refresh mechanism. On `401`, the client must re-authenticate. The client should treat the server response's `updatedAt` as the new local `updatedAt` baseline after every successful sync push.
 
 ### Auth response shape
 
@@ -136,34 +177,39 @@ rolebook-backend/
 
 ## Roles & Permissions
 
-Two roles: `admin` and `player`.
+Two roles: `admin` (global access) and `player` (scoped to own character).
 
 | Action | Admin | Player |
 |---|---|---|
-| GET `/campaigns`, `/campaigns/:id` | ✅ | ✅ |
+| GET `/campaigns`, `/campaigns/:id` | ✅ all campaigns | ✅ campaigns where they have a character |
 | POST `/campaigns` | ✅ | ❌ |
 | PATCH `/campaigns/:id` | ✅ | ❌ |
 | DELETE `/campaigns/:id` | ✅ | ❌ |
-| GET sessions | ✅ | ✅ |
-| POST/PATCH sessions | ✅ | ❌ |
-| DELETE sessions | ✅ | ❌ |
-| GET players in campaign | ✅ | ✅ own only |
+| GET `/campaigns/:id/players` | ✅ all players | ✅ own character only (`campaignId + linkedUserId` filter) |
+| POST/PATCH `/campaigns/:id/sessions` | ✅ | ❌ |
+| DELETE `/campaigns/:id/sessions/:id` | ✅ | ❌ |
 | POST `/players` | ✅ | ❌ |
-| GET/PATCH `/players/:id` | ✅ | ✅ own only |
+| GET/PATCH `/players/:id` | ✅ | ✅ own character only |
 | DELETE `/players/:id` | ✅ | ❌ |
-| GET/POST/PATCH own inventory | ✅ | ✅ own only |
+| GET/POST/PATCH inventory | ✅ | ✅ own character only |
 | DELETE inventory | ✅ | ❌ |
-| GET/POST/PATCH own spells | ✅ | ✅ own only |
+| GET/POST/PATCH spells | ✅ | ✅ own character only |
 | DELETE spells | ✅ | ❌ |
-| PUT `/players/:id/spell-slots` | ✅ | ✅ own only |
+| PUT `/players/:id/spell-slots` | ✅ | ✅ own character only |
 | GET `/arsenal/spells`, `/arsenal/equipment` | ✅ | ✅ |
 | POST/PATCH/DELETE arsenal | ✅ | ❌ |
 
-**"Own only"** — a player's `userId` is stored on their player document at creation. Players can only access documents where the document's `userId` matches their JWT `sub`.
+**Notes:**
+- Sessions have no standalone GET — retrieved embedded in `GET /campaigns/:id`.
+- Admin has global access; no per-resource ownership filter for admin role.
+- For session mutations (`POST/PATCH/DELETE /campaigns/:campaignId/sessions`), the handler validates the campaign exists (404 if not).
+- Player PATCH (`PATCH /players/:id`) strips the following fields before applying the update, even if present in the body: `campaignId`, `linkedUserId`. These are protected fields; silently ignored on player-role requests.
 
 **Enforcement:**
-- `RequireRole("admin")` middleware applied to all DELETE routes and admin-only mutations
-- Store layer always filters by `userId`
+- `RequireRole("admin")` middleware on all `DELETE` routes and all admin-only `POST`/`PATCH` routes
+- "Own only" for player-accessible routes enforced in store via `{ linkedUserId: requester.userId }` filter
+- Admin role is in the JWT claims and available from context — no DB lookup needed per request
+- Store methods accept a `requesterRole` param; admin role bypasses ownership filters entirely
 
 ---
 
@@ -181,7 +227,7 @@ Two roles: `admin` and `player`.
 1. Extract path params + decode JSON body
 2. Validate required fields → `400` if missing
 3. Extract `userID` and `role` from context
-4. Call store method (always passes `userID` for ownership check)
+4. Call store method (always passes `userID` and `role`)
 5. Encode JSON response
 
 **Error response shape:**
@@ -198,13 +244,38 @@ Two roles: `admin` and `player`.
 | `400 Bad Request` | Invalid body or params |
 | `401 Unauthorized` | Missing or invalid JWT |
 | `403 Forbidden` | Insufficient role |
-| `404 Not Found` | Resource does not exist (also used when resource belongs to another user) |
+| `404 Not Found` | Resource does not exist or belongs to another user |
 | `409 Conflict` | Unique constraint violation |
 | `500 Internal Server Error` | Unexpected server error |
 
 **Cascade deletes:**
-- `DELETE /campaigns/:id` → deletes campaign + all players in campaign + their inventory + their spells
-- `DELETE /players/:id` → deletes player + their inventory + their spells
+- `DELETE /campaigns/:id` → deletes campaign + all players in campaign + their inventory + their spells. Does NOT touch `arsenal_spells` or `arsenal_equipment`.
+- `DELETE /players/:id` → deletes player + their inventory + their spells.
+- Cascade runs as sequential single-collection deletes; no transaction. Orphaned documents on crash are an accepted risk.
+
+---
+
+## Spell Slot Updates
+
+Two ways to update spell slots — behavior is explicitly different:
+
+| Method | Endpoint | Behavior |
+|---|---|---|
+| `PATCH /players/:id` with `spellSlots` field | Merges only the specified slot levels; unspecified levels are unchanged |
+| `PUT /players/:id/spell-slots` | **Replaces** the entire spell slot map atomically. Response is the **full updated player object** (not just the slots map), ensuring the client receives a fresh `updatedAt` for its local baseline. |
+
+---
+
+## Map Pins
+
+`PATCH /campaigns/:id` with a `mapPins` array **replaces** the entire pins array. The client manages the full array locally and sends the complete desired state. Partial-merge semantics are not supported for this field.
+
+---
+
+## Player Schema Notes
+
+- `deathSaveSuccesses` and `deathSaveFailures`: server validates 0–3. Returns `400` if out of range.
+- `speciesOrRegion` and `region`: both preserved as separate nullable string fields as defined in the original API spec.
 
 ---
 
@@ -215,15 +286,15 @@ Global catalog of reference spells and equipment. Not tied to any campaign or us
 - Admins manage the catalog (POST/PATCH/DELETE)
 - Players can read it (GET)
 - Player workflow: GET arsenal → pick item → POST to own `/players/:id/inventory` or `/players/:id/spells`
-- The server does not enforce that player inventory items originate from the arsenal — the arsenal is a reference, not a gate
-
-**Schemas:** same shape as `Spell` and `InventoryItem` from API.md, without `playerId`/`userId` fields.
+- The server does **not** enforce that player inventory/spells originate from the arsenal — the arsenal is a reference, not a gate
+- Arsenal schemas: same shape as `Spell` and `InventoryItem` from API.md, without `playerId`/`linkedUserId` fields
+- No pagination. The catalog is expected to remain small enough for a single-response list.
 
 ---
 
 ## API Endpoints
 
-### Auth
+### Auth (public)
 | Method | Path |
 |---|---|
 | POST | `/api/auth/register` |
@@ -238,7 +309,7 @@ Global catalog of reference spells and equipment. Not tied to any campaign or us
 | PATCH | `/api/campaigns/:id` |
 | DELETE | `/api/campaigns/:id` |
 
-### Sessions
+### Sessions (embedded in campaign; no standalone GET)
 | Method | Path |
 |---|---|
 | POST | `/api/campaigns/:campaignId/sessions` |
