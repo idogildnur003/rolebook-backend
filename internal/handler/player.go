@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -30,6 +29,17 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
 	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+
+	// Verify the campaign exists before listing players
+	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
 
 	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isAdmin)
 	if err != nil {
@@ -96,7 +106,6 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if req.Race != "" {
 		player.Race = req.Race
 	}
-	player.UpdatedAt = time.Now().UTC()
 
 	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -159,7 +168,8 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 // Delete handles DELETE /api/players/:playerId (admin only — enforced by middleware).
 func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	found, err := h.players.Delete(r.Context(), playerID, "", true) // admin: isAdmin=true
+	userID := middleware.UserIDFromContext(r.Context())
+	found, err := h.players.Delete(r.Context(), playerID, userID, true) // admin: isAdmin=true, ownership filter bypassed
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
