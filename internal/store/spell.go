@@ -58,6 +58,7 @@ func (s *SpellStore) Update(ctx context.Context, id, userID string, isAdmin bool
 	if !isAdmin {
 		filter["linkedUserId"] = userID
 	}
+	// updatedAt is set in-place on the caller's map; callers must not reuse fields after this call.
 	fields["updatedAt"] = time.Now().UTC()
 	res := s.col.FindOneAndUpdate(
 		ctx,

@@ -96,6 +96,9 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if req.Tags == nil {
 		req.Tags = []string{}
 	}
+	if req.Properties == nil {
+		req.Properties = []string{}
+	}
 
 	item := &model.InventoryItem{
 		ID:           uuid.NewString(),
@@ -166,8 +169,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 // Delete handles DELETE /api/inventory/:itemId (admin only — enforced by middleware).
 func (h *InventoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
-	userID := middleware.UserIDFromContext(r.Context())
-	found, err := h.inventory.Delete(r.Context(), itemID, userID, true)
+	found, err := h.inventory.Delete(r.Context(), itemID, "", true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
