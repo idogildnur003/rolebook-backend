@@ -61,9 +61,26 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Category   string   `json:"category"`
 		Tags       []string `json:"tags"`
 		Notes      string   `json:"notes"`
+		ImageURI   string   `json:"imageUri"`
+
+		// Weapon fields
 		Damage     string   `json:"damage"`
 		DamageType string   `json:"damageType"`
+		WeaponType string   `json:"weaponType"`
 		Properties []string `json:"properties"`
+
+		// Armor fields
+		ArmorClass          *int    `json:"armorClass"`
+		ArmorBonus          *int    `json:"armorBonus"`
+		ShieldBonus         *int    `json:"shieldBonus"`
+		ArmorType           string  `json:"armorType"`
+		StrengthRequirement *int    `json:"strengthRequirement"`
+		StealthDisadvantage *bool   `json:"stealthDisadvantage"`
+
+		// Magic item fields
+		CompatibleWith *string  `json:"compatibleWith"`
+		EffectSummary  string   `json:"effectSummary"`
+		Value          *float64 `json:"value"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
@@ -89,9 +106,20 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Category:     req.Category,
 		Tags:         req.Tags,
 		Notes:        req.Notes,
+		ImageURI:     req.ImageURI,
 		Damage:       req.Damage,
 		DamageType:   req.DamageType,
+		WeaponType:   req.WeaponType,
 		Properties:   req.Properties,
+		ArmorClass:          req.ArmorClass,
+		ArmorBonus:          req.ArmorBonus,
+		ShieldBonus:         req.ShieldBonus,
+		ArmorType:           req.ArmorType,
+		StrengthRequirement: req.StrengthRequirement,
+		StealthDisadvantage: req.StealthDisadvantage,
+		CompatibleWith:      req.CompatibleWith,
+		EffectSummary:       req.EffectSummary,
+		Value:               req.Value,
 		UpdatedAt:    time.Now().UTC(),
 	}
 	if err := h.inventory.Create(r.Context(), item); err != nil {
