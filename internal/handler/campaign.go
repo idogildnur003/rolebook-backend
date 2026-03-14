@@ -145,6 +145,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 // Delete handles DELETE /api/campaigns/:id (admin only — enforced by middleware).
 // Cascade: deletes all players in the campaign, then their inventory and spells.
+// This operation is not atomic across collections. A crash between steps may leave orphaned documents.
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ctx := r.Context()

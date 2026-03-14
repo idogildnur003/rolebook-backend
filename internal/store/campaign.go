@@ -147,7 +147,15 @@ func (s *CampaignStore) UpdateSession(ctx context.Context, campaignID, sessionID
 }
 
 // DeleteSession removes an embedded session from a campaign and bumps updatedAt.
+// Returns (false, nil) if the campaign or session is not found.
 func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID string) (bool, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return false, err
+	}
+	if campaign == nil {
+		return false, nil
+	}
 	now := time.Now().UTC()
 	res, err := s.col.UpdateOne(
 		ctx,

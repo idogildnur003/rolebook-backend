@@ -25,17 +25,6 @@ func NewSessionHandler(campaigns *store.CampaignStore) *SessionHandler {
 func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 
-	// Verify campaign exists
-	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
 	var req struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
