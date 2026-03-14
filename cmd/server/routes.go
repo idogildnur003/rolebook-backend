@@ -30,8 +30,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore)
-	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore)
-	spellHandler := handler.NewSpellHandler(spellStore, playerStore)
+	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore, arsenalStore)
+	spellHandler := handler.NewSpellHandler(spellStore, playerStore, arsenalStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalStore)
 
 	adminOnly := middleware.RequireRole(model.RoleAdmin)

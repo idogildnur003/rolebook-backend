@@ -48,6 +48,19 @@ func (s *ArsenalStore) CreateSpell(ctx context.Context, spell *model.ArsenalSpel
 	return err
 }
 
+// GetSpell returns a single arsenal spell by ID, or nil if not found.
+func (s *ArsenalStore) GetSpell(ctx context.Context, id string) (*model.ArsenalSpell, error) {
+	var spell model.ArsenalSpell
+	err := s.spells.FindOne(ctx, bson.M{"_id": id}).Decode(&spell)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &spell, nil
+}
+
 func (s *ArsenalStore) UpdateSpell(ctx context.Context, id string, fields bson.M) (*model.ArsenalSpell, error) {
 	fields["updatedAt"] = time.Now().UTC()
 	res := s.spells.FindOneAndUpdate(
@@ -91,6 +104,19 @@ func (s *ArsenalStore) ListEquipment(ctx context.Context) ([]model.ArsenalEquipm
 func (s *ArsenalStore) CreateEquipment(ctx context.Context, item *model.ArsenalEquipment) error {
 	_, err := s.equipment.InsertOne(ctx, item)
 	return err
+}
+
+// GetEquipment returns a single arsenal equipment item by ID, or nil if not found.
+func (s *ArsenalStore) GetEquipment(ctx context.Context, id string) (*model.ArsenalEquipment, error) {
+	var item model.ArsenalEquipment
+	err := s.equipment.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (s *ArsenalStore) UpdateEquipment(ctx context.Context, id string, fields bson.M) (*model.ArsenalEquipment, error) {

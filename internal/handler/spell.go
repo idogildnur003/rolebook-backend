@@ -17,11 +17,12 @@ import (
 type SpellHandler struct {
 	spells  *store.SpellStore
 	players *store.PlayerStore
+	arsenal *store.ArsenalStore
 }
 
 // NewSpellHandler creates a SpellHandler.
-func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore) *SpellHandler {
-	return &SpellHandler{spells: spells, players: players}
+func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore, arsenal *store.ArsenalStore) *SpellHandler {
+	return &SpellHandler{spells: spells, players: players, arsenal: arsenal}
 }
 
 // List handles GET /api/players/:playerId/spells.
@@ -55,23 +56,50 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name        string   `json:"name"`
-		Level       int      `json:"level"`
-		School      string   `json:"school"`
-		CastingTime string   `json:"castingTime"`
-		Range       string   `json:"range"`
-		Components  []string `json:"components"`
-		Material    string   `json:"material"`
-		Duration    string   `json:"duration"`
-		Description string   `json:"description"`
-		IsPrepared  bool     `json:"isPrepared"`
-		IsRitual    bool     `json:"isRitual"`
-		Source      string   `json:"source"`
+		ArsenalSpellID string   `json:"arsenalSpellId"`
+		Name           string   `json:"name"`
+		Level          int      `json:"level"`
+		School         string   `json:"school"`
+		CastingTime    string   `json:"castingTime"`
+		Range          string   `json:"range"`
+		Components     []string `json:"components"`
+		Material       string   `json:"material"`
+		Duration       string   `json:"duration"`
+		Description    string   `json:"description"`
+		IsPrepared     bool     `json:"isPrepared"`
+		IsRitual       bool     `json:"isRitual"`
+		Source         string   `json:"source"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
+
+	// If an arsenal spell ID is provided, copy fields from the catalog.
+	if req.ArsenalSpellID != "" {
+		src, err := h.arsenal.GetSpell(r.Context(), req.ArsenalSpellID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		if src == nil {
+			writeError(w, http.StatusNotFound, "arsenal spell not found", "NOT_FOUND")
+			return
+		}
+		// Populate from catalog; client may still override isPrepared.
+		req.Name = src.Name
+		req.Level = src.Level
+		req.School = src.School
+		req.CastingTime = src.CastingTime
+		req.Range = src.Range
+		req.Components = src.Components
+		req.Material = src.Material
+		req.Duration = src.Duration
+		req.Description = src.Description
+		req.IsRitual = src.IsRitual
+		req.Source = src.Source
+	}
+
 	if req.Name == "" {
 		writeError(w, http.StatusBadRequest, "name is required", "BAD_REQUEST")
 		return

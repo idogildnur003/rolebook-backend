@@ -17,11 +17,12 @@ import (
 type InventoryHandler struct {
 	inventory *store.InventoryStore
 	players   *store.PlayerStore
+	arsenal   *store.ArsenalStore
 }
 
 // NewInventoryHandler creates an InventoryHandler.
-func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerStore) *InventoryHandler {
-	return &InventoryHandler{inventory: inventory, players: players}
+func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerStore, arsenal *store.ArsenalStore) *InventoryHandler {
+	return &InventoryHandler{inventory: inventory, players: players, arsenal: arsenal}
 }
 
 // List handles GET /api/players/:playerId/inventory.
@@ -56,12 +57,13 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Name       string   `json:"name"`
-		Quantity   int      `json:"quantity"`
-		Category   string   `json:"category"`
-		Tags       []string `json:"tags"`
-		Notes      string   `json:"notes"`
-		ImageURI   string   `json:"imageUri"`
+		ArsenalEquipmentID string   `json:"arsenalEquipmentId"`
+		Name               string   `json:"name"`
+		Quantity           int      `json:"quantity"`
+		Category           string   `json:"category"`
+		Tags               []string `json:"tags"`
+		Notes              string   `json:"notes"`
+		ImageURI           string   `json:"imageUri"`
 
 		// Weapon fields
 		Damage     string   `json:"damage"`
@@ -70,12 +72,12 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Properties []string `json:"properties"`
 
 		// Armor fields
-		ArmorClass          *int    `json:"armorClass"`
-		ArmorBonus          *int    `json:"armorBonus"`
-		ShieldBonus         *int    `json:"shieldBonus"`
-		ArmorType           string  `json:"armorType"`
-		StrengthRequirement *int    `json:"strengthRequirement"`
-		StealthDisadvantage *bool   `json:"stealthDisadvantage"`
+		ArmorClass          *int   `json:"armorClass"`
+		ArmorBonus          *int   `json:"armorBonus"`
+		ShieldBonus         *int   `json:"shieldBonus"`
+		ArmorType           string `json:"armorType"`
+		StrengthRequirement *int   `json:"strengthRequirement"`
+		StealthDisadvantage *bool  `json:"stealthDisadvantage"`
 
 		// Magic item fields
 		CompatibleWith *string  `json:"compatibleWith"`
@@ -86,6 +88,38 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
+
+	// If an arsenal equipment ID is provided, copy fields from the catalog.
+	if req.ArsenalEquipmentID != "" {
+		src, err := h.arsenal.GetEquipment(r.Context(), req.ArsenalEquipmentID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		if src == nil {
+			writeError(w, http.StatusNotFound, "arsenal equipment not found", "NOT_FOUND")
+			return
+		}
+		// Populate from catalog; client may still override quantity and notes.
+		req.Name = src.Name
+		req.Category = src.Category
+		req.Tags = src.Tags
+		req.ImageURI = src.ImageURI
+		req.Damage = src.Damage
+		req.DamageType = src.DamageType
+		req.WeaponType = src.WeaponType
+		req.Properties = src.Properties
+		req.ArmorClass = src.ArmorClass
+		req.ArmorBonus = src.ArmorBonus
+		req.ShieldBonus = src.ShieldBonus
+		req.ArmorType = src.ArmorType
+		req.StrengthRequirement = src.StrengthRequirement
+		req.StealthDisadvantage = src.StealthDisadvantage
+		req.CompatibleWith = src.CompatibleWith
+		req.EffectSummary = src.EffectSummary
+		req.Value = src.Value
+	}
+
 	if req.Name == "" {
 		writeError(w, http.StatusBadRequest, "name is required", "BAD_REQUEST")
 		return
