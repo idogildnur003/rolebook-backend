@@ -58,8 +58,7 @@ func Authenticate(jwtSecret string) func(http.Handler) http.Handler {
 func RequireRole(role model.Role) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userRole := RoleFromContext(r.Context())
-			if userRole != role {
+			if RoleFromContext(r.Context()) != role {
 				writeForbidden(w)
 				return
 			}

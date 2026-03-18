@@ -33,7 +33,7 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	var campaigns []model.Campaign
 	var err error
 
-	if role == model.RoleAdmin {
+	if role == model.RoleDM {
 		campaigns, err = h.campaigns.ListAll(ctx)
 	} else {
 		// Player: find campaigns where they have a character

@@ -29,7 +29,7 @@ func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerS
 func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	items, err := h.inventory.ListForPlayer(r.Context(), playerID, userID, isAdmin)
 	if err != nil {
@@ -43,7 +43,7 @@ func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	// Resolve the player to get linkedUserId for denormalization
 	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
@@ -170,7 +170,7 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {

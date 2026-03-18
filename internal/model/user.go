@@ -4,7 +4,7 @@ package model
 type Role string
 
 const (
-	RoleAdmin  Role = "admin"
+	RoleDM     Role = "dm"
 	RolePlayer Role = "player"
 )
 

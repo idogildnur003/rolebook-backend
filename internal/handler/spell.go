@@ -29,7 +29,7 @@ func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore, arsen
 func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	spells, err := h.spells.ListForPlayer(r.Context(), playerID, userID, isAdmin)
 	if err != nil {
@@ -43,7 +43,7 @@ func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
 	if err != nil {
@@ -134,7 +134,7 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	spellID := chi.URLParam(r, "spellId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -184,7 +184,7 @@ func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var slots map[string]model.SpellSlot
 	if err := decodeJSON(r, &slots); err != nil {
