@@ -28,7 +28,7 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	// Verify the campaign exists before listing players
 	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
@@ -53,7 +53,7 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
 	if err != nil {
@@ -120,7 +120,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleAdmin
+	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {

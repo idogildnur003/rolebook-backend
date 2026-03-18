@@ -16,23 +16,22 @@ import (
 
 // AuthHandler handles user registration and login.
 type AuthHandler struct {
-	users      *store.UserStore
-	jwtSecret  []byte
-	adminEmail string
+	users     *store.UserStore
+	jwtSecret []byte
 }
 
 // NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(users *store.UserStore, jwtSecret, adminEmail string) *AuthHandler {
+func NewAuthHandler(users *store.UserStore, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
-		users:      users,
-		jwtSecret:  []byte(jwtSecret),
-		adminEmail: strings.ToLower(adminEmail),
+		users:     users,
+		jwtSecret: []byte(jwtSecret),
 	}
 }
 
 type registerRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string     `json:"email"`
+	Password string     `json:"password"`
+	Role     model.Role `json:"role"`
 }
 
 type authResponse struct {
@@ -71,8 +70,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	role := model.RolePlayer
-	if req.Email == h.adminEmail {
-		role = model.RoleAdmin
+	if req.Role == model.RoleDM {
+		role = model.RoleDM
 	}
 
 	user := &model.User{

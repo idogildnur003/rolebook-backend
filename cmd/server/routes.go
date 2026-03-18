@@ -26,7 +26,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	playerStore.SetSpellStore(spellStore)
 
 	// Handlers
-	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, cfg.AdminEmail)
+	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore)
@@ -34,7 +34,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	spellHandler := handler.NewSpellHandler(spellStore, playerStore, arsenalStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalStore)
 
-	adminOnly := middleware.RequireRole(model.RoleAdmin)
+	dmOnly := middleware.RequireRole(model.RoleDM)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public
@@ -47,27 +47,27 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
-			r.With(adminOnly).Post("/campaigns", campaignHandler.Create)
+			r.With(dmOnly).Post("/campaigns", campaignHandler.Create)
 			r.Route("/campaigns/{id}", func(r chi.Router) {
 				r.Get("/", campaignHandler.Get)
-				r.With(adminOnly).Patch("/", campaignHandler.Update)
-				r.With(adminOnly).Delete("/", campaignHandler.Delete)
+				r.With(dmOnly).Patch("/", campaignHandler.Update)
+				r.With(dmOnly).Delete("/", campaignHandler.Delete)
 			})
 
 			// Sessions (admin only)
 			r.Route("/campaigns/{campaignId}/sessions", func(r chi.Router) {
-				r.With(adminOnly).Post("/", sessionHandler.Create)
-				r.With(adminOnly).Patch("/{sessionId}", sessionHandler.Update)
-				r.With(adminOnly).Delete("/{sessionId}", sessionHandler.Delete)
+				r.With(dmOnly).Post("/", sessionHandler.Create)
+				r.With(dmOnly).Patch("/{sessionId}", sessionHandler.Update)
+				r.With(dmOnly).Delete("/{sessionId}", sessionHandler.Delete)
 			})
 
 			// Players
 			r.Get("/campaigns/{campaignId}/players", playerHandler.ListForCampaign)
-			r.With(adminOnly).Post("/players", playerHandler.Create)
+			r.With(dmOnly).Post("/players", playerHandler.Create)
 			r.Route("/players/{playerId}", func(r chi.Router) {
 				r.Get("/", playerHandler.Get)
 				r.Patch("/", playerHandler.Update)
-				r.With(adminOnly).Delete("/", playerHandler.Delete)
+				r.With(dmOnly).Delete("/", playerHandler.Delete)
 				// Inventory sub-resource
 				r.Get("/inventory", inventoryHandler.List)
 				r.Post("/inventory", inventoryHandler.Create)
@@ -80,24 +80,24 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 			// Flat inventory routes
 			r.Patch("/inventory/{itemId}", inventoryHandler.Update)
-			r.With(adminOnly).Delete("/inventory/{itemId}", inventoryHandler.Delete)
+			r.With(dmOnly).Delete("/inventory/{itemId}", inventoryHandler.Delete)
 
 			// Flat spell routes
 			r.Patch("/spells/{spellId}", spellHandler.Update)
-			r.With(adminOnly).Delete("/spells/{spellId}", spellHandler.Delete)
+			r.With(dmOnly).Delete("/spells/{spellId}", spellHandler.Delete)
 
 			// Arsenal
 			r.Route("/arsenal/spells", func(r chi.Router) {
 				r.Get("/", arsenalHandler.ListSpells)
-				r.With(adminOnly).Post("/", arsenalHandler.CreateSpell)
-				r.With(adminOnly).Patch("/{id}", arsenalHandler.UpdateSpell)
-				r.With(adminOnly).Delete("/{id}", arsenalHandler.DeleteSpell)
+				r.With(dmOnly).Post("/", arsenalHandler.CreateSpell)
+				r.With(dmOnly).Patch("/{id}", arsenalHandler.UpdateSpell)
+				r.With(dmOnly).Delete("/{id}", arsenalHandler.DeleteSpell)
 			})
 			r.Route("/arsenal/equipment", func(r chi.Router) {
 				r.Get("/", arsenalHandler.ListEquipment)
-				r.With(adminOnly).Post("/", arsenalHandler.CreateEquipment)
-				r.With(adminOnly).Patch("/{id}", arsenalHandler.UpdateEquipment)
-				r.With(adminOnly).Delete("/{id}", arsenalHandler.DeleteEquipment)
+				r.With(dmOnly).Post("/", arsenalHandler.CreateEquipment)
+				r.With(dmOnly).Patch("/{id}", arsenalHandler.UpdateEquipment)
+				r.With(dmOnly).Delete("/{id}", arsenalHandler.DeleteEquipment)
 			})
 		})
 	})

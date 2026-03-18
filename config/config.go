@@ -4,10 +4,9 @@ import "os"
 
 // Config holds all runtime configuration loaded from environment variables.
 type Config struct {
-	Port       string
-	MongoURI   string
-	JWTSecret  string
-	AdminEmail string
+	Port      string
+	MongoURI  string
+	JWTSecret string
 }
 
 // Load reads configuration from environment variables.
@@ -18,10 +17,9 @@ func Load() Config {
 		port = "3000"
 	}
 	return Config{
-		Port:       port,
-		MongoURI:   mustEnv("MONGO_URI"),
-		JWTSecret:  mustEnv("JWT_SECRET"),
-		AdminEmail: os.Getenv("ADMIN_EMAIL"),
+		Port:      port,
+		MongoURI:  mustEnv("MONGO_URI"),
+		JWTSecret: mustEnv("JWT_SECRET"),
 	}
 }
 
