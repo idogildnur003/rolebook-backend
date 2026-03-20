@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 
 	"github.com/elad/rolebook-backend/config"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -30,6 +31,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	_ = godotenv.Load()
 	cfg := config.Load()
 
 	db, err := store.NewDB(cfg.MongoURI)
