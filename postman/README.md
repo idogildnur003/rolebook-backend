@@ -42,11 +42,26 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns` | Any | List campaigns (DM's + player's) | 200 |
-| GET | `/campaigns/{{campaignId}}` | DM or player | Get single campaign | 200 |
+| GET | `/campaigns` | Any | List campaigns (slim: id, role, name, themeImage, sessions) | 200 |
+| GET | `/campaigns/{{campaignId}}` | DM or player | Get single campaign (full) | 200 |
 | POST | `/campaigns` | Any | Create campaign (caller becomes DM) → sets `campaignId` | 201 |
 | PATCH | `/campaigns/{{campaignId}}` | Campaign DM | Update campaign fields | 200 |
 | DELETE | `/campaigns/{{campaignId}}` | Campaign DM | Delete campaign + all sub-resources | 204 |
+
+**GET `/campaigns` response:**
+```json
+[
+  {
+    "id": "abc-123",
+    "role": "dm",
+    "name": "Lost Mine of Phandelver",
+    "themeImage": "forest",
+    "sessions": [
+      { "id": "sess-1", "name": "Session 1 — The Cave" }
+    ]
+  }
+]
+```
 
 **POST body:**
 ```json
