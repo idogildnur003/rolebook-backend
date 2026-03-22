@@ -42,10 +42,10 @@ func (s *PlayerStore) Create(ctx context.Context, p *model.Player) error {
 }
 
 // Get returns a player by ID for the given role/userID.
-// Admin: no ownership filter. Player: filters by linkedUserId.
-func (s *PlayerStore) Get(ctx context.Context, id, userID string, isAdmin bool) (*model.Player, error) {
+// DM: no ownership filter. Player: filters by linkedUserId.
+func (s *PlayerStore) Get(ctx context.Context, id, userID string, isDM bool) (*model.Player, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	var p model.Player
@@ -60,10 +60,10 @@ func (s *PlayerStore) Get(ctx context.Context, id, userID string, isAdmin bool) 
 }
 
 // ListForCampaign returns players in a campaign.
-// Admin: all players. Player: only the player whose linkedUserId matches.
-func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isAdmin bool) ([]model.Player, error) {
+// DM: all players. Player: only the player whose linkedUserId matches.
+func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool) ([]model.Player, error) {
 	filter := bson.M{"campaignId": campaignID}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	cursor, err := s.col.Find(ctx, filter)
@@ -82,10 +82,10 @@ func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID st
 
 // Update applies a partial $set update and returns the updated player.
 // Protected fields (campaignId, linkedUserId) must be stripped by the handler before calling.
-// Admin: no ownership filter. Player: filters by linkedUserId.
-func (s *PlayerStore) Update(ctx context.Context, id, userID string, isAdmin bool, fields bson.M) (*model.Player, error) {
+// DM: no ownership filter. Player: filters by linkedUserId.
+func (s *PlayerStore) Update(ctx context.Context, id, userID string, isDM bool, fields bson.M) (*model.Player, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	fields["updatedAt"] = time.Now().UTC()
@@ -106,9 +106,9 @@ func (s *PlayerStore) Update(ctx context.Context, id, userID string, isAdmin boo
 }
 
 // Delete removes a player and cascades to their inventory and spells.
-func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isAdmin bool) (bool, error) {
+func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	res, err := s.col.DeleteOne(ctx, filter)

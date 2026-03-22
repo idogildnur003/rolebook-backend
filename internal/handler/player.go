@@ -28,7 +28,7 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	// Verify the campaign exists before listing players
 	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
@@ -41,7 +41,7 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isAdmin)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -53,9 +53,9 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
+	player, err := h.players.Get(r.Context(), playerID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -67,7 +67,7 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, player)
 }
 
-// Create handles POST /api/players (admin only — enforced by middleware).
+// Create handles POST /api/players (DM only — enforced by middleware).
 func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		CampaignID   string `json:"campaignId"`
@@ -115,12 +115,12 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update handles PATCH /api/players/:playerId.
-// Players can only update their own character; admins can update any.
+// Players can only update their own character; DMs can update any.
 // Protected fields (campaignId, linkedUserId) are stripped before applying.
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -153,7 +153,7 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.players.Update(r.Context(), playerID, userID, isAdmin, bson.M(req))
+	updated, err := h.players.Update(r.Context(), playerID, userID, isDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -165,11 +165,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/players/:playerId (admin only — enforced by middleware).
+// Delete handles DELETE /api/players/:playerId (DM only — enforced by middleware).
 func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	found, err := h.players.Delete(r.Context(), playerID, userID, true) // admin: isAdmin=true, ownership filter bypassed
+	found, err := h.players.Delete(r.Context(), playerID, userID, true) // DM: isDM=true, ownership filter bypassed
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return

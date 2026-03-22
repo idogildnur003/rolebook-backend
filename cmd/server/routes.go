@@ -54,7 +54,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Delete("/", campaignHandler.Delete)
 			})
 
-			// Sessions (admin only)
+			// Sessions (DM only)
 			r.Route("/campaigns/{campaignId}/sessions", func(r chi.Router) {
 				r.With(dmOnly).Post("/", sessionHandler.Create)
 				r.With(dmOnly).Patch("/{sessionId}", sessionHandler.Update)

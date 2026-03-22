@@ -21,7 +21,7 @@ func NewSessionHandler(campaigns *store.CampaignStore) *SessionHandler {
 	return &SessionHandler{campaigns: campaigns}
 }
 
-// Create handles POST /api/campaigns/:campaignId/sessions (admin only).
+// Create handles POST /api/campaigns/:campaignId/sessions (DM only).
 func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 
@@ -55,7 +55,7 @@ func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, created)
 }
 
-// Update handles PATCH /api/campaigns/:campaignId/sessions/:sessionId (admin only).
+// Update handles PATCH /api/campaigns/:campaignId/sessions/:sessionId (DM only).
 func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	sessionID := chi.URLParam(r, "sessionId")
@@ -89,7 +89,7 @@ func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/campaigns/:campaignId/sessions/:sessionId (admin only).
+// Delete handles DELETE /api/campaigns/:campaignId/sessions/:sessionId (DM only).
 func (h *SessionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	sessionID := chi.URLParam(r, "sessionId")

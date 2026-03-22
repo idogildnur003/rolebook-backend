@@ -29,9 +29,9 @@ func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore, arsen
 func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	spells, err := h.spells.ListForPlayer(r.Context(), playerID, userID, isAdmin)
+	spells, err := h.spells.ListForPlayer(r.Context(), playerID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -43,9 +43,9 @@ func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
+	player, err := h.players.Get(r.Context(), playerID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -134,7 +134,7 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	spellID := chi.URLParam(r, "spellId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -151,7 +151,7 @@ func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.spells.Update(r.Context(), spellID, userID, isAdmin, bson.M(req))
+	updated, err := h.spells.Update(r.Context(), spellID, userID, isDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -163,7 +163,7 @@ func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/spells/:spellId (admin only — enforced by middleware).
+// Delete handles DELETE /api/spells/:spellId (DM only — enforced by middleware).
 func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	spellID := chi.URLParam(r, "spellId")
 	userID := middleware.UserIDFromContext(r.Context())
@@ -184,7 +184,7 @@ func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var slots map[string]model.SpellSlot
 	if err := decodeJSON(r, &slots); err != nil {
@@ -192,7 +192,7 @@ func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	updated, err := h.players.Update(r.Context(), playerID, userID, isAdmin, bson.M{"spellSlots": slots})
+	updated, err := h.players.Update(r.Context(), playerID, userID, isDM, bson.M{"spellSlots": slots})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return

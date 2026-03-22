@@ -29,9 +29,9 @@ func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerS
 func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	items, err := h.inventory.ListForPlayer(r.Context(), playerID, userID, isAdmin)
+	items, err := h.inventory.ListForPlayer(r.Context(), playerID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -43,10 +43,10 @@ func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	// Resolve the player to get linkedUserId for denormalization
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
+	player, err := h.players.Get(r.Context(), playerID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -170,7 +170,7 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+	isDM := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -188,7 +188,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.inventory.Update(r.Context(), itemID, userID, isAdmin, bson.M(req))
+	updated, err := h.inventory.Update(r.Context(), itemID, userID, isDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -200,7 +200,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/inventory/:itemId (admin only — enforced by middleware).
+// Delete handles DELETE /api/inventory/:itemId (DM only — enforced by middleware).
 func (h *InventoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	found, err := h.inventory.Delete(r.Context(), itemID, "", true)
