@@ -109,6 +109,13 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+
+	cp := model.CampaignPlayer{UserID: linkedUser.ID, IsActive: true}
+	if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
 	writeJSON(w, http.StatusCreated, player)
 }
 
