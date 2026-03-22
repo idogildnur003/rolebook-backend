@@ -51,15 +51,17 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := middleware.UserIDFromContext(r.Context())
-	isMember := false
-	for _, membership := range campaign.Memberships {
-		if membership.PlayerID == userID {
-			isMember = true
-			break
+	hasAccess := campaign.DM == userID
+	if !hasAccess {
+		for _, p := range campaign.Players {
+			if p.UserID == userID && p.IsActive {
+				hasAccess = true
+				break
+			}
 		}
 	}
 
-	if !isMember {
+	if !hasAccess {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
@@ -87,19 +89,14 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	campaign := &model.Campaign{
 		ID:          uuid.NewString(),
-		CreatedBy:   userID,
+		DM:          userID,
 		Name:        req.Name,
 		ThemeImage:  req.ThemeImage,
 		MapImageURI: req.MapImageURI,
 		MapPins:     []model.MapPin{},
 		Sessions:    []model.Session{},
-		Memberships: []model.CampaignMembership{
-			{
-				PlayerID: userID,
-				IsDM:     true,
-			},
-		},
-		UpdatedAt: time.Now().UTC(),
+		Players:     []model.CampaignPlayer{},
+		UpdatedAt:   time.Now().UTC(),
 	}
 	if err := h.campaigns.Create(r.Context(), campaign); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -123,15 +120,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := middleware.UserIDFromContext(r.Context())
-	isDM := false
-	for _, membership := range campaign.Memberships {
-		if membership.PlayerID == userID && membership.IsDM {
-			isDM = true
-			break
-		}
-	}
-
-	if !isDM {
+	if campaign.DM != userID {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -183,15 +172,7 @@ func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := middleware.UserIDFromContext(ctx)
-	isDM := false
-	for _, membership := range campaign.Memberships {
-		if membership.PlayerID == userID && membership.IsDM {
-			isDM = true
-			break
-		}
-	}
-
-	if !isDM {
+	if campaign.DM != userID {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}

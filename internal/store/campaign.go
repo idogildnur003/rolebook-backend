@@ -35,9 +35,12 @@ func (s *CampaignStore) ListByIDs(ctx context.Context, ids []string) ([]model.Ca
 	return s.find(ctx, bson.M{"_id": bson.M{"$in": ids}})
 }
 
-// ListByUser returns campaigns where the user is a member.
+// ListByUser returns campaigns where the user is the DM or a player.
 func (s *CampaignStore) ListByUser(ctx context.Context, userID string) ([]model.Campaign, error) {
-	return s.find(ctx, bson.M{"memberships.playerId": userID})
+	return s.find(ctx, bson.M{"$or": bson.A{
+		bson.M{"dm": userID},
+		bson.M{"players.userId": userID},
+	}})
 }
 
 // GetByID returns a single campaign, or nil if not found.
