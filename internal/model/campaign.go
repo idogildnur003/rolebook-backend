@@ -18,16 +18,23 @@ type Session struct {
 	UpdatedAt   time.Time `bson:"updatedAt"   json:"updatedAt"`
 }
 
+// CampaignPlayer represents a player in a campaign.
+type CampaignPlayer struct {
+	UserID   string `bson:"userId"   json:"userId"`
+	IsActive bool   `bson:"isActive" json:"isActive"`
+}
+
 // Campaign is stored in the "campaigns" collection.
 // Sessions are embedded to avoid cross-collection joins.
-// createdBy records the admin who created the campaign (informational; not used for access control).
+// DM is the user ID of the campaign's Dungeon Master (the user who created it).
 type Campaign struct {
-	ID          string    `bson:"_id"         json:"id"`
-	CreatedBy   string    `bson:"createdBy"   json:"createdBy"`
-	Name        string    `bson:"name"        json:"name"`
-	ThemeImage  string    `bson:"themeImage"  json:"themeImage"`
-	MapImageURI *string   `bson:"mapImageUri" json:"mapImageUri"`
-	MapPins     []MapPin  `bson:"mapPins"     json:"mapPins"`
-	Sessions    []Session `bson:"sessions"    json:"sessions"`
-	UpdatedAt   time.Time `bson:"updatedAt"   json:"updatedAt"`
+	ID          string           `bson:"_id"         json:"id"`
+	DM          string           `bson:"dm"          json:"dm"`
+	Name        string           `bson:"name"        json:"name"`
+	ThemeImage  string           `bson:"themeImage"  json:"themeImage"`
+	MapImageURI *string          `bson:"mapImageUri" json:"mapImageUri"`
+	MapPins     []MapPin         `bson:"mapPins"     json:"mapPins"`
+	Sessions    []Session        `bson:"sessions"    json:"sessions"`
+	Players     []CampaignPlayer `bson:"players"     json:"players"`
+	UpdatedAt   time.Time        `bson:"updatedAt"   json:"updatedAt"`
 }

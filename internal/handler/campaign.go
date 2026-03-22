@@ -27,23 +27,9 @@ func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerSto
 // List handles GET /api/campaigns.
 func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	role := middleware.RoleFromContext(ctx)
 	userID := middleware.UserIDFromContext(ctx)
 
-	var campaigns []model.Campaign
-	var err error
-
-	if role == model.RoleDM {
-		campaigns, err = h.campaigns.ListAll(ctx)
-	} else {
-		// Player: find campaigns where they have a character
-		campaignIDs, e := h.players.CampaignIDsForUser(ctx, userID)
-		if e != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-			return
-		}
-		campaigns, err = h.campaigns.ListByIDs(ctx, campaignIDs)
-	}
+	campaigns, err := h.campaigns.ListByUser(ctx, userID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -63,23 +49,27 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
-	// Player role: verify they have a character in this campaign
-	if middleware.RoleFromContext(r.Context()) == model.RolePlayer {
-		userID := middleware.UserIDFromContext(r.Context())
-		ok, err := h.players.UserHasPlayerInCampaign(r.Context(), userID, id)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-			return
-		}
-		if !ok {
-			writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-			return
+
+	userID := middleware.UserIDFromContext(r.Context())
+	hasAccess := campaign.DM == userID
+	if !hasAccess {
+		for _, p := range campaign.Players {
+			if p.UserID == userID && p.IsActive {
+				hasAccess = true
+				break
+			}
 		}
 	}
+
+	if !hasAccess {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
+
 	writeJSON(w, http.StatusOK, campaign)
 }
 
-// Create handles POST /api/campaigns (admin only — enforced by middleware).
+// Create handles POST /api/campaigns (DM only — enforced by middleware).
 func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name        string  `json:"name"`
@@ -94,14 +84,18 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "name is required", "BAD_REQUEST")
 		return
 	}
+
+	userID := middleware.UserIDFromContext(r.Context())
+
 	campaign := &model.Campaign{
 		ID:          uuid.NewString(),
-		CreatedBy:   middleware.UserIDFromContext(r.Context()),
+		DM:          userID,
 		Name:        req.Name,
 		ThemeImage:  req.ThemeImage,
 		MapImageURI: req.MapImageURI,
 		MapPins:     []model.MapPin{},
 		Sessions:    []model.Session{},
+		Players:     []model.CampaignPlayer{},
 		UpdatedAt:   time.Now().UTC(),
 	}
 	if err := h.campaigns.Create(r.Context(), campaign); err != nil {
@@ -111,9 +105,26 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, campaign)
 }
 
-// Update handles PATCH /api/campaigns/:id (admin only — enforced by middleware).
+// Update handles PATCH /api/campaigns/:id (DM only — enforced by middleware).
 func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
+	campaign, err := h.campaigns.GetByID(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
+
+	userID := middleware.UserIDFromContext(r.Context())
+	if campaign.DM != userID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
@@ -143,12 +154,28 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/campaigns/:id (admin only — enforced by middleware).
+// Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
 // Cascade: deletes all players in the campaign, then their inventory and spells.
 // This operation is not atomic across collections. A crash between steps may leave orphaned documents.
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ctx := r.Context()
+
+	campaign, err := h.campaigns.GetByID(ctx, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
+
+	userID := middleware.UserIDFromContext(ctx)
+	if campaign.DM != userID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
 
 	// Get all player IDs in this campaign for cascade
 	playerIDs, err := h.players.IDsForCampaign(ctx, id)

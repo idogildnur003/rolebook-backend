@@ -22,7 +22,7 @@ func NewCampaignStore(db *DB) *CampaignStore {
 	return &CampaignStore{col: db.Collection("campaigns")}
 }
 
-// ListAll returns all campaigns (admin use — no filter).
+// ListAll returns all campaigns (no filter).
 func (s *CampaignStore) ListAll(ctx context.Context) ([]model.Campaign, error) {
 	return s.find(ctx, bson.M{})
 }
@@ -33,6 +33,14 @@ func (s *CampaignStore) ListByIDs(ctx context.Context, ids []string) ([]model.Ca
 		return []model.Campaign{}, nil
 	}
 	return s.find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+}
+
+// ListByUser returns campaigns where the user is the DM or a player.
+func (s *CampaignStore) ListByUser(ctx context.Context, userID string) ([]model.Campaign, error) {
+	return s.find(ctx, bson.M{"$or": bson.A{
+		bson.M{"dm": userID},
+		bson.M{"players.userId": userID},
+	}})
 }
 
 // GetByID returns a single campaign, or nil if not found.

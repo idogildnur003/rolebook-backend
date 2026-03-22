@@ -17,21 +17,26 @@ import (
 type InventoryHandler struct {
 	inventory *store.InventoryStore
 	players   *store.PlayerStore
+	campaigns *store.CampaignStore
 	arsenal   *store.ArsenalStore
 }
 
 // NewInventoryHandler creates an InventoryHandler.
-func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerStore, arsenal *store.ArsenalStore) *InventoryHandler {
-	return &InventoryHandler{inventory: inventory, players: players, arsenal: arsenal}
+func NewInventoryHandler(inventory *store.InventoryStore, players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *store.ArsenalStore) *InventoryHandler {
+	return &InventoryHandler{inventory: inventory, players: players, campaigns: campaigns, arsenal: arsenal}
 }
 
 // List handles GET /api/players/:playerId/inventory.
 func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	items, err := h.inventory.ListForPlayer(r.Context(), playerID, userID, isAdmin)
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
+		return
+	}
+
+	userID := middleware.UserIDFromContext(r.Context())
+	items, err := h.inventory.ListForPlayer(r.Context(), playerID, userID, access.IsDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -42,17 +47,9 @@ func (h *InventoryHandler) List(w http.ResponseWriter, r *http.Request) {
 // Create handles POST /api/players/:playerId/inventory.
 func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	// Resolve the player to get linkedUserId for denormalization
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	if player == nil {
-		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 
@@ -100,7 +97,6 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "arsenal equipment not found", "NOT_FOUND")
 			return
 		}
-		// Populate from catalog; client may still override quantity and notes.
 		req.Name = src.Name
 		req.Category = src.Category
 		req.Tags = src.Tags
@@ -135,19 +131,19 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item := &model.InventoryItem{
-		ID:           uuid.NewString(),
-		PlayerID:     playerID,
-		LinkedUserID: player.LinkedUserID,
-		Name:         req.Name,
-		Quantity:     req.Quantity,
-		Category:     req.Category,
-		Tags:         req.Tags,
-		Notes:        req.Notes,
-		ImageURI:     req.ImageURI,
-		Damage:       req.Damage,
-		DamageType:   req.DamageType,
-		WeaponType:   req.WeaponType,
-		Properties:   req.Properties,
+		ID:                  uuid.NewString(),
+		PlayerID:            playerID,
+		LinkedUserID:        access.Player.LinkedUserID,
+		Name:                req.Name,
+		Quantity:            req.Quantity,
+		Category:            req.Category,
+		Tags:                req.Tags,
+		Notes:               req.Notes,
+		ImageURI:            req.ImageURI,
+		Damage:              req.Damage,
+		DamageType:          req.DamageType,
+		WeaponType:          req.WeaponType,
+		Properties:          req.Properties,
 		ArmorClass:          req.ArmorClass,
 		ArmorBonus:          req.ArmorBonus,
 		ShieldBonus:         req.ShieldBonus,
@@ -157,7 +153,7 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		CompatibleWith:      req.CompatibleWith,
 		EffectSummary:       req.EffectSummary,
 		Value:               req.Value,
-		UpdatedAt:    time.Now().UTC(),
+		UpdatedAt:           time.Now().UTC(),
 	}
 	if err := h.inventory.Create(r.Context(), item); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -170,14 +166,29 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+
+	// Fetch the item to find which player it belongs to.
+	item, err := h.inventory.GetByID(r.Context(), itemID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if item == nil {
+		writeError(w, http.StatusNotFound, "inventory item not found", "NOT_FOUND")
+		return
+	}
+
+	// Resolve access via the item's player.
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, item.PlayerID)
+	if access == nil {
+		return
+	}
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	// Strip protected fields
 	delete(req, "_id")
 	delete(req, "id")
 	delete(req, "playerId")
@@ -188,7 +199,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.inventory.Update(r.Context(), itemID, userID, isAdmin, bson.M(req))
+	updated, err := h.inventory.Update(r.Context(), itemID, userID, access.IsDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -200,9 +211,31 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/inventory/:itemId (admin only — enforced by middleware).
+// Delete handles DELETE /api/inventory/:itemId (campaign DM only).
 func (h *InventoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "itemId")
+
+	// Fetch the item to find which player it belongs to.
+	item, err := h.inventory.GetByID(r.Context(), itemID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if item == nil {
+		writeError(w, http.StatusNotFound, "inventory item not found", "NOT_FOUND")
+		return
+	}
+
+	// Resolve access via the item's player — must be campaign DM.
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, item.PlayerID)
+	if access == nil {
+		return
+	}
+	if !access.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
 	found, err := h.inventory.Delete(r.Context(), itemID, "", true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
