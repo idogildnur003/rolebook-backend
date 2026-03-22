@@ -42,12 +42,11 @@ func (s *PlayerStore) Create(ctx context.Context, p *model.Player) error {
 }
 
 // Get returns a player by ID for the given role/userID.
-// DM: no ownership filter. Non-DM: filters by linkedUserId and hides NPCs.
+// DM: no ownership filter. Non-DM: filters by linkedUserId.
 func (s *PlayerStore) Get(ctx context.Context, id, userID string, isDM bool) (*model.Player, error) {
 	filter := bson.M{"_id": id}
 	if !isDM {
 		filter["linkedUserId"] = userID
-		filter["isNpc"] = false
 	}
 	var p model.Player
 	err := s.col.FindOne(ctx, filter).Decode(&p)
@@ -61,12 +60,11 @@ func (s *PlayerStore) Get(ctx context.Context, id, userID string, isDM bool) (*m
 }
 
 // ListForCampaign returns players in a campaign.
-// DM: all players. Non-DM: only the player whose linkedUserId matches (hides NPCs).
+// DM: all players. Non-DM: only the player whose linkedUserId matches.
 func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool) ([]model.Player, error) {
 	filter := bson.M{"campaignId": campaignID}
 	if !isDM {
 		filter["linkedUserId"] = userID
-		filter["isNpc"] = false
 	}
 	cursor, err := s.col.Find(ctx, filter)
 	if err != nil {

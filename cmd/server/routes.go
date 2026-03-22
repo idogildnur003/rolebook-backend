@@ -17,6 +17,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	userStore := store.NewUserStore(db)
 	campaignStore := store.NewCampaignStore(db)
 	playerStore := store.NewPlayerStore(db)
+	npcStore := store.NewNpcStore(db)
 	inventoryStore := store.NewInventoryStore(db)
 	spellStore := store.NewSpellStore(db)
 	arsenalStore := store.NewArsenalStore(db)
@@ -30,6 +31,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore)
+	npcHandler := handler.NewNpcHandler(npcStore, campaignStore)
 	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore, campaignStore, arsenalStore)
 	spellHandler := handler.NewSpellHandler(spellStore, playerStore, campaignStore, arsenalStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalStore)
@@ -76,6 +78,17 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/spells", spellHandler.Create)
 				// Spell slots
 				r.Put("/spell-slots", spellHandler.UpdateSpellSlots)
+			})
+
+			// NPCs (campaign DM only — enforced in handler)
+			r.Route("/campaigns/{campaignId}/npcs", func(r chi.Router) {
+				r.Get("/", npcHandler.List)
+				r.Post("/", npcHandler.Create)
+			})
+			r.Route("/npcs/{npcId}", func(r chi.Router) {
+				r.Get("/", npcHandler.Get)
+				r.Patch("/", npcHandler.Update)
+				r.Delete("/", npcHandler.Delete)
 			})
 
 			// Flat inventory routes (access enforced in handler)
