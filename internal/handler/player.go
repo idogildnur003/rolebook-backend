@@ -62,20 +62,27 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create handles POST /api/players (campaign DM only).
-// Only campaignId and userEmail are required. The player fills in their own details later.
+// For regular players: campaignId and userEmail are required.
+// For NPCs: campaignId and isNpc: true are required. UserEmail is ignored.
 func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 
 	var req struct {
 		CampaignID string `json:"campaignId"`
 		UserEmail  string `json:"userEmail"`
+		IsNPC      bool   `json:"isNpc"`
+		Name       string `json:"name"` // Optional for NPCs during create
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	if req.CampaignID == "" || req.UserEmail == "" {
-		writeError(w, http.StatusBadRequest, "campaignId and userEmail are required", "BAD_REQUEST")
+	if req.CampaignID == "" {
+		writeError(w, http.StatusBadRequest, "campaignId is required", "BAD_REQUEST")
+		return
+	}
+	if !req.IsNPC && req.UserEmail == "" {
+		writeError(w, http.StatusBadRequest, "userEmail is required for regular players", "BAD_REQUEST")
 		return
 	}
 
@@ -93,27 +100,33 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	linkedUser, err := h.users.FindByEmail(r.Context(), req.UserEmail)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	if linkedUser == nil {
-		writeError(w, http.StatusNotFound, "user not found", "NOT_FOUND")
-		return
+	var linkedUserID string
+	if !req.IsNPC {
+		linkedUser, err := h.users.FindByEmail(r.Context(), req.UserEmail)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		if linkedUser == nil {
+			writeError(w, http.StatusNotFound, "user not found", "NOT_FOUND")
+			return
+		}
+		linkedUserID = linkedUser.ID
 	}
 
-	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, "", 1)
+	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUserID, req.Name, 1, req.IsNPC)
 
 	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
 
-	cp := model.CampaignPlayer{UserID: linkedUser.ID, IsActive: true}
-	if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
+	if !req.IsNPC {
+		cp := model.CampaignPlayer{UserID: linkedUserID, IsActive: true}
+		if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
 	}
 
 	writeJSON(w, http.StatusCreated, player)

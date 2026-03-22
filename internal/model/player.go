@@ -15,6 +15,7 @@ type Player struct {
 	ID           string `bson:"_id"          json:"id"`
 	CampaignID   string `bson:"campaignId"   json:"campaignId"`
 	LinkedUserID string `bson:"linkedUserId" json:"-"` // internal access-control field; not exposed in API responses
+	IsNPC        bool   `bson:"isNpc"        json:"isNpc"`
 
 	Name            string  `bson:"name"            json:"name"`
 	ClassName       *string `bson:"className"       json:"className"`
@@ -62,11 +63,12 @@ type Player struct {
 
 // DefaultPlayer returns a new Player with sensible D&D 5e defaults.
 // All maps and slices are initialized (never nil) to ensure clean JSON serialisation.
-func DefaultPlayer(id, campaignID, linkedUserID, name string, level int) *Player {
+func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, isNPC bool) *Player {
 	return &Player{
 		ID:           id,
 		CampaignID:   campaignID,
 		LinkedUserID: linkedUserID,
+		IsNPC:        isNPC,
 		Name:         name,
 		Level:        level,
 		Size:         "Medium",

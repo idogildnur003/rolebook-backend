@@ -40,6 +40,12 @@ func resolvePlayerAccess(w http.ResponseWriter, r *http.Request, players *store.
 		return nil
 	}
 
+	// NPCs are DM-only. Regular players cannot access them even if they have the ID.
+	if player.IsNPC && !isDM {
+		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
+		return nil
+	}
+
 	// Allow if the user is the campaign DM or the player's linked user.
 	if !isDM && player.LinkedUserID != userID {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
