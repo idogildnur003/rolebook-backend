@@ -66,7 +66,7 @@ func (s *InventoryStore) Create(ctx context.Context, item *model.InventoryItem) 
 	return err
 }
 
-// Update applies a partial $set update. Admin: no linkedUserId filter. Non-DM: requires match.
+// Update applies a partial $set update. DM: no linkedUserId filter. Non-DM: requires match.
 func (s *InventoryStore) Update(ctx context.Context, id, userID string, isDM bool, fields bson.M) (*model.InventoryItem, error) {
 	filter := bson.M{"_id": id}
 	if !isDM {

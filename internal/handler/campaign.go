@@ -69,7 +69,7 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, campaign)
 }
 
-// Create handles POST /api/campaigns (admin only — enforced by middleware).
+// Create handles POST /api/campaigns (DM only — enforced by middleware).
 func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name        string  `json:"name"`
@@ -105,7 +105,7 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, campaign)
 }
 
-// Update handles PATCH /api/campaigns/:id (admin only — enforced by middleware).
+// Update handles PATCH /api/campaigns/:id (DM only — enforced by middleware).
 func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -154,7 +154,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/campaigns/:id (admin only — enforced by middleware).
+// Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
 // Cascade: deletes all players in the campaign, then their inventory and spells.
 // This operation is not atomic across collections. A crash between steps may leave orphaned documents.
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {

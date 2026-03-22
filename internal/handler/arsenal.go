@@ -32,7 +32,7 @@ func (h *ArsenalHandler) ListSpells(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, spells)
 }
 
-// CreateSpell handles POST /api/arsenal/spells (admin only).
+// CreateSpell handles POST /api/arsenal/spells (DM only).
 func (h *ArsenalHandler) CreateSpell(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name        string   `json:"name"`
@@ -69,7 +69,7 @@ func (h *ArsenalHandler) CreateSpell(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, spell)
 }
 
-// UpdateSpell handles PATCH /api/arsenal/spells/:id (admin only).
+// UpdateSpell handles PATCH /api/arsenal/spells/:id (DM only).
 func (h *ArsenalHandler) UpdateSpell(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var req map[string]any
@@ -96,7 +96,7 @@ func (h *ArsenalHandler) UpdateSpell(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// DeleteSpell handles DELETE /api/arsenal/spells/:id (admin only).
+// DeleteSpell handles DELETE /api/arsenal/spells/:id (DM only).
 func (h *ArsenalHandler) DeleteSpell(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	found, err := h.arsenal.DeleteSpell(r.Context(), id)
@@ -121,7 +121,7 @@ func (h *ArsenalHandler) ListEquipment(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, items)
 }
 
-// CreateEquipment handles POST /api/arsenal/equipment (admin only).
+// CreateEquipment handles POST /api/arsenal/equipment (DM only).
 func (h *ArsenalHandler) CreateEquipment(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name     string   `json:"name"`
@@ -192,7 +192,7 @@ func (h *ArsenalHandler) CreateEquipment(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusCreated, item)
 }
 
-// UpdateEquipment handles PATCH /api/arsenal/equipment/:id (admin only).
+// UpdateEquipment handles PATCH /api/arsenal/equipment/:id (DM only).
 func (h *ArsenalHandler) UpdateEquipment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var req map[string]any
@@ -219,7 +219,7 @@ func (h *ArsenalHandler) UpdateEquipment(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// DeleteEquipment handles DELETE /api/arsenal/equipment/:id (admin only).
+// DeleteEquipment handles DELETE /api/arsenal/equipment/:id (DM only).
 func (h *ArsenalHandler) DeleteEquipment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	found, err := h.arsenal.DeleteEquipment(r.Context(), id)

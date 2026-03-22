@@ -22,7 +22,7 @@ func NewCampaignStore(db *DB) *CampaignStore {
 	return &CampaignStore{col: db.Collection("campaigns")}
 }
 
-// ListAll returns all campaigns (admin use — no filter).
+// ListAll returns all campaigns (no filter).
 func (s *CampaignStore) ListAll(ctx context.Context) ([]model.Campaign, error) {
 	return s.find(ctx, bson.M{})
 }
