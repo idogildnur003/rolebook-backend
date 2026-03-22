@@ -78,7 +78,7 @@ Requires Bearer `{{token}}`.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns/{{campaignId}}/players` | DM sees all; player sees own | List players in campaign | 200 |
+| GET | `/campaigns/{{campaignId}}/players` | Campaign DM | List players in campaign | 200 |
 | GET | `/players/{{playerId}}` | Campaign DM or linked user | Get single player | 200 |
 | POST | `/players` | Campaign DM | Create player → sets `playerId` | 201 |
 | PATCH | `/players/{{playerId}}` | Campaign DM or linked user | Update player fields | 200 |
