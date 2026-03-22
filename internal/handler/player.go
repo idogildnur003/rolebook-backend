@@ -16,11 +16,12 @@ import (
 type PlayerHandler struct {
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
+	users     *store.UserStore
 }
 
 // NewPlayerHandler creates a PlayerHandler.
-func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore) *PlayerHandler {
-	return &PlayerHandler{players: players, campaigns: campaigns}
+func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore, users *store.UserStore) *PlayerHandler {
+	return &PlayerHandler{players: players, campaigns: campaigns, users: users}
 }
 
 // ListForCampaign handles GET /api/campaigns/:campaignId/players.
@@ -61,23 +62,20 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create handles POST /api/players (campaign DM only).
+// Only campaignId and userEmail are required. The player fills in their own details later.
 func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 
 	var req struct {
-		CampaignID   string `json:"campaignId"`
-		Name         string `json:"name"`
-		ClassName    string `json:"className"`
-		Level        int    `json:"level"`
-		Race         string `json:"race"`
-		LinkedUserID string `json:"linkedUserId"`
+		CampaignID string `json:"campaignId"`
+		UserEmail  string `json:"userEmail"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	if req.CampaignID == "" || req.Name == "" {
-		writeError(w, http.StatusBadRequest, "campaignId and name are required", "BAD_REQUEST")
+	if req.CampaignID == "" || req.UserEmail == "" {
+		writeError(w, http.StatusBadRequest, "campaignId and userEmail are required", "BAD_REQUEST")
 		return
 	}
 
@@ -95,22 +93,29 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Level <= 0 {
-		req.Level = 1
+	linkedUser, err := h.users.FindByEmail(r.Context(), req.UserEmail)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if linkedUser == nil {
+		writeError(w, http.StatusNotFound, "user not found", "NOT_FOUND")
+		return
 	}
 
-	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, req.LinkedUserID, req.Name, req.Level)
-	if req.ClassName != "" {
-		player.ClassName = &req.ClassName
-	}
-	if req.Race != "" {
-		player.Race = req.Race
-	}
+	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, "", 1)
 
 	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+
+	cp := model.CampaignPlayer{UserID: linkedUser.ID, IsActive: true}
+	if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
 	writeJSON(w, http.StatusCreated, player)
 }
 

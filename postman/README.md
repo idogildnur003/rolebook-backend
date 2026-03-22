@@ -84,14 +84,44 @@ Requires Bearer `{{token}}`.
 | PATCH | `/players/{{playerId}}` | Campaign DM or linked user | Update player fields | 200 |
 | DELETE | `/players/{{playerId}}` | Campaign DM | Delete player + inventory/spells | 204 |
 
-**POST body:**
+**POST body (DM provides campaign + user email only; player fills in details later):**
 ```json
-{ "campaignId": "{{campaignId}}", "name": "Thorn", "className": "Ranger", "level": 1, "race": "Wood Elf" }
+{ "campaignId": "{{campaignId}}", "userEmail": "player@example.com" }
 ```
 
-**PATCH body (HP update example):**
+**PATCH body (all editable fields):**
 ```json
-{ "currentHp": 18, "tempHp": 5 }
+{
+  "name": "Thorn Ironbark",
+  "className": "Ranger",
+  "level": 5,
+  "race": "Wood Elf",
+  "notes": "Prefers ranged combat",
+  "avatarUri": "https://example.com/avatar.png",
+  "backgroundStory": "Raised in the Emerald Forest by druids.",
+  "alignment": "Neutral Good",
+  "speciesOrRegion": "Sylvan",
+  "subclass": "Gloom Stalker",
+  "region": "Emerald Forest",
+  "size": "Medium",
+  "currentHp": 38,
+  "maxHp": 42,
+  "tempHp": 5,
+  "ac": 15,
+  "speed": 35,
+  "initiativeBonus": 3,
+  "proficiencyBonus": 3,
+  "deathSaveSuccesses": 0,
+  "deathSaveFailures": 0,
+  "abilityScores": { "STR": 12, "DEX": 16, "CON": 14, "INT": 10, "WIS": 14, "CHA": 8 },
+  "abilityTemporaryModifiers": {},
+  "skillTemporaryModifiers": {},
+  "proficientSavingThrows": ["STR", "DEX"],
+  "proficientSkills": ["Stealth", "Perception", "Survival"],
+  "expertiseSkills": ["Stealth"],
+  "featuresAndFeats": ["Favored Enemy", "Natural Explorer", "Dread Ambusher"],
+  "conditions": {}
+}
 ```
 
 ---

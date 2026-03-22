@@ -29,7 +29,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
-	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore)
+	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore)
 	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore, campaignStore, arsenalStore)
 	spellHandler := handler.NewSpellHandler(spellStore, playerStore, campaignStore, arsenalStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalStore)

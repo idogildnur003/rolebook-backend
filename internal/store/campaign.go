@@ -179,6 +179,19 @@ func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID
 	return res.ModifiedCount > 0, nil
 }
 
+// AddPlayer appends a CampaignPlayer to the campaign's embedded players array.
+func (s *CampaignStore) AddPlayer(ctx context.Context, campaignID string, player model.CampaignPlayer) error {
+	_, err := s.col.UpdateOne(
+		ctx,
+		bson.M{"_id": campaignID},
+		bson.M{
+			"$push": bson.M{"players": player},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	return err
+}
+
 func (s *CampaignStore) find(ctx context.Context, filter bson.M) ([]model.Campaign, error) {
 	cursor, err := s.col.Find(ctx, filter)
 	if err != nil {
