@@ -24,6 +24,20 @@ func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerSto
 	return &CampaignHandler{campaigns: campaigns, players: players}
 }
 
+// campaignListItem is the slim shape returned by List.
+type campaignListItem struct {
+	ID         string                `json:"id"`
+	Role       string                `json:"role"`
+	Name       string                `json:"name"`
+	ThemeImage string                `json:"themeImage"`
+	Sessions   []campaignListSession `json:"sessions"`
+}
+
+type campaignListSession struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // List handles GET /api/campaigns.
 func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -34,7 +48,26 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	writeJSON(w, http.StatusOK, campaigns)
+
+	items := make([]campaignListItem, len(campaigns))
+	for i, c := range campaigns {
+		role := "player"
+		if c.DM == userID {
+			role = "dm"
+		}
+		sessions := make([]campaignListSession, len(c.Sessions))
+		for j, s := range c.Sessions {
+			sessions[j] = campaignListSession{ID: s.ID, Name: s.Name}
+		}
+		items[i] = campaignListItem{
+			ID:         c.ID,
+			Role:       role,
+			Name:       c.Name,
+			ThemeImage: c.ThemeImage,
+			Sessions:   sessions,
+		}
+	}
+	writeJSON(w, http.StatusOK, items)
 }
 
 // Get handles GET /api/campaigns/:id.
