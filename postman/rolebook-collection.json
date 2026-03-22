@@ -22,7 +22,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret123\"\n}",
+              "raw": "{\n  \"email\": \"dm@example.com\",\n  \"password\": \"secret123\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -53,7 +53,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret123\"\n}",
+              "raw": "{\n  \"email\": \"dm@example.com\",\n  \"password\": \"secret123\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -123,7 +123,7 @@
           ]
         },
         {
-          "name": "Create Campaign (admin)",
+          "name": "Create Campaign",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -153,7 +153,7 @@
           ]
         },
         {
-          "name": "Update Campaign (admin)",
+          "name": "Update Campaign (campaign DM)",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -179,7 +179,7 @@
           ]
         },
         {
-          "name": "Delete Campaign (admin)",
+          "name": "Delete Campaign (campaign DM)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -204,7 +204,7 @@
       "name": "Sessions",
       "item": [
         {
-          "name": "Create Session (admin)",
+          "name": "Create Session (campaign DM)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -234,7 +234,7 @@
           ]
         },
         {
-          "name": "Update Session (admin)",
+          "name": "Update Session (campaign DM)",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -260,7 +260,7 @@
           ]
         },
         {
-          "name": "Delete Session (admin)",
+          "name": "Delete Session (campaign DM)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -325,7 +325,7 @@
           ]
         },
         {
-          "name": "Create Player (admin)",
+          "name": "Create Player (campaign DM)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -381,7 +381,7 @@
           ]
         },
         {
-          "name": "Delete Player (admin)",
+          "name": "Delete Player (campaign DM)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -482,7 +482,7 @@
           ]
         },
         {
-          "name": "Delete Item (admin)",
+          "name": "Delete Item (campaign DM)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -583,7 +583,7 @@
           ]
         },
         {
-          "name": "Delete Spell (admin)",
+          "name": "Delete Spell (campaign DM)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -654,7 +654,7 @@
           ]
         },
         {
-          "name": "Create Arsenal Spell (admin)",
+          "name": "Create Arsenal Spell (DM role)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -684,7 +684,7 @@
           ]
         },
         {
-          "name": "Update Arsenal Spell (admin)",
+          "name": "Update Arsenal Spell (DM role)",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -710,7 +710,7 @@
           ]
         },
         {
-          "name": "Delete Arsenal Spell (admin)",
+          "name": "Delete Arsenal Spell (DM role)",
           "request": {
             "method": "DELETE",
             "url": {
@@ -750,7 +750,7 @@
           ]
         },
         {
-          "name": "Create Arsenal Equipment (admin)",
+          "name": "Create Arsenal Equipment (DM role)",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -780,7 +780,7 @@
           ]
         },
         {
-          "name": "Update Arsenal Equipment (admin)",
+          "name": "Update Arsenal Equipment (DM role)",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -806,7 +806,7 @@
           ]
         },
         {
-          "name": "Delete Arsenal Equipment (admin)",
+          "name": "Delete Arsenal Equipment (DM role)",
           "request": {
             "method": "DELETE",
             "url": {
