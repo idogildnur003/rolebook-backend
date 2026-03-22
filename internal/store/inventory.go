@@ -27,10 +27,10 @@ func NewInventoryStore(db *DB) *InventoryStore {
 }
 
 // ListForPlayer returns all inventory items for a player.
-// Admin: no linkedUserId filter. Player: requires linkedUserId match.
-func (s *InventoryStore) ListForPlayer(ctx context.Context, playerID, userID string, isAdmin bool) ([]model.InventoryItem, error) {
+// DM: no linkedUserId filter. Non-DM: requires linkedUserId match.
+func (s *InventoryStore) ListForPlayer(ctx context.Context, playerID, userID string, isDM bool) ([]model.InventoryItem, error) {
 	filter := bson.M{"playerId": playerID}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	cursor, err := s.col.Find(ctx, filter)
@@ -47,16 +47,29 @@ func (s *InventoryStore) ListForPlayer(ctx context.Context, playerID, userID str
 	return items, nil
 }
 
+// GetByID returns a single inventory item by ID, or nil if not found.
+func (s *InventoryStore) GetByID(ctx context.Context, id string) (*model.InventoryItem, error) {
+	var item model.InventoryItem
+	err := s.col.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
 // Create inserts a new inventory item.
 func (s *InventoryStore) Create(ctx context.Context, item *model.InventoryItem) error {
 	_, err := s.col.InsertOne(ctx, item)
 	return err
 }
 
-// Update applies a partial $set update. Admin: no linkedUserId filter. Player: requires match.
-func (s *InventoryStore) Update(ctx context.Context, id, userID string, isAdmin bool, fields bson.M) (*model.InventoryItem, error) {
+// Update applies a partial $set update. Admin: no linkedUserId filter. Non-DM: requires match.
+func (s *InventoryStore) Update(ctx context.Context, id, userID string, isDM bool, fields bson.M) (*model.InventoryItem, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	// updatedAt is set in-place on the caller's map; callers must not reuse fields after this call.
@@ -78,9 +91,9 @@ func (s *InventoryStore) Update(ctx context.Context, id, userID string, isAdmin 
 }
 
 // Delete removes an inventory item by ID.
-func (s *InventoryStore) Delete(ctx context.Context, id, userID string, isAdmin bool) (bool, error) {
+func (s *InventoryStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	res, err := s.col.DeleteOne(ctx, filter)

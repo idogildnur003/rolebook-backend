@@ -27,9 +27,9 @@ func NewSpellStore(db *DB) *SpellStore {
 }
 
 // ListForPlayer returns all spells for a player.
-func (s *SpellStore) ListForPlayer(ctx context.Context, playerID, userID string, isAdmin bool) ([]model.Spell, error) {
+func (s *SpellStore) ListForPlayer(ctx context.Context, playerID, userID string, isDM bool) ([]model.Spell, error) {
 	filter := bson.M{"playerId": playerID}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	cursor, err := s.col.Find(ctx, filter)
@@ -46,6 +46,19 @@ func (s *SpellStore) ListForPlayer(ctx context.Context, playerID, userID string,
 	return spells, nil
 }
 
+// GetByID returns a single spell by ID, or nil if not found.
+func (s *SpellStore) GetByID(ctx context.Context, id string) (*model.Spell, error) {
+	var spell model.Spell
+	err := s.col.FindOne(ctx, bson.M{"_id": id}).Decode(&spell)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &spell, nil
+}
+
 // Create inserts a new spell.
 func (s *SpellStore) Create(ctx context.Context, spell *model.Spell) error {
 	_, err := s.col.InsertOne(ctx, spell)
@@ -53,9 +66,9 @@ func (s *SpellStore) Create(ctx context.Context, spell *model.Spell) error {
 }
 
 // Update applies a partial $set update to a spell.
-func (s *SpellStore) Update(ctx context.Context, id, userID string, isAdmin bool, fields bson.M) (*model.Spell, error) {
+func (s *SpellStore) Update(ctx context.Context, id, userID string, isDM bool, fields bson.M) (*model.Spell, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	// updatedAt is set in-place on the caller's map; callers must not reuse fields after this call.
@@ -77,9 +90,9 @@ func (s *SpellStore) Update(ctx context.Context, id, userID string, isAdmin bool
 }
 
 // Delete removes a spell by ID.
-func (s *SpellStore) Delete(ctx context.Context, id, userID string, isAdmin bool) (bool, error) {
+func (s *SpellStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
 	filter := bson.M{"_id": id}
-	if !isAdmin {
+	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	res, err := s.col.DeleteOne(ctx, filter)

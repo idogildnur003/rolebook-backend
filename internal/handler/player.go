@@ -13,7 +13,6 @@ import (
 )
 
 // PlayerHandler handles all player CRUD endpoints.
-// campaigns store is used only for campaign-existence validation on player Create.
 type PlayerHandler struct {
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
@@ -25,12 +24,11 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 }
 
 // ListForCampaign handles GET /api/campaigns/:campaignId/players.
+// DM sees all players; a regular user sees only their own.
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	// Verify the campaign exists before listing players
 	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -41,7 +39,8 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isAdmin)
+	isDM := campaign.DM == userID
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -50,25 +49,21 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 }
 
 // Get handles GET /api/players/:playerId.
+// DM of the player's campaign or the player's linked user can access.
 func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
-	if player == nil {
-		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
-		return
-	}
-	writeJSON(w, http.StatusOK, player)
+	writeJSON(w, http.StatusOK, access.Player)
 }
 
-// Create handles POST /api/players (admin only — enforced by middleware).
+// Create handles POST /api/players (campaign DM only).
 func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromContext(r.Context())
+
 	var req struct {
 		CampaignID   string `json:"campaignId"`
 		Name         string `json:"name"`
@@ -85,7 +80,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "campaignId and name are required", "BAD_REQUEST")
 		return
 	}
-	// Verify campaign exists before creating the player
+
 	campaign, err := h.campaigns.GetByID(r.Context(), req.CampaignID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -95,6 +90,11 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
+	if campaign.DM != userID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
 	if req.Level <= 0 {
 		req.Level = 1
 	}
@@ -115,12 +115,16 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update handles PATCH /api/players/:playerId.
-// Players can only update their own character; admins can update any.
+// DM of the player's campaign or the player's linked user can update.
 // Protected fields (campaignId, linkedUserId) are stripped before applying.
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
+
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
+		return
+	}
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -153,7 +157,7 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.players.Update(r.Context(), playerID, userID, isAdmin, bson.M(req))
+	updated, err := h.players.Update(r.Context(), playerID, userID, access.IsDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -165,11 +169,21 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/players/:playerId (admin only — enforced by middleware).
+// Delete handles DELETE /api/players/:playerId (campaign DM only).
 func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
+
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
+		return
+	}
+	if !access.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
 	userID := middleware.UserIDFromContext(r.Context())
-	found, err := h.players.Delete(r.Context(), playerID, userID, true) // admin: isAdmin=true, ownership filter bypassed
+	found, err := h.players.Delete(r.Context(), playerID, userID, true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return

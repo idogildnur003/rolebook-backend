@@ -30,8 +30,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore)
-	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore, arsenalStore)
-	spellHandler := handler.NewSpellHandler(spellStore, playerStore, arsenalStore)
+	inventoryHandler := handler.NewInventoryHandler(inventoryStore, playerStore, campaignStore, arsenalStore)
+	spellHandler := handler.NewSpellHandler(spellStore, playerStore, campaignStore, arsenalStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalStore)
 
 	dmOnly := middleware.RequireRole(model.RoleDM)
@@ -54,20 +54,20 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Delete("/", campaignHandler.Delete)
 			})
 
-			// Sessions (admin only)
+			// Sessions (campaign DM only — enforced in handler)
 			r.Route("/campaigns/{campaignId}/sessions", func(r chi.Router) {
-				r.With(dmOnly).Post("/", sessionHandler.Create)
-				r.With(dmOnly).Patch("/{sessionId}", sessionHandler.Update)
-				r.With(dmOnly).Delete("/{sessionId}", sessionHandler.Delete)
+				r.Post("/", sessionHandler.Create)
+				r.Patch("/{sessionId}", sessionHandler.Update)
+				r.Delete("/{sessionId}", sessionHandler.Delete)
 			})
 
-			// Players
+			// Players (campaign DM check enforced in handler)
 			r.Get("/campaigns/{campaignId}/players", playerHandler.ListForCampaign)
-			r.With(dmOnly).Post("/players", playerHandler.Create)
+			r.Post("/players", playerHandler.Create)
 			r.Route("/players/{playerId}", func(r chi.Router) {
 				r.Get("/", playerHandler.Get)
 				r.Patch("/", playerHandler.Update)
-				r.With(dmOnly).Delete("/", playerHandler.Delete)
+				r.Delete("/", playerHandler.Delete)
 				// Inventory sub-resource
 				r.Get("/inventory", inventoryHandler.List)
 				r.Post("/inventory", inventoryHandler.Create)
@@ -78,15 +78,15 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Put("/spell-slots", spellHandler.UpdateSpellSlots)
 			})
 
-			// Flat inventory routes
+			// Flat inventory routes (access enforced in handler)
 			r.Patch("/inventory/{itemId}", inventoryHandler.Update)
-			r.With(dmOnly).Delete("/inventory/{itemId}", inventoryHandler.Delete)
+			r.Delete("/inventory/{itemId}", inventoryHandler.Delete)
 
-			// Flat spell routes
+			// Flat spell routes (access enforced in handler)
 			r.Patch("/spells/{spellId}", spellHandler.Update)
-			r.With(dmOnly).Delete("/spells/{spellId}", spellHandler.Delete)
+			r.Delete("/spells/{spellId}", spellHandler.Delete)
 
-			// Arsenal
+			// Arsenal (global DM-only via JWT role — not campaign-specific)
 			r.Route("/arsenal/spells", func(r chi.Router) {
 				r.Get("/", arsenalHandler.ListSpells)
 				r.With(dmOnly).Post("/", arsenalHandler.CreateSpell)

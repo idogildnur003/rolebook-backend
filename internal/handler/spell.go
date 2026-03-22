@@ -15,23 +15,28 @@ import (
 
 // SpellHandler handles spell and spell-slot endpoints.
 type SpellHandler struct {
-	spells  *store.SpellStore
-	players *store.PlayerStore
-	arsenal *store.ArsenalStore
+	spells    *store.SpellStore
+	players   *store.PlayerStore
+	campaigns *store.CampaignStore
+	arsenal   *store.ArsenalStore
 }
 
 // NewSpellHandler creates a SpellHandler.
-func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore, arsenal *store.ArsenalStore) *SpellHandler {
-	return &SpellHandler{spells: spells, players: players, arsenal: arsenal}
+func NewSpellHandler(spells *store.SpellStore, players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *store.ArsenalStore) *SpellHandler {
+	return &SpellHandler{spells: spells, players: players, campaigns: campaigns, arsenal: arsenal}
 }
 
 // List handles GET /api/players/:playerId/spells.
 func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	spells, err := h.spells.ListForPlayer(r.Context(), playerID, userID, isAdmin)
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
+		return
+	}
+
+	userID := middleware.UserIDFromContext(r.Context())
+	spells, err := h.spells.ListForPlayer(r.Context(), playerID, userID, access.IsDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -42,16 +47,9 @@ func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 // Create handles POST /api/players/:playerId/spells.
 func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
-	player, err := h.players.Get(r.Context(), playerID, userID, isAdmin)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	if player == nil {
-		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 
@@ -86,7 +84,6 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "arsenal spell not found", "NOT_FOUND")
 			return
 		}
-		// Populate from catalog; client may still override isPrepared.
 		req.Name = src.Name
 		req.Level = src.Level
 		req.School = src.School
@@ -108,7 +105,7 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	spell := &model.Spell{
 		ID:           uuid.NewString(),
 		PlayerID:     playerID,
-		LinkedUserID: player.LinkedUserID,
+		LinkedUserID: access.Player.LinkedUserID,
 		Name:         req.Name,
 		Level:        req.Level,
 		School:       req.School,
@@ -134,7 +131,23 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	spellID := chi.URLParam(r, "spellId")
 	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
+
+	// Fetch the spell to find which player it belongs to.
+	spell, err := h.spells.GetByID(r.Context(), spellID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if spell == nil {
+		writeError(w, http.StatusNotFound, "spell not found", "NOT_FOUND")
+		return
+	}
+
+	// Resolve access via the spell's player.
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, spell.PlayerID)
+	if access == nil {
+		return
+	}
 
 	var req map[string]any
 	if err := decodeJSON(r, &req); err != nil {
@@ -151,7 +164,7 @@ func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.spells.Update(r.Context(), spellID, userID, isAdmin, bson.M(req))
+	updated, err := h.spells.Update(r.Context(), spellID, userID, access.IsDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -163,11 +176,32 @@ func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/spells/:spellId (admin only — enforced by middleware).
+// Delete handles DELETE /api/spells/:spellId (campaign DM only).
 func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	spellID := chi.URLParam(r, "spellId")
-	userID := middleware.UserIDFromContext(r.Context())
-	found, err := h.spells.Delete(r.Context(), spellID, userID, true)
+
+	// Fetch the spell to find which player it belongs to.
+	spell, err := h.spells.GetByID(r.Context(), spellID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if spell == nil {
+		writeError(w, http.StatusNotFound, "spell not found", "NOT_FOUND")
+		return
+	}
+
+	// Resolve access via the spell's player — must be campaign DM.
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, spell.PlayerID)
+	if access == nil {
+		return
+	}
+	if !access.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	found, err := h.spells.Delete(r.Context(), spellID, "", true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -180,19 +214,22 @@ func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateSpellSlots handles PUT /api/players/:playerId/spell-slots.
-// Replaces the entire spell slot map atomically. Returns the full updated player object.
 func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	userID := middleware.UserIDFromContext(r.Context())
-	isAdmin := middleware.RoleFromContext(r.Context()) == model.RoleDM
 
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
+		return
+	}
+
+	userID := middleware.UserIDFromContext(r.Context())
 	var slots map[string]model.SpellSlot
 	if err := decodeJSON(r, &slots); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
 
-	updated, err := h.players.Update(r.Context(), playerID, userID, isAdmin, bson.M{"spellSlots": slots})
+	updated, err := h.players.Update(r.Context(), playerID, userID, access.IsDM, bson.M{"spellSlots": slots})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
