@@ -18,6 +18,12 @@ type Session struct {
 	UpdatedAt   time.Time `bson:"updatedAt"   json:"updatedAt"`
 }
 
+// CampaignMembership defines a player's role in a campaign.
+type CampaignMembership struct {
+	PlayerID string `bson:"playerId" json:"playerId"`
+	IsDM     bool   `bson:"isDM"    json:"isDM"`
+}
+
 // Campaign is stored in the "campaigns" collection.
 // Sessions are embedded to avoid cross-collection joins.
 // createdBy records the admin who created the campaign (informational; not used for access control).
@@ -29,5 +35,6 @@ type Campaign struct {
 	MapImageURI *string   `bson:"mapImageUri" json:"mapImageUri"`
 	MapPins     []MapPin  `bson:"mapPins"     json:"mapPins"`
 	Sessions    []Session `bson:"sessions"    json:"sessions"`
+	Memberships []CampaignMembership `bson:"memberships" json:"memberships"`
 	UpdatedAt   time.Time `bson:"updatedAt"   json:"updatedAt"`
 }

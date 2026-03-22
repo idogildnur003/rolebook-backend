@@ -47,11 +47,11 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
-			r.With(dmOnly).Post("/campaigns", campaignHandler.Create)
+			r.Post("/campaigns", campaignHandler.Create)
 			r.Route("/campaigns/{id}", func(r chi.Router) {
 				r.Get("/", campaignHandler.Get)
-				r.With(dmOnly).Patch("/", campaignHandler.Update)
-				r.With(dmOnly).Delete("/", campaignHandler.Delete)
+				r.Patch("/", campaignHandler.Update)
+				r.Delete("/", campaignHandler.Delete)
 			})
 
 			// Sessions (admin only)
