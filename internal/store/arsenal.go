@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -12,45 +11,50 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
-// ArsenalStore handles the global spell and equipment catalog.
 type ArsenalStore struct {
 	spells    *mongo.Collection
 	equipment *mongo.Collection
 }
 
-// NewArsenalStore creates an ArsenalStore for both catalog collections.
 func NewArsenalStore(db *DB) *ArsenalStore {
 	return &ArsenalStore{
-		spells:    db.Collection("arsenal_spells"),
-		equipment: db.Collection("arsenal_equipment"),
+		spells:    db.Arsenal().Collection("spells"),
+		equipment: db.Arsenal().Collection("equipment"),
 	}
 }
 
-// --- Spell catalog ---
+// PaginatedResult holds a page of results with total count.
+type PaginatedResult[T any] struct {
+	Data  []T   `json:"data"`
+	Page  int64 `json:"page"`
+	Limit int64 `json:"limit"`
+	Total int64 `json:"total"`
+}
 
-func (s *ArsenalStore) ListSpells(ctx context.Context) ([]model.ArsenalSpell, error) {
-	cursor, err := s.spells.Find(ctx, bson.M{})
+func (s *ArsenalStore) ListSpells(ctx context.Context, page, limit int64) (*PaginatedResult[model.Spell], error) {
+	total, err := s.spells.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	var spells []model.ArsenalSpell
+	skip := (page - 1) * limit
+	cursor, err := s.spells.Find(ctx, bson.M{},
+		options.Find().SetSkip(skip).SetLimit(limit).SetSort(bson.D{{Key: "name", Value: 1}}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var spells []model.Spell
 	if err := cursor.All(ctx, &spells); err != nil {
 		return nil, err
 	}
 	if spells == nil {
-		spells = []model.ArsenalSpell{}
+		spells = []model.Spell{}
 	}
-	return spells, nil
+	return &PaginatedResult[model.Spell]{Data: spells, Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *ArsenalStore) CreateSpell(ctx context.Context, spell *model.ArsenalSpell) error {
-	_, err := s.spells.InsertOne(ctx, spell)
-	return err
-}
-
-// GetSpell returns a single arsenal spell by ID, or nil if not found.
-func (s *ArsenalStore) GetSpell(ctx context.Context, id string) (*model.ArsenalSpell, error) {
-	var spell model.ArsenalSpell
+func (s *ArsenalStore) GetSpell(ctx context.Context, id string) (*model.Spell, error) {
+	var spell model.Spell
 	err := s.spells.FindOne(ctx, bson.M{"_id": id}).Decode(&spell)
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, nil
@@ -61,54 +65,30 @@ func (s *ArsenalStore) GetSpell(ctx context.Context, id string) (*model.ArsenalS
 	return &spell, nil
 }
 
-func (s *ArsenalStore) UpdateSpell(ctx context.Context, id string, fields bson.M) (*model.ArsenalSpell, error) {
-	fields["updatedAt"] = time.Now().UTC()
-	res := s.spells.FindOneAndUpdate(
-		ctx,
-		bson.M{"_id": id},
-		bson.M{"$set": fields},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
-	)
-	var spell model.ArsenalSpell
-	if err := res.Decode(&spell); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &spell, nil
-}
-
-func (s *ArsenalStore) DeleteSpell(ctx context.Context, id string) (bool, error) {
-	res, err := s.spells.DeleteOne(ctx, bson.M{"_id": id})
-	return res.DeletedCount > 0, err
-}
-
-// --- Equipment catalog ---
-
-func (s *ArsenalStore) ListEquipment(ctx context.Context) ([]model.ArsenalEquipment, error) {
-	cursor, err := s.equipment.Find(ctx, bson.M{})
+func (s *ArsenalStore) ListEquipment(ctx context.Context, page, limit int64) (*PaginatedResult[model.Equipment], error) {
+	total, err := s.equipment.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
-	var items []model.ArsenalEquipment
+	skip := (page - 1) * limit
+	cursor, err := s.equipment.Find(ctx, bson.M{},
+		options.Find().SetSkip(skip).SetLimit(limit).SetSort(bson.D{{Key: "name", Value: 1}}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var items []model.Equipment
 	if err := cursor.All(ctx, &items); err != nil {
 		return nil, err
 	}
 	if items == nil {
-		items = []model.ArsenalEquipment{}
+		items = []model.Equipment{}
 	}
-	return items, nil
+	return &PaginatedResult[model.Equipment]{Data: items, Page: page, Limit: limit, Total: total}, nil
 }
 
-func (s *ArsenalStore) CreateEquipment(ctx context.Context, item *model.ArsenalEquipment) error {
-	_, err := s.equipment.InsertOne(ctx, item)
-	return err
-}
-
-// GetEquipment returns a single arsenal equipment item by ID, or nil if not found.
-func (s *ArsenalStore) GetEquipment(ctx context.Context, id string) (*model.ArsenalEquipment, error) {
-	var item model.ArsenalEquipment
+func (s *ArsenalStore) GetEquipment(ctx context.Context, id string) (*model.Equipment, error) {
+	var item model.Equipment
 	err := s.equipment.FindOne(ctx, bson.M{"_id": id}).Decode(&item)
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, nil
@@ -117,27 +97,4 @@ func (s *ArsenalStore) GetEquipment(ctx context.Context, id string) (*model.Arse
 		return nil, err
 	}
 	return &item, nil
-}
-
-func (s *ArsenalStore) UpdateEquipment(ctx context.Context, id string, fields bson.M) (*model.ArsenalEquipment, error) {
-	fields["updatedAt"] = time.Now().UTC()
-	res := s.equipment.FindOneAndUpdate(
-		ctx,
-		bson.M{"_id": id},
-		bson.M{"$set": fields},
-		options.FindOneAndUpdate().SetReturnDocument(options.After),
-	)
-	var item model.ArsenalEquipment
-	if err := res.Decode(&item); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &item, nil
-}
-
-func (s *ArsenalStore) DeleteEquipment(ctx context.Context, id string) (bool, error) {
-	res, err := s.equipment.DeleteOne(ctx, bson.M{"_id": id})
-	return res.DeletedCount > 0, err
 }

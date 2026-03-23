@@ -12,11 +12,11 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
+var ErrDuplicateEntry = errors.New("duplicate entry")
+
 // PlayerStore handles persistence for player characters.
 type PlayerStore struct {
-	col      *mongo.Collection
-	invStore *InventoryStore // set after inventory store is created (wired in routes)
-	spStore  *SpellStore     // set after spell store is created (wired in routes)
+	col *mongo.Collection
 }
 
 // NewPlayerStore creates a PlayerStore and ensures required indexes.
@@ -28,12 +28,6 @@ func NewPlayerStore(db *DB) *PlayerStore {
 	})
 	return &PlayerStore{col: col}
 }
-
-// SetInventoryStore links the inventory store for cascade deletes.
-func (s *PlayerStore) SetInventoryStore(inv *InventoryStore) { s.invStore = inv }
-
-// SetSpellStore links the spell store for cascade deletes.
-func (s *PlayerStore) SetSpellStore(sp *SpellStore) { s.spStore = sp }
 
 // Create inserts a new player.
 func (s *PlayerStore) Create(ctx context.Context, p *model.Player) error {
@@ -105,38 +99,20 @@ func (s *PlayerStore) Update(ctx context.Context, id, userID string, isDM bool, 
 	return &p, nil
 }
 
-// Delete removes a player and cascades to their inventory and spells.
+// Delete removes a player.
 func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
 	filter := bson.M{"_id": id}
 	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	res, err := s.col.DeleteOne(ctx, filter)
-	if err != nil || res.DeletedCount == 0 {
-		return false, err
-	}
-	// Cascade
-	if s.invStore != nil {
-		_ = s.invStore.DeleteByPlayerID(ctx, id)
-	}
-	if s.spStore != nil {
-		_ = s.spStore.DeleteByPlayerID(ctx, id)
-	}
-	return true, nil
+	return res.DeletedCount > 0, err
 }
 
 // DeleteByIDs deletes multiple players (used by campaign cascade delete).
 func (s *PlayerStore) DeleteByIDs(ctx context.Context, ids []string) error {
 	if len(ids) == 0 {
 		return nil
-	}
-	for _, id := range ids {
-		if s.invStore != nil {
-			_ = s.invStore.DeleteByPlayerID(ctx, id)
-		}
-		if s.spStore != nil {
-			_ = s.spStore.DeleteByPlayerID(ctx, id)
-		}
 	}
 	_, err := s.col.DeleteMany(ctx, bson.M{"_id": bson.M{"$in": ids}})
 	return err
@@ -188,4 +164,100 @@ func (s *PlayerStore) CampaignIDsForUser(ctx context.Context, userID string) ([]
 func (s *PlayerStore) UserHasPlayerInCampaign(ctx context.Context, userID, campaignID string) (bool, error) {
 	count, err := s.col.CountDocuments(ctx, bson.M{"campaignId": campaignID, "linkedUserId": userID})
 	return count > 0, err
+}
+
+// --- Spell array methods ---
+
+func (s *PlayerStore) AddSpell(ctx context.Context, playerID string, spell model.PlayerSpell) error {
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID, "spells.spellId": bson.M{"$ne": spell.SpellID}},
+		bson.M{
+			"$push": bson.M{"spells": spell},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrDuplicateEntry
+	}
+	return nil
+}
+
+func (s *PlayerStore) RemoveSpell(ctx context.Context, playerID, spellID string) (bool, error) {
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID},
+		bson.M{
+			"$pull": bson.M{"spells": bson.M{"spellId": spellID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
+}
+
+func (s *PlayerStore) UpdateSpell(ctx context.Context, playerID, spellID string, fields bson.M) (bool, error) {
+	setFields := bson.M{"updatedAt": time.Now().UTC()}
+	for k, v := range fields {
+		setFields["spells.$."+k] = v
+	}
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID, "spells.spellId": spellID},
+		bson.M{"$set": setFields},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
+}
+
+// --- Inventory array methods ---
+
+func (s *PlayerStore) AddInventoryItem(ctx context.Context, playerID string, item model.PlayerInventoryItem) error {
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID, "inventory.equipmentId": bson.M{"$ne": item.EquipmentID}},
+		bson.M{
+			"$push": bson.M{"inventory": item},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if res.ModifiedCount == 0 {
+		return ErrDuplicateEntry
+	}
+	return nil
+}
+
+func (s *PlayerStore) RemoveInventoryItem(ctx context.Context, playerID, equipmentID string) (bool, error) {
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID},
+		bson.M{
+			"$pull": bson.M{"inventory": bson.M{"equipmentId": equipmentID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
+}
+
+func (s *PlayerStore) UpdateInventoryItem(ctx context.Context, playerID, equipmentID string, fields bson.M) (bool, error) {
+	setFields := bson.M{"updatedAt": time.Now().UTC()}
+	for k, v := range fields {
+		setFields["inventory.$."+k] = v
+	}
+	res, err := s.col.UpdateOne(ctx,
+		bson.M{"_id": playerID, "inventory.equipmentId": equipmentID},
+		bson.M{"$set": setFields},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.ModifiedCount > 0, nil
 }
