@@ -36,5 +36,7 @@ type Campaign struct {
 	MapPins     []MapPin         `bson:"mapPins"     json:"mapPins"`
 	Sessions    []Session        `bson:"sessions"    json:"sessions"`
 	Players     []CampaignPlayer `bson:"players"     json:"players"`
-	UpdatedAt   time.Time        `bson:"updatedAt"   json:"updatedAt"`
+	DisabledSpells    []string `bson:"disabledSpells"    json:"disabledSpells"`
+	DisabledEquipment []string `bson:"disabledEquipment" json:"disabledEquipment"`
+	UpdatedAt         time.Time        `bson:"updatedAt"   json:"updatedAt"`
 }
