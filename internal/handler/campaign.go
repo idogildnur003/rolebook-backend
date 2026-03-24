@@ -93,10 +93,12 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:        req.Name,
 		ThemeImage:  req.ThemeImage,
 		MapImageURI: req.MapImageURI,
-		MapPins:     []model.MapPin{},
-		Sessions:    []model.Session{},
-		Players:     []model.CampaignPlayer{},
-		UpdatedAt:   time.Now().UTC(),
+		MapPins:           []model.MapPin{},
+		Sessions:          []model.Session{},
+		Players:           []model.CampaignPlayer{},
+		DisabledSpells:    []string{},
+		DisabledEquipment: []string{},
+		UpdatedAt:         time.Now().UTC(),
 	}
 	if err := h.campaigns.Create(r.Context(), campaign); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -131,7 +133,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Only allow mutable fields
-	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true}
+	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true, "disabledSpells": true, "disabledEquipment": true}
 	fields := bson.M{}
 	for k, v := range req {
 		if allowed[k] {
@@ -155,8 +157,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
-// Cascade: deletes all players in the campaign, then their inventory and spells.
-// This operation is not atomic across collections. A crash between steps may leave orphaned documents.
+// Cascade: deletes all players in the campaign (spells and inventory are embedded).
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ctx := r.Context()
