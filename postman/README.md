@@ -253,7 +253,12 @@ All errors follow this shape:
 |---|---|
 | 400 | Invalid body or params |
 | 401 | Missing or invalid JWT |
-| 403 | Not the campaign DM |
+| 403 | Not the campaign DM or not the linked player |
 | 404 | Resource not found |
 | 409 | Duplicate entry (e.g. spell already added, email taken) |
 | 500 | Unexpected server error |
+
+## Notes
+
+- There is no global "role" on users. Whether a user is a DM or player is determined per-campaign (the campaign creator is the DM; linked users are players).
+- The JWT contains only the user ID — no role claim.

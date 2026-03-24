@@ -51,9 +51,9 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]campaignListItem, len(campaigns))
 	for i, c := range campaigns {
-		role := "player"
+		role := model.RolePlayer
 		if c.DM == userID {
-			role = "dm"
+			role = model.RoleDM
 		}
 		sessions := make([]campaignListSession, len(c.Sessions))
 		for j, s := range c.Sessions {
@@ -61,7 +61,7 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		items[i] = campaignListItem{
 			ID:         c.ID,
-			Role:       role,
+			Role:       string(role),
 			Name:       c.Name,
 			ThemeImage: c.ThemeImage,
 			Sessions:   sessions,
@@ -121,11 +121,11 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 
 	campaign := &model.Campaign{
-		ID:          uuid.NewString(),
-		DM:          userID,
-		Name:        req.Name,
-		ThemeImage:  req.ThemeImage,
-		MapImageURI: req.MapImageURI,
+		ID:                uuid.NewString(),
+		DM:                userID,
+		Name:              req.Name,
+		ThemeImage:        req.ThemeImage,
+		MapImageURI:       req.MapImageURI,
 		MapPins:           []model.MapPin{},
 		Sessions:          []model.Session{},
 		Players:           []model.CampaignPlayer{},

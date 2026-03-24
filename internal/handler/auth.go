@@ -28,21 +28,19 @@ func NewAuthHandler(users *store.UserStore, jwtSecret string) *AuthHandler {
 	}
 }
 
-type registerRequest struct {
-	Email    string     `json:"email"`
-	Password string     `json:"password"`
-	Role     model.Role `json:"role"`
+type authRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type authResponse struct {
-	Token  string     `json:"token"`
-	UserID string     `json:"userId"`
-	Role   model.Role `json:"role"`
+	Token  string `json:"token"`
+	UserID string `json:"userId"`
 }
 
 // Register handles POST /api/auth/register.
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	var req registerRequest
+	var req authRequest
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
@@ -69,34 +67,28 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	role := model.RolePlayer
-	if req.Role == model.RoleDM {
-		role = model.RoleDM
-	}
-
 	user := &model.User{
 		ID:           uuid.NewString(),
 		Email:        req.Email,
 		PasswordHash: string(hash),
-		Role:         role,
 	}
 	if err := h.users.Create(r.Context(), user); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
 
-	token, err := h.signToken(user.ID, user.Role)
+	token, err := h.signToken(user.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, authResponse{Token: token, UserID: user.ID, Role: user.Role})
+	writeJSON(w, http.StatusCreated, authResponse{Token: token, UserID: user.ID})
 }
 
 // Login handles POST /api/auth/login.
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req registerRequest
+	var req authRequest
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
@@ -122,18 +114,17 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.signToken(user.ID, user.Role)
+	token, err := h.signToken(user.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID, Role: user.Role})
+	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID})
 }
 
-func (h *AuthHandler) signToken(userID string, role model.Role) (string, error) {
+func (h *AuthHandler) signToken(userID string) (string, error) {
 	claims := &middleware.Claims{
-		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
