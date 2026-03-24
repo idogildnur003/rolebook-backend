@@ -15,10 +15,18 @@ func CalculateDerivedStats(p *model.Player) *model.DerivedStats {
 	effectiveSpeed := p.Speed
 	var warnings []model.ConditionWarning
 
-	// 1. Speed-affecting conditions
-	if p.Conditions["Grappled"] || p.Conditions["Restrained"] || p.Conditions["Paralyzed"] ||
-		p.Conditions["Petrified"] || p.Conditions["Stunned"] || p.Conditions["Unconscious"] ||
-		p.ExhaustionLevel >= 5 {
+	// 1. Speed-affecting conditions (checked case-insensitively to match getWarningForCondition)
+	speedZero := p.ExhaustionLevel >= 5
+	for cond, active := range p.Conditions {
+		if !active {
+			continue
+		}
+		switch strings.ToLower(cond) {
+		case "grappled", "restrained", "paralyzed", "petrified", "stunned", "unconscious":
+			speedZero = true
+		}
+	}
+	if speedZero {
 		effectiveSpeed = 0
 	} else if p.ExhaustionLevel >= 2 {
 		effectiveSpeed = p.Speed / 2
