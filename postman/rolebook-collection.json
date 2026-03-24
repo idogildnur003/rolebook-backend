@@ -331,7 +331,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"campaignId\": \"{{campaignId}}\",\n  \"name\": \"Thorn\",\n  \"className\": \"Ranger\",\n  \"level\": 1,\n  \"race\": \"Wood Elf\"\n}",
+              "raw": "{\n  \"campaignId\": \"{{campaignId}}\",\n  \"userEmail\": \"player@example.com\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -361,7 +361,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"currentHp\": 18,\n  \"tempHp\": 5\n}",
+              "raw": "{\n  \"name\": \"Thorn Ironbark\",\n  \"className\": \"Ranger\",\n  \"level\": 5,\n  \"race\": \"Wood Elf\",\n  \"notes\": \"Prefers ranged combat\",\n  \"backgroundStory\": \"Raised in the Emerald Forest by druids.\",\n  \"alignment\": \"Neutral Good\",\n  \"speciesOrRegion\": \"Sylvan\",\n  \"subclass\": \"Gloom Stalker\",\n  \"region\": \"Emerald Forest\",\n  \"size\": \"Medium\",\n  \"currentHp\": 38,\n  \"maxHp\": 42,\n  \"tempHp\": 5,\n  \"ac\": 15,\n  \"speed\": 35,\n  \"initiativeBonus\": 3,\n  \"proficiencyBonus\": 3,\n  \"deathSaveSuccesses\": 0,\n  \"deathSaveFailures\": 0,\n  \"abilityScores\": { \"STR\": 12, \"DEX\": 16, \"CON\": 14, \"INT\": 10, \"WIS\": 14, \"CHA\": 8 },\n  \"abilityTemporaryModifiers\": {},\n  \"skillTemporaryModifiers\": {},\n  \"proficientSavingThrows\": [\"STR\", \"DEX\"],\n  \"proficientSkills\": [\"Stealth\", \"Perception\", \"Survival\"],\n  \"expertiseSkills\": [\"Stealth\"],\n  \"featuresAndFeats\": [\"Favored Enemy\", \"Natural Explorer\", \"Dread Ambusher\"],\n  \"conditions\": {}\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
