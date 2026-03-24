@@ -36,5 +36,4 @@ temp/
 .claude/settgings.local.json
 
 # Binaries
-server.exe
 *.exe

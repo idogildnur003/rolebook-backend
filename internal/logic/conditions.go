@@ -6,6 +6,40 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
+// conditionWarnings maps lowercase condition names to their mechanical warning text.
+var conditionWarnings = map[string]string{
+	"blinded":    "Disadvantage on attacks; attackers have advantage.",
+	"invisible":  "Advantage on attacks; attackers have disadvantage.",
+	"deafened":   "Automatically fail ability checks involving hearing.",
+	"poisoned":   "Disadvantage on attack rolls and ability checks.",
+	"frightened": "Disadvantage on checks and attacks while source is in sight; cannot move closer.",
+	"prone":      "Disadvantage on attacks; attackers within 5ft have advantage, others have disadvantage.",
+	"restrained": "Disadvantage on attacks and Dex saves; attackers have advantage.",
+	"paralyzed":  "Automatically fail Str and Dex saves; attackers have advantage (crit if within 5ft).",
+	"stunned":    "Automatically fail Str and Dex saves; attackers have advantage (crit if within 5ft).",
+	"unconscious": "Automatically fail Str and Dex saves; attackers have advantage (crit if within 5ft).",
+}
+
+// exhaustionEffects maps exhaustion level to its mechanical effect description.
+var exhaustionEffects = map[int]string{
+	1: "Disadvantage on ability checks.",
+	2: "Speed halved.",
+	3: "Disadvantage on attack rolls and saving throws.",
+	4: "Hit point maximum halved.",
+	5: "Speed reduced to 0.",
+	6: "Death.",
+}
+
+// speedZeroConditions is the set of lowercase condition names that reduce speed to 0.
+var speedZeroConditions = map[string]bool{
+	"grappled":   true,
+	"restrained": true,
+	"paralyzed":  true,
+	"petrified":  true,
+	"stunned":    true,
+	"unconscious": true,
+}
+
 // CalculateDerivedStats computes effective stats and warnings based on a player's conditions.
 func CalculateDerivedStats(p *model.Player) *model.DerivedStats {
 	if p == nil {
@@ -15,14 +49,10 @@ func CalculateDerivedStats(p *model.Player) *model.DerivedStats {
 	effectiveSpeed := p.Speed
 	var warnings []model.ConditionWarning
 
-	// 1. Speed-affecting conditions (checked case-insensitively to match getWarningForCondition)
+	// 1. Speed-affecting conditions (case-insensitive)
 	speedZero := p.ExhaustionLevel >= 5
 	for cond, active := range p.Conditions {
-		if !active {
-			continue
-		}
-		switch strings.ToLower(cond) {
-		case "grappled", "restrained", "paralyzed", "petrified", "stunned", "unconscious":
+		if active && speedZeroConditions[strings.ToLower(cond)] {
 			speedZero = true
 		}
 	}
@@ -37,9 +67,7 @@ func CalculateDerivedStats(p *model.Player) *model.DerivedStats {
 		if !active {
 			continue
 		}
-
-		warning := getWarningForCondition(cond)
-		if warning != "" {
+		if warning, ok := conditionWarnings[strings.ToLower(cond)]; ok {
 			warnings = append(warnings, model.ConditionWarning{
 				Condition: cond,
 				Effect:    warning,
@@ -51,54 +79,12 @@ func CalculateDerivedStats(p *model.Player) *model.DerivedStats {
 	if p.ExhaustionLevel > 0 {
 		warnings = append(warnings, model.ConditionWarning{
 			Condition: "Exhaustion",
-			Effect:    getExhaustionEffect(p.ExhaustionLevel),
+			Effect:    exhaustionEffects[p.ExhaustionLevel],
 		})
 	}
 
 	return &model.DerivedStats{
 		EffectiveSpeed: effectiveSpeed,
 		Warnings:       warnings,
-	}
-}
-
-func getWarningForCondition(cond string) string {
-	switch strings.ToLower(cond) {
-	case "blinded":
-		return "Disadvantage on attacks; attackers have advantage."
-	case "invisible":
-		return "Advantage on attacks; attackers have disadvantage."
-	case "deafened":
-		return "Automatically fail ability checks involving hearing."
-	case "poisoned":
-		return "Disadvantage on attack rolls and ability checks."
-	case "frightened":
-		return "Disadvantage on checks and attacks while source is in sight; cannot move closer."
-	case "prone":
-		return "Disadvantage on attacks; attackers within 5ft have advantage, others have disadvantage."
-	case "restrained":
-		return "Disadvantage on attacks and Dex saves; attackers have advantage."
-	case "paralyzed", "stunned", "unconscious":
-		return "Automatically fail Str and Dex saves; attackers have advantage (crit if within 5ft)."
-	default:
-		return ""
-	}
-}
-
-func getExhaustionEffect(level int) string {
-	switch level {
-	case 1:
-		return "Disadvantage on ability checks."
-	case 2:
-		return "Speed halved."
-	case 3:
-		return "Disadvantage on attack rolls and saving throws."
-	case 4:
-		return "Hit point maximum halved."
-	case 5:
-		return "Speed reduced to 0."
-	case 6:
-		return "Death."
-	default:
-		return ""
 	}
 }
