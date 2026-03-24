@@ -14,9 +14,8 @@ Base URL: `http://localhost:3000/api` (set via `{{baseUrl}}` environment variabl
 
 The API uses two kinds of authorization:
 
-- **Campaign DM**: The user who created the campaign is its DM. Write operations on campaigns, sessions, players, inventory, and spells check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
-- **DM role (JWT)**: Arsenal endpoints use a global `dm` role from the JWT. Any user with the DM role can manage the shared arsenal catalog.
-- **Linked user**: A player's linked user can read and update their own character, inventory, and spells.
+- **Campaign DM**: The user who created the campaign is its DM. Write operations on campaigns, sessions, and players check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
+- **Linked user**: A player's linked user can read and update their own character, spells, and inventory.
 
 ---
 
@@ -68,6 +67,16 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
 { "name": "Lost Mine of Phandelver", "themeImage": "forest" }
 ```
 
+**PATCH body (all mutable fields):**
+```json
+{
+  "name": "Updated Name",
+  "themeImage": "desert",
+  "disabledSpells": ["spell-id-1"],
+  "disabledEquipment": ["equip-id-1"]
+}
+```
+
 ---
 
 ## Sessions
@@ -97,7 +106,7 @@ Requires Bearer `{{token}}`.
 | GET | `/players/{{playerId}}` | Campaign DM or linked user | Get single player | 200 |
 | POST | `/players` | Campaign DM | Create player → sets `playerId` | 201 |
 | PATCH | `/players/{{playerId}}` | Campaign DM or linked user | Update player fields | 200 |
-| DELETE | `/players/{{playerId}}` | Campaign DM | Delete player + inventory/spells | 204 |
+| DELETE | `/players/{{playerId}}` | Campaign DM | Delete player (spells/inventory embedded, deleted with player) | 204 |
 
 **POST body (DM provides campaign + user email only; player fills in details later):**
 ```json
@@ -141,39 +150,31 @@ Requires Bearer `{{token}}`.
 
 ---
 
-## Inventory
+## Player Spells
 
-Requires Bearer `{{token}}`.
-
-| Method | Path | Access | Description | Status |
-|---|---|---|---|---|
-| GET | `/players/{{playerId}}/inventory` | Campaign DM or linked user | List inventory | 200 |
-| POST | `/players/{{playerId}}/inventory` | Campaign DM or linked user | Add item → sets `itemId` | 201 |
-| PATCH | `/inventory/{{itemId}}` | Campaign DM or linked user | Update item | 200 |
-| DELETE | `/inventory/{{itemId}}` | Campaign DM | Delete item | 204 |
-
-**POST body:**
-```json
-{ "name": "Longsword", "quantity": 1, "category": "weapons", "tags": ["melee", "martial"], "damage": "1d8", "damageType": "slashing" }
-```
-
----
-
-## Spells
-
-Requires Bearer `{{token}}`.
+Requires Bearer `{{token}}`. Spells are embedded in the player document as lightweight references to the arsenal catalog.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/players/{{playerId}}/spells` | Campaign DM or linked user | List known spells | 200 |
-| POST | `/players/{{playerId}}/spells` | Campaign DM or linked user | Add spell → sets `spellId` | 201 |
-| PATCH | `/spells/{{spellId}}` | Campaign DM or linked user | Update spell (e.g. toggle prepared) | 200 |
-| DELETE | `/spells/{{spellId}}` | Campaign DM | Remove spell | 204 |
+| GET | `/players/{{playerId}}/spells` | Campaign DM or linked user | List known spells (filtered by campaign disabled list) | 200 |
+| POST | `/players/{{playerId}}/spells` | Campaign DM or linked user | Add spell from arsenal → validates existence | 201 |
+| PATCH | `/players/{{playerId}}/spells/{{spellId}}` | Campaign DM or linked user | Update spell fields | 204 |
+| DELETE | `/players/{{playerId}}/spells/{{spellId}}` | Campaign DM or linked user | Remove spell | 204 |
 | PUT | `/players/{{playerId}}/spell-slots` | Campaign DM or linked user | Replace all spell slots | 200 |
 
+**GET response:**
+```json
+[{ "spellId": "abc-123", "name": "Fireball", "isPrepared": true }]
+```
+
 **POST body:**
 ```json
-{ "name": "Fireball", "level": 3, "school": "Evocation", "castingTime": "1 action", "range": "150 feet", "components": ["V","S","M"], "isPrepared": false }
+{ "spellId": "{{arsenalSpellId}}", "isPrepared": false }
+```
+
+**PATCH body (any mutable field):**
+```json
+{ "isPrepared": true }
 ```
 
 **PUT spell-slots body:**
@@ -183,36 +184,60 @@ Requires Bearer `{{token}}`.
 
 ---
 
-## Arsenal
+## Player Inventory
 
-Global reference catalog. Requires Bearer `{{token}}`. Write operations require DM role (JWT).
+Requires Bearer `{{token}}`. Inventory items are embedded in the player document as lightweight references to the arsenal catalog.
 
-### Spells
-
-| Method | Path | DM role | Description | Status |
+| Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/arsenal/spells` | No | List all reference spells | 200 |
-| POST | `/arsenal/spells` | Yes | Create reference spell → sets `arsenalSpellId` | 201 |
-| PATCH | `/arsenal/spells/{{arsenalSpellId}}` | Yes | Update reference spell | 200 |
-| DELETE | `/arsenal/spells/{{arsenalSpellId}}` | Yes | Delete reference spell | 204 |
+| GET | `/players/{{playerId}}/inventory` | Campaign DM or linked user | List inventory (filtered by campaign disabled list) | 200 |
+| POST | `/players/{{playerId}}/inventory` | Campaign DM or linked user | Add item from arsenal → validates existence | 201 |
+| PATCH | `/players/{{playerId}}/inventory/{{equipmentId}}` | Campaign DM or linked user | Update item fields | 204 |
+| DELETE | `/players/{{playerId}}/inventory/{{equipmentId}}` | Campaign DM or linked user | Remove item | 204 |
+
+**GET response:**
+```json
+[{ "equipmentId": "abc-123", "name": "Longsword", "quantity": 1 }]
+```
 
 **POST body:**
 ```json
-{ "name": "Magic Missile", "level": 1, "school": "Evocation", "castingTime": "1 action", "range": "120 feet", "components": ["V","S"], "duration": "Instantaneous" }
+{ "equipmentId": "{{arsenalEquipmentId}}", "quantity": 1 }
+```
+
+**PATCH body (any mutable field):**
+```json
+{ "quantity": 2 }
+```
+
+---
+
+## Arsenal
+
+Read-only reference catalog. Data is manually curated in the `arsenal` database. Requires Bearer `{{token}}`, no role restriction.
+
+### Spells
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/arsenal/spells?page=1&limit=20` | List spells (paginated) | 200 |
+| GET | `/arsenal/spells/{{arsenalSpellId}}` | Get full spell details | 200 |
+
+**List response:**
+```json
+{ "data": [{ "id": "abc-123", "name": "Magic Missile", "level": 1, ... }], "page": 1, "limit": 20, "total": 42 }
 ```
 
 ### Equipment
 
-| Method | Path | DM role | Description | Status |
-|---|---|---|---|---|
-| GET | `/arsenal/equipment` | No | List all reference equipment | 200 |
-| POST | `/arsenal/equipment` | Yes | Create reference item → sets `arsenalEquipmentId` | 201 |
-| PATCH | `/arsenal/equipment/{{arsenalEquipmentId}}` | Yes | Update reference item | 200 |
-| DELETE | `/arsenal/equipment/{{arsenalEquipmentId}}` | Yes | Delete reference item | 204 |
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/arsenal/equipment?page=1&limit=20` | List equipment (paginated) | 200 |
+| GET | `/arsenal/equipment/{{arsenalEquipmentId}}` | Get full equipment details | 200 |
 
-**POST body:**
+**List response:**
 ```json
-{ "name": "Chain Mail", "category": "armor", "tags": ["heavy"], "armorClass": 16, "armorType": "heavy", "stealthDisadvantage": true }
+{ "data": [{ "id": "abc-123", "name": "Chain Mail", "category": "armor", ... }], "page": 1, "limit": 20, "total": 15 }
 ```
 
 ---
@@ -228,7 +253,7 @@ All errors follow this shape:
 |---|---|
 | 400 | Invalid body or params |
 | 401 | Missing or invalid JWT |
-| 403 | Not the campaign DM (or not DM role for arsenal) |
+| 403 | Not the campaign DM |
 | 404 | Resource not found |
-| 409 | Unique constraint (e.g. email taken) |
+| 409 | Duplicate entry (e.g. spell already added, email taken) |
 | 500 | Unexpected server error |
