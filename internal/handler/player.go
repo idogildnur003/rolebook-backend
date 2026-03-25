@@ -51,6 +51,24 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, players)
 }
 
+// GetMyPlayer handles GET /api/campaigns/:campaignId/player.
+// Returns the caller's own player character in the given campaign.
+func (h *PlayerHandler) GetMyPlayer(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	userID := middleware.UserIDFromContext(r.Context())
+
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, false)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if len(players) == 0 {
+		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
+		return
+	}
+	writeJSON(w, http.StatusOK, players[0])
+}
+
 // Get handles GET /api/players/:playerId.
 // DM of the player's campaign or the player's linked user can access.
 func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +130,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cp := model.CampaignPlayer{UserID: linkedUser.ID, IsActive: true}
+	cp := model.CampaignPlayer{UserID: linkedUser.ID, PlayerID: player.ID, IsActive: true}
 	if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
