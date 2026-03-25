@@ -24,8 +24,7 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 	return &PlayerHandler{players: players, campaigns: campaigns, users: users}
 }
 
-// ListForCampaign handles GET /api/campaigns/:campaignId/players.
-// DM sees all players; a regular user sees only their own.
+// ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
@@ -39,9 +38,12 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
+	if campaign.DM != userID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
 
-	isDM := campaign.DM == userID
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, isDM)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return

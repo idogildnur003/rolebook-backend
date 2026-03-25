@@ -51,9 +51,9 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]campaignListItem, len(campaigns))
 	for i, c := range campaigns {
-		role := "player"
+		role := model.RolePlayer
 		if c.DM == userID {
-			role = "dm"
+			role = model.RoleDM
 		}
 		sessions := make([]campaignListSession, len(c.Sessions))
 		for j, s := range c.Sessions {
@@ -61,7 +61,7 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		items[i] = campaignListItem{
 			ID:         c.ID,
-			Role:       role,
+			Role:       string(role),
 			Name:       c.Name,
 			ThemeImage: c.ThemeImage,
 			Sessions:   sessions,
@@ -121,15 +121,17 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.UserIDFromContext(r.Context())
 
 	campaign := &model.Campaign{
-		ID:          uuid.NewString(),
-		DM:          userID,
-		Name:        req.Name,
-		ThemeImage:  req.ThemeImage,
-		MapImageURI: req.MapImageURI,
-		MapPins:     []model.MapPin{},
-		Sessions:    []model.Session{},
-		Players:     []model.CampaignPlayer{},
-		UpdatedAt:   time.Now().UTC(),
+		ID:                uuid.NewString(),
+		DM:                userID,
+		Name:              req.Name,
+		ThemeImage:        req.ThemeImage,
+		MapImageURI:       req.MapImageURI,
+		MapPins:           []model.MapPin{},
+		Sessions:          []model.Session{},
+		Players:           []model.CampaignPlayer{},
+		DisabledSpells:    []string{},
+		DisabledEquipment: []string{},
+		UpdatedAt:         time.Now().UTC(),
 	}
 	if err := h.campaigns.Create(r.Context(), campaign); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -164,7 +166,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Only allow mutable fields
-	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true}
+	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true, "disabledSpells": true, "disabledEquipment": true}
 	fields := bson.M{}
 	for k, v := range req {
 		if allowed[k] {
@@ -188,8 +190,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 // Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
-// Cascade: deletes all players in the campaign, then their inventory and spells.
-// This operation is not atomic across collections. A crash between steps may leave orphaned documents.
+// Cascade: deletes all players in the campaign (spells and inventory are embedded).
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ctx := r.Context()

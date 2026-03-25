@@ -10,6 +10,20 @@ type SpellSlot struct {
 
 // Note: spell slot level keys are strings "1"–"9" in the map.
 
+// PlayerSpell is a lightweight spell reference embedded in the Player document.
+type PlayerSpell struct {
+	SpellID    string `bson:"spellId"    json:"spellId"`
+	Name       string `bson:"name"       json:"name"`
+	IsPrepared bool   `bson:"isPrepared" json:"isPrepared"`
+}
+
+// PlayerInventoryItem is a lightweight equipment reference embedded in the Player document.
+type PlayerInventoryItem struct {
+	EquipmentID string `bson:"equipmentId" json:"equipmentId"`
+	Name        string `bson:"name"        json:"name"`
+	Quantity    int    `bson:"quantity"    json:"quantity"`
+}
+
 // Player represents a D&D character sheet stored in the "players" collection.
 type Player struct {
 	ID           string `bson:"_id"          json:"id"`
@@ -57,6 +71,12 @@ type Player struct {
 	// Conditions — e.g. {"poisoned": true}
 	Conditions map[string]bool `bson:"conditions" json:"conditions"`
 
+	// Spells — embedded references to arsenal spells
+	Spells []PlayerSpell `bson:"spells" json:"spells"`
+
+	// Inventory — embedded references to arsenal equipment
+	Inventory []PlayerInventoryItem `bson:"inventory" json:"inventory"`
+
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
@@ -92,6 +112,8 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int) *Player
 			"6": {}, "7": {}, "8": {}, "9": {},
 		},
 		Conditions: make(map[string]bool),
+		Spells:    []PlayerSpell{},
+		Inventory: []PlayerInventoryItem{},
 		UpdatedAt:  time.Now().UTC(),
 	}
 }

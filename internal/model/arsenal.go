@@ -2,9 +2,9 @@ package model
 
 import "time"
 
-// ArsenalSpell is a reference spell in the global catalog ("arsenal_spells" collection).
-// It does not have PlayerID or LinkedUserID fields — it is a global reference, not tied to any player.
-type ArsenalSpell struct {
+// Spell is a reference spell in the arsenal database ("spells" collection).
+// It is a global catalog entry, not tied to any player.
+type Spell struct {
 	ID          string    `bson:"_id"               json:"id"`
 	Name        string    `bson:"name"              json:"name"`
 	Level       int       `bson:"level"             json:"level"`
@@ -20,9 +20,9 @@ type ArsenalSpell struct {
 	UpdatedAt   time.Time `bson:"updatedAt"         json:"updatedAt"`
 }
 
-// ArsenalEquipment is a reference item in the global catalog ("arsenal_equipment" collection).
-// It does not have PlayerID or LinkedUserID fields.
-type ArsenalEquipment struct {
+// Equipment is a reference item in the arsenal database ("equipment" collection).
+// It is a global catalog entry, not tied to any player.
+type Equipment struct {
 	ID       string   `bson:"_id"          json:"id"`
 	Name     string   `bson:"name"         json:"name"`
 	Category string   `bson:"category"     json:"category"`

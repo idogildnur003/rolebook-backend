@@ -179,6 +179,32 @@
           ]
         },
         {
+          "name": "Disable Spells/Equipment (campaign DM)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disabledSpells\": [\"{{arsenalSpellId}}\"],\n  \"disabledEquipment\": [\"{{arsenalEquipmentId}}\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/{{campaignId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", "{{campaignId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
+              }
+            }
+          ]
+        },
+        {
           "name": "Delete Campaign (campaign DM)",
           "request": {
             "method": "DELETE",
@@ -403,16 +429,16 @@
       ]
     },
     {
-      "name": "Inventory",
+      "name": "Player Spells",
       "item": [
         {
-          "name": "List Inventory",
+          "name": "List Player Spells",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/inventory",
+              "raw": "{{baseUrl}}/players/{{playerId}}/spells",
               "host": ["{{baseUrl}}"],
-              "path": ["players", "{{playerId}}", "inventory"]
+              "path": ["players", "{{playerId}}", "spells"]
             }
           },
           "event": [
@@ -426,19 +452,19 @@
           ]
         },
         {
-          "name": "Add Item",
+          "name": "Add Spell to Player",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Longsword\",\n  \"quantity\": 1,\n  \"category\": \"weapons\",\n  \"tags\": [\"melee\", \"martial\"],\n  \"damage\": \"1d8\",\n  \"damageType\": \"slashing\"\n}",
+              "raw": "{\n  \"spellId\": \"{{arsenalSpellId}}\",\n  \"isPrepared\": false\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/inventory",
+              "raw": "{{baseUrl}}/players/{{playerId}}/spells",
               "host": ["{{baseUrl}}"],
-              "path": ["players", "{{playerId}}", "inventory"]
+              "path": ["players", "{{playerId}}", "spells"]
             }
           },
           "event": [
@@ -449,46 +475,26 @@
                 "exec": [
                   "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
                   "const json = pm.response.json();",
-                  "pm.environment.set(\"itemId\", json.id);"
+                  "pm.environment.set(\"playerSpellId\", json.spellId);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Update Item",
+          "name": "Update Player Spell",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"quantity\": 2,\n  \"notes\": \"Found in the cave.\"\n}",
+              "raw": "{\n  \"isPrepared\": true\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/inventory/{{itemId}}",
+              "raw": "{{baseUrl}}/players/{{playerId}}/spells/{{playerSpellId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["inventory", "{{itemId}}"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete Item (campaign DM)",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "{{baseUrl}}/inventory/{{itemId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["inventory", "{{itemId}}"]
+              "path": ["players", "{{playerId}}", "spells", "{{playerSpellId}}"]
             }
           },
           "event": [
@@ -500,96 +506,15 @@
               }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "Spells",
-      "item": [
-        {
-          "name": "List Spells",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/spells",
-              "host": ["{{baseUrl}}"],
-              "path": ["players", "{{playerId}}", "spells"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
-              }
-            }
-          ]
         },
         {
-          "name": "Add Spell",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Fireball\",\n  \"level\": 3,\n  \"school\": \"Evocation\",\n  \"castingTime\": \"1 action\",\n  \"range\": \"150 feet\",\n  \"components\": [\"V\", \"S\", \"M\"],\n  \"isPrepared\": false\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/players/{{playerId}}/spells",
-              "host": ["{{baseUrl}}"],
-              "path": ["players", "{{playerId}}", "spells"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
-                  "const json = pm.response.json();",
-                  "pm.environment.set(\"spellId\", json.id);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update Spell",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"isPrepared\": true\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/spells/{{spellId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["spells", "{{spellId}}"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete Spell (campaign DM)",
+          "name": "Delete Player Spell",
           "request": {
             "method": "DELETE",
             "url": {
-              "raw": "{{baseUrl}}/spells/{{spellId}}",
+              "raw": "{{baseUrl}}/players/{{playerId}}/spells/{{playerSpellId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["spells", "{{spellId}}"]
+              "path": ["players", "{{playerId}}", "spells", "{{playerSpellId}}"]
             }
           },
           "event": [
@@ -631,16 +556,16 @@
       ]
     },
     {
-      "name": "Arsenal",
+      "name": "Player Inventory",
       "item": [
         {
-          "name": "List Arsenal Spells",
+          "name": "List Player Inventory",
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/arsenal/spells",
+              "raw": "{{baseUrl}}/players/{{playerId}}/inventory",
               "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "spells"]
+              "path": ["players", "{{playerId}}", "inventory"]
             }
           },
           "event": [
@@ -654,19 +579,19 @@
           ]
         },
         {
-          "name": "Create Arsenal Spell (DM role)",
+          "name": "Add Item to Player",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Magic Missile\",\n  \"level\": 1,\n  \"school\": \"Evocation\",\n  \"castingTime\": \"1 action\",\n  \"range\": \"120 feet\",\n  \"components\": [\"V\", \"S\"],\n  \"duration\": \"Instantaneous\"\n}",
+              "raw": "{\n  \"equipmentId\": \"{{arsenalEquipmentId}}\",\n  \"quantity\": 1\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/arsenal/spells",
+              "raw": "{{baseUrl}}/players/{{playerId}}/inventory",
               "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "spells"]
+              "path": ["players", "{{playerId}}", "inventory"]
             }
           },
           "event": [
@@ -677,26 +602,75 @@
                 "exec": [
                   "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
                   "const json = pm.response.json();",
-                  "pm.environment.set(\"arsenalSpellId\", json.id);"
+                  "pm.environment.set(\"playerEquipmentId\", json.equipmentId);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "Update Arsenal Spell (DM role)",
+          "name": "Update Inventory Item",
           "request": {
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"description\": \"Three glowing darts of magical force.\"\n}",
+              "raw": "{\n  \"quantity\": 2\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/arsenal/spells/{{arsenalSpellId}}",
+              "raw": "{{baseUrl}}/players/{{playerId}}/inventory/{{playerEquipmentId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "spells", "{{arsenalSpellId}}"]
+              "path": ["players", "{{playerId}}", "inventory", "{{playerEquipmentId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status 204\", () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Inventory Item",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/players/{{playerId}}/inventory/{{playerEquipmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "{{playerId}}", "inventory", "{{playerEquipmentId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status 204\", () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Arsenal",
+      "item": [
+        {
+          "name": "List Arsenal Spells",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/arsenal/spells?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["arsenal", "spells"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
             }
           },
           "event": [
@@ -710,9 +684,9 @@
           ]
         },
         {
-          "name": "Delete Arsenal Spell (DM role)",
+          "name": "Get Arsenal Spell",
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/arsenal/spells/{{arsenalSpellId}}",
               "host": ["{{baseUrl}}"],
@@ -724,7 +698,7 @@
               "listen": "test",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.test(\"Status 204\", () => pm.response.to.have.status(204));"]
+                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
               }
             }
           ]
@@ -734,9 +708,13 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/arsenal/equipment",
+              "raw": "{{baseUrl}}/arsenal/equipment?page=1&limit=20",
               "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "equipment"]
+              "path": ["arsenal", "equipment"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
             }
           },
           "event": [
@@ -750,45 +728,9 @@
           ]
         },
         {
-          "name": "Create Arsenal Equipment (DM role)",
+          "name": "Get Arsenal Equipment",
           "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Chain Mail\",\n  \"category\": \"armor\",\n  \"tags\": [\"heavy\"],\n  \"armorClass\": 16,\n  \"armorType\": \"heavy\",\n  \"stealthDisadvantage\": true\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/arsenal/equipment",
-              "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "equipment"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
-                  "const json = pm.response.json();",
-                  "pm.environment.set(\"arsenalEquipmentId\", json.id);"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Update Arsenal Equipment (DM role)",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"notes\": \"Standard heavy armor, no stealth.\"\n}",
-              "options": { "raw": { "language": "json" } }
-            },
+            "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/arsenal/equipment/{{arsenalEquipmentId}}",
               "host": ["{{baseUrl}}"],
@@ -801,26 +743,6 @@
               "script": {
                 "type": "text/javascript",
                 "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Delete Arsenal Equipment (DM role)",
-          "request": {
-            "method": "DELETE",
-            "url": {
-              "raw": "{{baseUrl}}/arsenal/equipment/{{arsenalEquipmentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["arsenal", "equipment", "{{arsenalEquipmentId}}"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": ["pm.test(\"Status 204\", () => pm.response.to.have.status(204));"]
               }
             }
           ]
