@@ -37,6 +37,10 @@ func (h *SpellHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
 
 	disabledSet := make(map[string]bool, len(campaign.DisabledSpells))
 	for _, id := range campaign.DisabledSpells {
