@@ -311,7 +311,31 @@
       "name": "Players",
       "item": [
         {
-          "name": "List Players in Campaign",
+          "name": "Get My Player in Campaign",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/campaigns/{{campaignId}}/player",
+              "host": ["{{baseUrl}}"],
+              "path": ["campaigns", "{{campaignId}}", "player"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.environment.set(\"playerId\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Players in Campaign (DM only)",
           "request": {
             "method": "GET",
             "url": {

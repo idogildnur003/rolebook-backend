@@ -20,7 +20,8 @@ type Session struct {
 
 // CampaignPlayer represents a player in a campaign.
 type CampaignPlayer struct {
-	UserID   string `bson:"userId"   json:"userId"`
+	UserID   string `bson:"userId"   json:"-"`
+	PlayerID string `bson:"playerId" json:"playerId"`
 	IsActive bool   `bson:"isActive" json:"isActive"`
 }
 
