@@ -31,6 +31,7 @@ type campaignListItem struct {
 	Name       string                `json:"name"`
 	ThemeImage string                `json:"themeImage"`
 	Sessions   []campaignListSession `json:"sessions"`
+	Players    []model.CampaignPlayer `json:"players,omitempty"`
 }
 
 type campaignListSession struct {
@@ -59,13 +60,17 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		for j, s := range c.Sessions {
 			sessions[j] = campaignListSession{ID: s.ID, Name: s.Name}
 		}
-		items[i] = campaignListItem{
+		item := campaignListItem{
 			ID:         c.ID,
 			Role:       string(role),
 			Name:       c.Name,
 			ThemeImage: c.ThemeImage,
 			Sessions:   sessions,
 		}
+		if role == model.RoleDM {
+			item.Players = c.Players
+		}
+		items[i] = item
 	}
 	writeJSON(w, http.StatusOK, items)
 }

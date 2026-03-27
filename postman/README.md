@@ -41,7 +41,7 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns` | Any | List campaigns (slim: id, role, name, themeImage, sessions) | 200 |
+| GET | `/campaigns` | Any | List campaigns (slim: id, role, name, themeImage, sessions, players¹) | 200 |
 | GET | `/campaigns/{{campaignId}}` | DM or player | Get single campaign (full) | 200 |
 | POST | `/campaigns` | Any | Create campaign (caller becomes DM) → sets `campaignId` | 201 |
 | PATCH | `/campaigns/{{campaignId}}` | Campaign DM | Update campaign fields | 200 |
@@ -57,10 +57,15 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
     "themeImage": "forest",
     "sessions": [
       { "id": "sess-1", "name": "Session 1 — The Cave" }
+    ],
+    "players": [
+      { "playerId": "player-1", "isActive": true }
     ]
   }
 ]
 ```
+
+¹ `players` is only included when `role` is `"dm"`. Omitted for player-role campaigns.
 
 **POST body:**
 ```json
@@ -102,7 +107,8 @@ Requires Bearer `{{token}}`.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns/{{campaignId}}/players` | Campaign DM | List players in campaign | 200 |
+| GET | `/campaigns/{{campaignId}}/player` | Any campaign member | Get caller's own player in campaign → sets `playerId` | 200 |
+| GET | `/campaigns/{{campaignId}}/players` | Campaign DM | List all players in campaign | 200 |
 | GET | `/players/{{playerId}}` | Campaign DM or linked user | Get single player | 200 |
 | POST | `/players` | Campaign DM | Create player → sets `playerId` | 201 |
 | PATCH | `/players/{{playerId}}` | Campaign DM or linked user | Update player fields | 200 |
