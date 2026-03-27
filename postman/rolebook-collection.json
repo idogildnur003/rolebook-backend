@@ -97,7 +97,12 @@
               "listen": "test",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.test(\"Status 200\", () => pm.response.to.have.status(200));"]
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const dm = json.find(c => c.role === \"dm\");",
+                  "if (dm) pm.environment.set(\"campaignId\", dm.id);"
+                ]
               }
             }
           ]
