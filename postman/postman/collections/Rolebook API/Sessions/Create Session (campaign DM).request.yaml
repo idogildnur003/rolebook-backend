@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/sessions"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Session 1 — The Cave",
+      "description": "The party entered the goblin cave."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("sessionId", json.id);
+    language: text/javascript
+order: 1000

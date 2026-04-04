@@ -1,0 +1,11 @@
+$kind: http-request
+url: "{{baseUrl}}/arsenal/spells?page=1&limit=20"
+method: GET
+queryParams:
+  page: "1"
+  limit: "20"
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 1000

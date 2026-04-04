@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/players/{{playerId}}/inventory"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "equipmentId": "{{arsenalEquipmentId}}",
+      "quantity": 1
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("playerEquipmentId", json.equipmentId);
+    language: text/javascript
+order: 2000

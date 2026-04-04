@@ -1,0 +1,32 @@
+name: Rolebook Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:3000/api'
+    enabled: true
+  - key: token
+    value: ''
+    enabled: true
+  - key: userId
+    value: ''
+    enabled: true
+  - key: campaignId
+    value: ''
+    enabled: true
+  - key: sessionId
+    value: ''
+    enabled: true
+  - key: playerId
+    value: ''
+    enabled: true
+  - key: itemId
+    value: ''
+    enabled: true
+  - key: spellId
+    value: ''
+    enabled: true
+  - key: arsenalSpellId
+    value: ''
+    enabled: true
+  - key: arsenalEquipmentId
+    value: ''
+    enabled: true

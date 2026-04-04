@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/sessions/{{sessionId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 204", () => pm.response.to.have.status(204));
+    language: text/javascript
+order: 3000

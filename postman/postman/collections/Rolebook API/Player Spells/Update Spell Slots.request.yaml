@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/players/{{playerId}}/spell-slots"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "1": { "max": 4, "used": 0 },
+      "2": { "max": 3, "used": 1 },
+      "3": { "max": 3, "used": 0 }
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000
