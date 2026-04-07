@@ -1,0 +1,43 @@
+$kind: http-request
+url: "{{baseUrl}}/players/{{playerId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: >-
+    {
+      "name": "Thorn Ironbark",
+      "className": "Ranger",
+      "level": 5,
+      "race": "Wood Elf",
+      "notes": "Prefers ranged combat",
+      "backgroundStory": "Raised in the Emerald Forest by druids.",
+      "alignment": "Neutral Good",
+      "speciesOrRegion": "Sylvan",
+      "subclass": "Gloom Stalker",
+      "region": "Emerald Forest",
+      "size": "Medium",
+      "currentHp": 38,
+      "maxHp": 42,
+      "tempHp": 5,
+      "ac": 15,
+      "speed": 35,
+      "initiativeBonus": 3,
+      "proficiencyBonus": 3,
+      "deathSaveSuccesses": 0,
+      "deathSaveFailures": 0,
+      "abilityScores": { "STR": 12, "DEX": 16, "CON": 14, "INT": 10, "WIS": 14, "CHA": 8 },
+      "abilityTemporaryModifiers": {},
+      "skillTemporaryModifiers": {},
+      "proficientSavingThrows": ["STR", "DEX"],
+      "proficientSkills": ["Stealth", "Perception", "Survival"],
+      "expertiseSkills": ["Stealth"],
+      "featuresAndFeats": ["Favored Enemy", "Natural Explorer", "Dread Ambusher"],
+      "conditions": {}
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/sessions/{{sessionId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Revised Name",
+      "description": "Updated notes."
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 2000

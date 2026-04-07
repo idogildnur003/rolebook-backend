@@ -4,11 +4,14 @@ Base URL: `http://localhost:3000/api` (set via `{{baseUrl}}` environment variabl
 
 ## Setup
 
-1. Import `rolebook-environment.json` into Postman (Environments → Import)
-2. Import `rolebook-collection.json` into Postman (Collections → Import)
-3. Select **Rolebook Local** as the active environment
-4. Run **Login** (or **Register**) first — the test script auto-sets `{{token}}`
-5. Run **Create Campaign** → **Create Player** to populate IDs for downstream requests
+The collection and environment are stored as YAML files under `postman/` and are loaded via native Git integration.
+
+1. Open Postman and connect the workspace to this repository (the `.postman/resources.yaml` file maps everything automatically)
+2. Select **Rolebook Local** as the active environment
+3. Run **Login** (or **Register**) first — the test script auto-sets `{{token}}`
+4. Run **Create Campaign** → **Create Player** to populate IDs for downstream requests
+
+> **Legacy files:** `rolebook-environment.json` is kept as a reference backup but is no longer the active source.
 
 ## Access Control
 

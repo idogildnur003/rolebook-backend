@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      const dm = json.find(c => c.role === "dm");
+      if (dm) pm.environment.set("campaignId", dm.id);
+    language: text/javascript
+order: 1000

@@ -1,0 +1,9 @@
+# Use this workspace to collaborate
+workspace:
+  id: d14218ba-2f5c-4d0c-81f4-cc2fede870ee
+
+localResources:
+  collections:
+    - ../postman/collections/Rolebook API
+  environments:
+    - ../postman/environments/rolebook-environment.yaml

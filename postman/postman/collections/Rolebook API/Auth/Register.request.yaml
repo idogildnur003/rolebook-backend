@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "dm@example.com",
+      "password": "secret123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 2xx", () => pm.response.to.be.success);
+      const json = pm.response.json();
+      pm.environment.set("token", json.token);
+      pm.environment.set("userId", json.userId);
+    language: text/javascript
+order: 1000

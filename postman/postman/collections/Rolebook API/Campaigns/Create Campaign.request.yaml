@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Lost Mine of Phandelver",
+      "themeImage": "forest"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("campaignId", json.id);
+    language: text/javascript
+order: 3000
