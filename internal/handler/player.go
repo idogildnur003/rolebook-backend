@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"strings"
+	"unicode"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -11,6 +13,38 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
+
+// displayNameFromEmail derives a human-readable display name from an email address.
+// "john.doe@example.com" → "John Doe"
+// "jdoe@example.com"    → "Jdoe"
+func displayNameFromEmail(email string) string {
+	local := email
+	if at := strings.IndexByte(email, '@'); at >= 0 {
+		local = email[:at]
+	}
+	// Replace common separators with spaces
+	local = strings.Map(func(r rune) rune {
+		if r == '.' || r == '_' || r == '-' || r == '+' {
+			return ' '
+		}
+		return r
+	}, local)
+	// Title-case each word
+	words := strings.Fields(local)
+	for i, w := range words {
+		if w == "" {
+			continue
+		}
+		runes := []rune(w)
+		runes[0] = unicode.ToUpper(runes[0])
+		words[i] = string(runes)
+	}
+	result := strings.Join(words, " ")
+	if result == "" {
+		return "Player"
+	}
+	return result
+}
 
 // PlayerHandler handles all player CRUD endpoints.
 type PlayerHandler struct {
@@ -123,7 +157,10 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, "", 1)
+	// Seed the player name from their email so the DM never sees a blank/ghost entry.
+	// The player can rename their character at any time from their own profile screen.
+	initialName := displayNameFromEmail(linkedUser.Email)
+	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, initialName, 1)
 
 	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
