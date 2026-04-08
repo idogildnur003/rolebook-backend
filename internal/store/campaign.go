@@ -192,6 +192,25 @@ func (s *CampaignStore) AddPlayer(ctx context.Context, campaignID string, player
 	return err
 }
 
+// SetPlayerActive updates the isActive flag on a specific player entry within the campaign's
+// embedded players array.  Returns (true, nil) if the document was found and modified.
+func (s *CampaignStore) SetPlayerActive(ctx context.Context, campaignID, playerID string, active bool) (bool, error) {
+	res, err := s.col.UpdateOne(
+		ctx,
+		bson.M{"_id": campaignID, "players.playerId": playerID},
+		bson.M{
+			"$set": bson.M{
+				"players.$.isActive": active,
+				"updatedAt":          time.Now().UTC(),
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.MatchedCount > 0, nil
+}
+
 func (s *CampaignStore) find(ctx context.Context, filter bson.M) ([]model.Campaign, error) {
 	cursor, err := s.col.Find(ctx, filter)
 	if err != nil {
