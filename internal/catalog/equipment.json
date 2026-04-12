@@ -1,0 +1,2370 @@
+[
+  {
+    "id": "padded-armor",
+    "name": "Padded Armor",
+    "category": "armor",
+    "tags": ["armor", "light", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: Yes • light armor that sets AC as 11 + Dex modifier and stays flexible for agile movement.",
+    "armorClass": 11,
+    "armorBonus": 1,
+    "armorType": "Light Armor",
+    "stealthDisadvantage": true,
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "leather-armor",
+    "name": "Leather Armor",
+    "category": "armor",
+    "tags": ["armor", "light"],
+    "notes": "Stealth: No Disadvantage • Dex: Yes • light armor that sets AC as 11 + Dex modifier and stays flexible for agile movement.",
+    "armorClass": 11,
+    "armorBonus": 1,
+    "armorType": "Light Armor",
+    "stealthDisadvantage": false,
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "studded-leather",
+    "name": "Studded Leather",
+    "category": "armor",
+    "tags": ["armor", "light"],
+    "notes": "Stealth: No Disadvantage • Dex: Yes • light armor that sets AC as 12 + Dex modifier and stays flexible for agile movement.",
+    "armorClass": 12,
+    "armorBonus": 2,
+    "armorType": "Light Armor",
+    "stealthDisadvantage": false,
+    "cost": 45,
+    "currency": "gp"
+  },
+  {
+    "id": "hide",
+    "name": "Hide",
+    "category": "armor",
+    "tags": ["armor", "medium"],
+    "notes": "Stealth: No Disadvantage • Dex: Max 2 • medium armor that sets AC as 12 + Dex modifier (max 2) and balances protection and mobility.",
+    "armorClass": 12,
+    "armorBonus": 2,
+    "armorType": "Medium Armor",
+    "stealthDisadvantage": false,
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "chain-shirt",
+    "name": "Chain Shirt",
+    "category": "armor",
+    "tags": ["armor", "medium"],
+    "notes": "Stealth: No Disadvantage • Dex: Max 2 • medium armor that sets AC as 13 + Dex modifier (max 2) and balances protection and mobility.",
+    "armorClass": 13,
+    "armorBonus": 3,
+    "armorType": "Medium Armor",
+    "stealthDisadvantage": false,
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "scale-mail",
+    "name": "Scale Mail",
+    "category": "armor",
+    "tags": ["armor", "medium", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: Max 2 • medium armor that sets AC as 14 + Dex modifier (max 2) and balances protection and mobility.",
+    "armorClass": 14,
+    "armorBonus": 4,
+    "armorType": "Medium Armor",
+    "stealthDisadvantage": true,
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "breastplate",
+    "name": "Breastplate",
+    "category": "armor",
+    "tags": ["armor", "medium"],
+    "notes": "Stealth: No Disadvantage • Dex: Max 2 • medium armor that sets AC as 14 + Dex modifier (max 2) and balances protection and mobility.",
+    "armorClass": 14,
+    "armorBonus": 4,
+    "armorType": "Medium Armor",
+    "stealthDisadvantage": false,
+    "cost": 400,
+    "currency": "gp"
+  },
+  {
+    "id": "half-plate",
+    "name": "Half Plate",
+    "category": "armor",
+    "tags": ["armor", "medium", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: Max 2 • medium armor that sets AC as 15 + Dex modifier (max 2) and balances protection and mobility.",
+    "armorClass": 15,
+    "armorBonus": 5,
+    "armorType": "Medium Armor",
+    "stealthDisadvantage": true,
+    "cost": 750,
+    "currency": "gp"
+  },
+  {
+    "id": "ring-mail",
+    "name": "Ring Mail",
+    "category": "armor",
+    "tags": ["armor", "heavy", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: No • heavy armor that sets AC as 14 and leans into heavier full-body protection.",
+    "armorClass": 14,
+    "armorBonus": 4,
+    "armorType": "Heavy Armor",
+    "stealthDisadvantage": true,
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "chain-mail",
+    "name": "Chain Mail",
+    "category": "armor",
+    "tags": ["armor", "heavy", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: No • heavy armor that sets AC as 16 and expects Strength 13 and leans into heavier full-body protection.",
+    "armorClass": 16,
+    "armorBonus": 6,
+    "armorType": "Heavy Armor",
+    "strengthRequirement": 13,
+    "stealthDisadvantage": true,
+    "cost": 75,
+    "currency": "gp"
+  },
+  {
+    "id": "splint",
+    "name": "Splint",
+    "category": "armor",
+    "tags": ["armor", "heavy", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: No • heavy armor that sets AC as 17 and expects Strength 15 and leans into heavier full-body protection.",
+    "armorClass": 17,
+    "armorBonus": 7,
+    "armorType": "Heavy Armor",
+    "strengthRequirement": 15,
+    "stealthDisadvantage": true,
+    "cost": 200,
+    "currency": "gp"
+  },
+  {
+    "id": "plate",
+    "name": "Plate",
+    "category": "armor",
+    "tags": ["armor", "heavy", "stealth-disadvantage"],
+    "notes": "Stealth Disadvantage • Dex: No • heavy armor that sets AC as 18 and expects Strength 15 and leans into heavier full-body protection.",
+    "armorClass": 18,
+    "armorBonus": 8,
+    "armorType": "Heavy Armor",
+    "strengthRequirement": 15,
+    "stealthDisadvantage": true,
+    "cost": 1500,
+    "currency": "gp"
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "category": "shields",
+    "tags": ["shield", "armor", "defense"],
+    "notes": "Stealth: No Disadvantage • Dex: Unchanged • Shield that adds +2 AC while carried in hand.",
+    "shieldBonus": 2,
+    "armorType": "Shield",
+    "stealthDisadvantage": false,
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "club",
+    "name": "Club",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "bludgeoning", "light"],
+    "notes": "Simple melee weapon that deals 1d4 bludgeoning damage and stays quick and easy to handle in close fights.",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Melee",
+    "properties": ["Light"],
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "dagger",
+    "name": "Dagger",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "piercing", "finesse", "light", "thrown"],
+    "notes": "Simple melee weapon that deals 1d4 piercing damage and can be thrown when the fight opens up.",
+    "damage": "1d4",
+    "damageType": "piercing",
+    "weaponType": "Simple Melee",
+    "properties": ["Finesse", "Light", "Thrown (20/60)"],
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "greatclub",
+    "name": "Greatclub",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "bludgeoning", "two-handed"],
+    "notes": "Simple melee weapon that deals 1d8 bludgeoning damage and supports steady combat use.",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Melee",
+    "properties": ["Two-Handed"],
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "handaxe",
+    "name": "Handaxe",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "slashing", "light", "thrown"],
+    "notes": "Simple melee weapon that deals 1d6 slashing damage and can be thrown when the fight opens up.",
+    "damage": "1d6",
+    "damageType": "slashing",
+    "weaponType": "Simple Melee",
+    "properties": ["Light", "Thrown (20/60)"],
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "javelin",
+    "name": "Javelin",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "piercing", "thrown"],
+    "notes": "Simple melee weapon that deals 1d6 piercing damage and can be thrown when the fight opens up.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Simple Melee",
+    "properties": ["Thrown (30/120)"],
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "light-hammer",
+    "name": "Light Hammer",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "bludgeoning", "light", "thrown"],
+    "notes": "Simple melee weapon that deals 1d4 bludgeoning damage and can be thrown when the fight opens up.",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Melee",
+    "properties": ["Light", "Thrown (20/60)"],
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "mace",
+    "name": "Mace",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "bludgeoning"],
+    "notes": "Simple melee weapon that deals 1d6 bludgeoning damage and supports steady combat use.",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Melee",
+    "properties": [],
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "quarterstaff",
+    "name": "Quarterstaff",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "bludgeoning", "versatile"],
+    "notes": "Simple melee weapon that deals 1d6 bludgeoning damage and shifts between one- and two-handed strikes.",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Melee",
+    "properties": ["Versatile (1d8)"],
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "sickle",
+    "name": "Sickle",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "slashing", "light"],
+    "notes": "Simple melee weapon that deals 1d4 slashing damage and stays quick and easy to handle in close fights.",
+    "damage": "1d4",
+    "damageType": "slashing",
+    "weaponType": "Simple Melee",
+    "properties": ["Light"],
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "spear",
+    "name": "Spear",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "melee", "piercing", "thrown", "versatile"],
+    "notes": "Simple melee weapon that deals 1d6 piercing damage and can be thrown when the fight opens up.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Simple Melee",
+    "properties": ["Thrown", "Versatile (1d8)"],
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "light-crossbow",
+    "name": "Light Crossbow",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "ranged", "piercing", "ammunition", "loading", "two-handed"],
+    "notes": "Simple ranged weapon that deals 1d8 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "weaponType": "Simple Ranged",
+    "properties": ["Ammunition (80/320)", "Loading", "Two-Handed"],
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "dart",
+    "name": "Dart",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "ranged", "piercing", "finesse", "thrown"],
+    "notes": "Simple ranged weapon that deals 1d4 piercing damage and can be thrown when the fight opens up.",
+    "damage": "1d4",
+    "damageType": "piercing",
+    "weaponType": "Simple Ranged",
+    "properties": ["Finesse", "Thrown (20/60)"],
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "shortbow",
+    "name": "Shortbow",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "ranged", "piercing", "ammunition", "two-handed"],
+    "notes": "Simple ranged weapon that deals 1d6 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Simple Ranged",
+    "properties": ["Ammunition (80/320)", "Two-Handed"],
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "sling",
+    "name": "Sling",
+    "category": "weapons",
+    "tags": ["weapon", "simple", "ranged", "bludgeoning", "ammunition"],
+    "notes": "Simple ranged weapon that deals 1d4 bludgeoning damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "weaponType": "Simple Ranged",
+    "properties": ["Ammunition (30/120)"],
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "battleaxe",
+    "name": "Battleaxe",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "versatile"],
+    "notes": "Martial melee weapon that deals 1d8 slashing damage and shifts between one- and two-handed strikes.",
+    "damage": "1d8",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Versatile (1d10)"],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "flail",
+    "name": "Flail",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "bludgeoning"],
+    "notes": "Martial melee weapon that deals 1d8 bludgeoning damage and supports steady combat use.",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "weaponType": "Martial Melee",
+    "properties": [],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "glaive",
+    "name": "Glaive",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "heavy", "reach", "two-handed"],
+    "notes": "Martial melee weapon that deals 1d10 slashing damage and keeps targets at the end of its reach.",
+    "damage": "1d10",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Reach", "Two-Handed"],
+    "cost": 20,
+    "currency": "gp"
+  },
+  {
+    "id": "greataxe",
+    "name": "Greataxe",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "heavy", "two-handed"],
+    "notes": "Martial melee weapon that deals 1d12 slashing damage and hits harder in the hands of a strong wielder.",
+    "damage": "1d12",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Two-Handed"],
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "greatsword",
+    "name": "Greatsword",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "heavy", "two-handed"],
+    "notes": "Martial melee weapon that deals 2d6 slashing damage and hits harder in the hands of a strong wielder.",
+    "damage": "2d6",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Two-Handed"],
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "halberd",
+    "name": "Halberd",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "heavy", "reach", "two-handed"],
+    "notes": "Martial melee weapon that deals 1d10 slashing damage and keeps targets at the end of its reach.",
+    "damage": "1d10",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Reach", "Two-Handed"],
+    "cost": 20,
+    "currency": "gp"
+  },
+  {
+    "id": "lance",
+    "name": "Lance",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing", "reach", "special"],
+    "notes": "Martial melee weapon that deals 1d12 piercing damage and keeps targets at the end of its reach.",
+    "damage": "1d12",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": ["Reach", "Special"],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "longsword",
+    "name": "Longsword",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "versatile"],
+    "notes": "Martial melee weapon that deals 1d8 slashing damage and shifts between one- and two-handed strikes.",
+    "damage": "1d8",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Versatile (1d10)"],
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "maul",
+    "name": "Maul",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "bludgeoning", "heavy", "two-handed"],
+    "notes": "Martial melee weapon that deals 2d6 bludgeoning damage and hits harder in the hands of a strong wielder.",
+    "damage": "2d6",
+    "damageType": "bludgeoning",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Two-Handed"],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "morningstar",
+    "name": "Morningstar",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing"],
+    "notes": "Martial melee weapon that deals 1d8 piercing damage and supports steady combat use.",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": [],
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "pike",
+    "name": "Pike",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing", "heavy", "reach", "two-handed"],
+    "notes": "Martial melee weapon that deals 1d10 piercing damage and keeps targets at the end of its reach.",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": ["Heavy", "Reach", "Two-Handed"],
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "rapier",
+    "name": "Rapier",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing", "finesse"],
+    "notes": "Martial melee weapon that deals 1d8 piercing damage and favours agile, precise attacks.",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": ["Finesse"],
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "scimitar",
+    "name": "Scimitar",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "finesse", "light"],
+    "notes": "Martial melee weapon that deals 1d6 slashing damage and favours agile, precise attacks.",
+    "damage": "1d6",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Finesse", "Light"],
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "shortsword",
+    "name": "Shortsword",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing", "finesse", "light"],
+    "notes": "Martial melee weapon that deals 1d6 piercing damage and favours agile, precise attacks.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": ["Finesse", "Light"],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "trident",
+    "name": "Trident",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing", "thrown", "versatile"],
+    "notes": "Martial melee weapon that deals 1d6 piercing damage and can be thrown when the fight opens up.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": ["Thrown (20/60)", "Versatile (1d8)"],
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "war-pick",
+    "name": "War Pick",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "piercing"],
+    "notes": "Martial melee weapon that deals 1d8 piercing damage and supports steady combat use.",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "weaponType": "Martial Melee",
+    "properties": [],
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "warhammer",
+    "name": "Warhammer",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "bludgeoning", "versatile"],
+    "notes": "Martial melee weapon that deals 1d8 bludgeoning damage and shifts between one- and two-handed strikes.",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "weaponType": "Martial Melee",
+    "properties": ["Versatile (1d8)"],
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "whip",
+    "name": "Whip",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "melee", "slashing", "finesse", "reach"],
+    "notes": "Martial melee weapon that deals 1d4 slashing damage and keeps targets at the end of its reach.",
+    "damage": "1d4",
+    "damageType": "slashing",
+    "weaponType": "Martial Melee",
+    "properties": ["Finesse", "Reach"],
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "blowgun",
+    "name": "Blowgun",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "ranged", "piercing", "ammunition", "loading"],
+    "notes": "Martial ranged weapon that deals 1 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1",
+    "damageType": "piercing",
+    "weaponType": "Martial Ranged",
+    "properties": ["Ammunition (25/100)", "Loading"],
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "hand-crossbow",
+    "name": "Hand Crossbow",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "ranged", "piercing", "ammunition", "light", "loading"],
+    "notes": "Martial ranged weapon that deals 1d6 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "weaponType": "Martial Ranged",
+    "properties": ["Ammunition (30/120)", "Light", "Loading"],
+    "cost": 75,
+    "currency": "gp"
+  },
+  {
+    "id": "heavy-crossbow",
+    "name": "Heavy Crossbow",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "ranged", "piercing", "ammunition", "heavy", "loading", "two-handed"],
+    "notes": "Martial ranged weapon that deals 1d10 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "weaponType": "Martial Ranged",
+    "properties": ["Ammunition (100/400)", "Heavy", "Loading", "Two-Handed"],
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "longbow",
+    "name": "Longbow",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "ranged", "piercing", "ammunition", "heavy", "two-handed"],
+    "notes": "Martial ranged weapon that deals 1d8 piercing damage and fires ammunition for reliable ranged pressure.",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "weaponType": "Martial Ranged",
+    "properties": ["Ammunition (150/600)", "Heavy", "Two-Handed"],
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "net",
+    "name": "Net",
+    "category": "weapons",
+    "tags": ["weapon", "martial", "ranged", "special", "thrown"],
+    "notes": "Martial ranged weapon used to hinder targets with a short thrown cast.",
+    "weaponType": "Martial Ranged",
+    "properties": ["Special", "Thrown (5/15)"],
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "arrows",
+    "name": "Arrows",
+    "category": "ammunition",
+    "tags": ["ranged", "arrows", "ammo"],
+    "notes": "Common ammunition for crossbows and bows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "bolts",
+    "name": "Bolts",
+    "category": "ammunition",
+    "tags": ["ranged", "bolts", "ammo"],
+    "notes": "Small, steel-tipped bolts.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "sling-bullets",
+    "name": "Sling Bullets",
+    "category": "ammunition",
+    "tags": ["ranged", "sling", "ammo"],
+    "notes": "Lead shot for slings.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "rations",
+    "name": "Rations",
+    "category": "consumables",
+    "tags": ["food", "travel"],
+    "notes": "A day of sustenance."
+  },
+  {
+    "id": "oil-flask",
+    "name": "Oil Flask",
+    "category": "consumables",
+    "tags": ["fire", "light", "consumable"],
+    "notes": "Useful for extinguishing or igniting flames."
+  },
+  {
+    "id": "potion-of-healing",
+    "name": "Potion of Healing",
+    "category": "potions",
+    "tags": ["healing", "consumable"],
+    "notes": "Restores hit points quickly.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "torches",
+    "name": "Torches",
+    "category": "adventuringGear",
+    "tags": ["light", "exploration"],
+    "notes": "Lasts for 1 hour of light."
+  },
+  {
+    "id": "candles",
+    "name": "Candles",
+    "category": "adventuringGear",
+    "tags": ["light", "interior"],
+    "notes": "Small, steady light source."
+  },
+  {
+    "id": "rope-50-ft",
+    "name": "Rope (50 ft.)",
+    "category": "adventuringGear",
+    "tags": ["utility", "climbing"],
+    "notes": "Hemp rope with tested load rating."
+  },
+  {
+    "id": "grappling-hook",
+    "name": "Grappling Hook",
+    "category": "adventuringGear",
+    "tags": ["climbing", "tool"],
+    "notes": "Useful for scaling walls and ledges.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "bedroll",
+    "name": "Bedroll",
+    "category": "adventuringGear",
+    "tags": ["rest", "shelter"],
+    "notes": "Portable bed for outdoor travel.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "tinderbox",
+    "name": "Tinderbox",
+    "category": "adventuringGear",
+    "tags": ["fire", "starter"],
+    "notes": "Tools to start controlled fire.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "waterskin",
+    "name": "Waterskin",
+    "category": "adventuringGear",
+    "tags": ["water", "survival"],
+    "notes": "Keeps water sealed and portable.",
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "backpack",
+    "name": "Backpack",
+    "category": "adventuringGear",
+    "tags": ["storage", "essential"],
+    "notes": "Standard backpack for adventuring kits.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "lantern",
+    "name": "Lantern",
+    "category": "adventuringGear",
+    "tags": ["light", "exploration"],
+    "notes": "Enables reliable lighting in dark places."
+  },
+  {
+    "id": "crowbar",
+    "name": "Crowbar",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "hammer",
+    "name": "Hammer",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "pitons",
+    "name": "Pitons",
+    "category": "adventuringGear",
+    "tags": ["climbing", "security"],
+    "notes": "Metal anchors for climbing safety.",
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "mess-kit",
+    "name": "Mess Kit",
+    "category": "adventuringGear",
+    "tags": ["cooking", "survival"],
+    "notes": "Portable kit for preparing food.",
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "wand",
+    "name": "Wand",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "crystal",
+    "name": "Crystal",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "orb",
+    "name": "Orb",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 20,
+    "currency": "gp"
+  },
+  {
+    "id": "staff",
+    "name": "Staff",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "holy-symbol",
+    "name": "Holy Symbol",
+    "category": "spellcastingFocus",
+    "tags": ["focus", "divine"],
+    "notes": "Symbol for divine magic."
+  },
+  {
+    "id": "druidic-focus",
+    "name": "Druidic Focus",
+    "category": "spellcastingFocus",
+    "tags": ["focus", "druid"],
+    "notes": "Druidic totem for channeling druid magic."
+  },
+  {
+    "id": "copper-pieces",
+    "name": "Copper Pieces",
+    "category": "currency",
+    "tags": ["coin", "currency"],
+    "notes": "Copper pieces are the most common coin."
+  },
+  {
+    "id": "silver-pieces",
+    "name": "Silver Pieces",
+    "category": "currency",
+    "tags": ["coin", "currency"],
+    "notes": "Silver is standard trade currency."
+  },
+  {
+    "id": "electrum-pieces",
+    "name": "Electrum Pieces",
+    "category": "currency",
+    "tags": ["coin", "currency"],
+    "notes": "Less commonly used silver-gold mix."
+  },
+  {
+    "id": "gold-pieces",
+    "name": "Gold Pieces",
+    "category": "currency",
+    "tags": ["coin", "currency"],
+    "notes": "Most common high-value coinage."
+  },
+  {
+    "id": "platinum-pieces",
+    "name": "Platinum Pieces",
+    "category": "currency",
+    "tags": ["coin", "currency"],
+    "notes": "High value and often reserved for large purchases."
+  },
+  {
+    "id": "gem-pouch",
+    "name": "Gem Pouch",
+    "category": "treasure",
+    "tags": ["loot", "treasure"],
+    "notes": "Carry your gems and small valuables safely."
+  },
+  {
+    "id": "signet-ring",
+    "name": "Signet Ring",
+    "category": "rings",
+    "tags": ["ring", "jewelry"],
+    "notes": "Wearable ring that fits loot, trade, or signature character style.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "old-key",
+    "name": "Old Key",
+    "category": "questItems",
+    "tags": ["key", "quest"],
+    "notes": "Weathered key with unknown lock profile."
+  },
+  {
+    "id": "sealed-letter",
+    "name": "Sealed Letter",
+    "category": "questItems",
+    "tags": ["document", "quest"],
+    "notes": "Important message, do not break the wax seal."
+  },
+  {
+    "id": "relic-fragment",
+    "name": "Relic Fragment",
+    "category": "treasure",
+    "tags": ["artifact", "story"],
+    "notes": "A fragment from an ancient relic."
+  },
+  {
+    "id": "scroll",
+    "name": "Scroll",
+    "category": "scrolls",
+    "tags": ["spell", "scroll"],
+    "notes": "A single-use magic scroll."
+  },
+  {
+    "id": "wand-of-warmth",
+    "name": "Wand of Warmth",
+    "category": "wands",
+    "tags": ["arcane", "focus"],
+    "notes": "Mystic wand for spellcasting utility."
+  },
+  {
+    "id": "wand-of-minor-effects",
+    "name": "Wand of Minor Effects",
+    "category": "wands",
+    "tags": ["arcane", "focus"],
+    "notes": "Simple carved wand for ritual use."
+  },
+  {
+    "id": "rod-of-sparks",
+    "name": "Rod of Sparks",
+    "category": "rods",
+    "tags": ["arcane", "focus"],
+    "notes": "Arcane rod with electric residue."
+  },
+  {
+    "id": "wondrous-band",
+    "name": "Wondrous Band",
+    "category": "wondrousItems",
+    "tags": ["charm", "wondrous"],
+    "notes": "Minor utility item infused with magic."
+  },
+  {
+    "id": "mystic-crystal-shard",
+    "name": "Mystic Crystal Shard",
+    "category": "wondrousItems",
+    "tags": ["focus", "wondrous"],
+    "notes": "A shimmering shard with faint residual magic."
+  },
+  {
+    "id": "abacus",
+    "name": "Abacus",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "alms-box",
+    "name": "Alms Box",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Support item suited for rituals, care, or careful preparation.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "ball-bearings-bag-of-1000",
+    "name": "Ball Bearings (bag of 1,000)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "barrel",
+    "name": "Barrel",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "basket",
+    "name": "Basket",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.4,
+    "currency": "sp"
+  },
+  {
+    "id": "bell",
+    "name": "Bell",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "blanket",
+    "name": "Blanket",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "block-and-tackle",
+    "name": "Block and Tackle",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "book-scripture",
+    "name": "Book, Scripture",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "bottle-glass",
+    "name": "Bottle, glass",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "bucket",
+    "name": "Bucket",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "caltrops-bag-of-20",
+    "name": "Caltrops (bag of 20)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "candle",
+    "name": "Candle",
+    "category": "adventuringGear",
+    "tags": ["utility", "light"],
+    "notes": "Portable light source that keeps camps and dark passages usable.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "case-map-or-scroll",
+    "name": "Case, Map or Scroll",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "censer",
+    "name": "Censer",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Support item suited for rituals, care, or careful preparation.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "chain-10-feet",
+    "name": "Chain (10 feet)",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "chalk-1-piece",
+    "name": "Chalk (1 piece)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "chest",
+    "name": "Chest",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "climbers-kit",
+    "name": "Climber's Kit",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "clothes-common",
+    "name": "Clothes, Common",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "clothes-costume",
+    "name": "Clothes, Costume",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "clothes-fine",
+    "name": "Clothes, Fine",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "clothes-travelers",
+    "name": "Clothes, Traveler's",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "fishing-tackle",
+    "name": "Fishing Tackle",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "flask",
+    "name": "Flask",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "flask-or-tankard",
+    "name": "Flask or Tankard",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "hammer-sledge",
+    "name": "Hammer, Sledge",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "healers-kit",
+    "name": "Healer's Kit",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Support item suited for rituals, care, or careful preparation.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "hourglass",
+    "name": "Hourglass",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "hunting-trap",
+    "name": "Hunting Trap",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "incense-1-block",
+    "name": "Incense (1 block)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Support item suited for rituals, care, or careful preparation.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "ink-1-ounce-bottle",
+    "name": "Ink (1 ounce bottle)",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "ink-pen",
+    "name": "Ink Pen",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "jug",
+    "name": "Jug",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "jug-or-pitcher",
+    "name": "Jug or Pitcher",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "ladder-10-foot",
+    "name": "Ladder (10-foot)",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "lamp",
+    "name": "Lamp",
+    "category": "adventuringGear",
+    "tags": ["utility", "light"],
+    "notes": "Portable light source that keeps camps and dark passages usable.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "lantern-bullseye",
+    "name": "Lantern, Bullseye",
+    "category": "adventuringGear",
+    "tags": ["utility", "light"],
+    "notes": "Portable light source that keeps camps and dark passages usable.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "lantern-hooded",
+    "name": "Lantern, Hooded",
+    "category": "adventuringGear",
+    "tags": ["utility", "light"],
+    "notes": "Portable light source that keeps camps and dark passages usable.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "lock",
+    "name": "Lock",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "manacles",
+    "name": "Manacles",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "mirror-steel",
+    "name": "Mirror, Steel",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "oil-flask-shop",
+    "name": "Oil (flask)",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "paper-one-sheet",
+    "name": "Paper (one sheet)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "parchment-one-sheet",
+    "name": "Parchment (one sheet)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "perfume-vial",
+    "name": "Perfume (vial)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "pick-miners",
+    "name": "Pick, Miner's",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "piton",
+    "name": "Piton",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "pole-10-foot",
+    "name": "Pole (10-foot)",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "pot-iron",
+    "name": "Pot, Iron",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "pouch",
+    "name": "Pouch",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "ram-portable",
+    "name": "Ram, Portable",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 4,
+    "currency": "gp"
+  },
+  {
+    "id": "rations-1-day",
+    "name": "Rations (1 day)",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Camp-friendly supply that helps keep a party equipped on the road.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "robes",
+    "name": "Robes",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "rope-hempen-50-feet",
+    "name": "Rope, Hempen (50 feet)",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "rope-silk-50-feet",
+    "name": "Rope, Silk (50 feet)",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "sack",
+    "name": "Sack",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "scale-merchants",
+    "name": "Scale, Merchant's",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "shovel",
+    "name": "Shovel",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "signal-whistle",
+    "name": "Signal Whistle",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.05,
+    "currency": "cp"
+  },
+  {
+    "id": "soap",
+    "name": "Soap",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "spellbook",
+    "name": "Spellbook",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Writing or recordkeeping supply useful for notes, maps, and logs.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "spikes-iron",
+    "name": "Spikes, Iron",
+    "category": "adventuringGear",
+    "tags": ["utility", "exploration"],
+    "notes": "Field gear built for climbing, hauling, or rough exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "spyglass",
+    "name": "Spyglass",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1000,
+    "currency": "gp"
+  },
+  {
+    "id": "tent-two-person",
+    "name": "Tent, Two-person",
+    "category": "adventuringGear",
+    "tags": ["utility", "travel"],
+    "notes": "Travel-ready supply that improves comfort between encounters.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "torch",
+    "name": "Torch",
+    "category": "adventuringGear",
+    "tags": ["utility", "light"],
+    "notes": "Portable light source that keeps camps and dark passages usable.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "vial",
+    "name": "Vial",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "whetstone",
+    "name": "Whetstone",
+    "category": "adventuringGear",
+    "tags": ["utility"],
+    "notes": "Practical adventuring gear for travel, camp, or exploration.",
+    "cost": 0.01,
+    "currency": "cp"
+  },
+  {
+    "id": "arrows-20",
+    "name": "Arrows (20)",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "blowgun-needles-50",
+    "name": "Blowgun Needles (50)",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "case-crossbow-bolt",
+    "name": "Case, Crossbow Bolt",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "crossbow-bolts-20",
+    "name": "Crossbow Bolts (20)",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "quiver",
+    "name": "Quiver",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "sling-bullets-20",
+    "name": "Sling Bullets (20)",
+    "category": "ammunition",
+    "tags": ["ammo", "ranged"],
+    "notes": "Packaged ammunition ready for bows, slings, or crossbows.",
+    "cost": 0.04,
+    "currency": "cp"
+  },
+  {
+    "id": "acid-vial",
+    "name": "Acid (vial)",
+    "category": "consumables",
+    "tags": ["consumable", "alchemy"],
+    "notes": "Bottle-ready substance meant for quick tactical or support use.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "alchemists-fire-flask",
+    "name": "Alchemist's Fire (flask)",
+    "category": "consumables",
+    "tags": ["consumable", "alchemy", "travel"],
+    "notes": "Bottle-ready substance meant for quick tactical or support use.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "antitoxin-vial",
+    "name": "Antitoxin (vial)",
+    "category": "consumables",
+    "tags": ["consumable", "support"],
+    "notes": "Bottle-ready substance meant for quick tactical or support use.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "holy-water-flask",
+    "name": "Holy Water (flask)",
+    "category": "consumables",
+    "tags": ["consumable", "support", "travel"],
+    "notes": "Bottle-ready substance meant for quick tactical or support use.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "poison-basic-vial",
+    "name": "Poison, Basic (vial)",
+    "category": "consumables",
+    "tags": ["consumable", "alchemy"],
+    "notes": "Bottle-ready substance meant for quick tactical or support use.",
+    "cost": 100,
+    "currency": "gp"
+  },
+  {
+    "id": "rowboat",
+    "name": "Rowboat",
+    "category": "miscellaneous",
+    "tags": ["utility", "vehicle", "travel"],
+    "notes": "Small watercraft for short crossings, scouting, or river travel.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "ring-exquisite",
+    "name": "Ring, Exquisite",
+    "category": "rings",
+    "tags": ["ring", "jewelry"],
+    "notes": "Wearable ring that fits loot, trade, or signature character style.",
+    "cost": 3,
+    "currency": "gp"
+  },
+  {
+    "id": "ring-mundane",
+    "name": "Ring, Mundane",
+    "category": "rings",
+    "tags": ["ring", "jewelry"],
+    "notes": "Wearable ring that fits loot, trade, or signature character style.",
+    "cost": 0.3,
+    "currency": "sp"
+  },
+  {
+    "id": "amulet",
+    "name": "Amulet",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "component-pouch",
+    "name": "Component Pouch",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus", "travel"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "emblem",
+    "name": "Emblem",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "reliquary",
+    "name": "Reliquary",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "rod",
+    "name": "Rod",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "sprig-of-mistletoe",
+    "name": "Sprig of Mistletoe",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "totem",
+    "name": "Totem",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "wooden-staff",
+    "name": "Wooden Staff",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "yew-wand",
+    "name": "Yew Wand",
+    "category": "spellcastingFocus",
+    "tags": ["magic", "focus"],
+    "notes": "Spellcasting focus used to channel practiced magical effects.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "alchemists-supplies",
+    "name": "Alchemist's Supplies",
+    "category": "tools",
+    "tags": ["tool", "crafting", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "bagpipes",
+    "name": "Bagpipes",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "brewers-supplies",
+    "name": "Brewer's Supplies",
+    "category": "tools",
+    "tags": ["tool", "crafting", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 20,
+    "currency": "gp"
+  },
+  {
+    "id": "calligraphers-supplies",
+    "name": "Calligrapher's Supplies",
+    "category": "tools",
+    "tags": ["tool", "crafting", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "carpenters-tools",
+    "name": "Carpenter's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 8,
+    "currency": "gp"
+  },
+  {
+    "id": "cartographers-tools",
+    "name": "Cartographer's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "cobblers-tools",
+    "name": "Cobbler's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "cooks-utensils",
+    "name": "Cook's Utensils",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "dice-set",
+    "name": "Dice Set",
+    "category": "tools",
+    "tags": ["tool", "gaming"],
+    "notes": "Compact gaming set for wagers, downtime, or social scenes.",
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "disguise-kit",
+    "name": "Disguise Kit",
+    "category": "tools",
+    "tags": ["tool", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "dragonchess-set",
+    "name": "Dragonchess Set",
+    "category": "tools",
+    "tags": ["tool", "gaming"],
+    "notes": "Compact gaming set for wagers, downtime, or social scenes.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "drum",
+    "name": "Drum",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 6,
+    "currency": "gp"
+  },
+  {
+    "id": "dulcimer",
+    "name": "Dulcimer",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "flute",
+    "name": "Flute",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "forgery-kit",
+    "name": "Forgery Kit",
+    "category": "tools",
+    "tags": ["tool", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 15,
+    "currency": "gp"
+  },
+  {
+    "id": "glassblowers-tools",
+    "name": "Glassblower's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "herbalism-kit",
+    "name": "Herbalism Kit",
+    "category": "tools",
+    "tags": ["tool", "crafting", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "horn",
+    "name": "Horn",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 3,
+    "currency": "gp"
+  },
+  {
+    "id": "jewelers-tools",
+    "name": "Jeweler's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "leatherworkers-tools",
+    "name": "Leatherworker's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "lute",
+    "name": "Lute",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 35,
+    "currency": "gp"
+  },
+  {
+    "id": "lyre",
+    "name": "Lyre",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "masons-tools",
+    "name": "Mason's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "navigators-tools",
+    "name": "Navigator's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "painters-supplies",
+    "name": "Painter's Supplies",
+    "category": "tools",
+    "tags": ["tool", "crafting", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "pan-flute",
+    "name": "Pan Flute",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 12,
+    "currency": "gp"
+  },
+  {
+    "id": "playing-card-set",
+    "name": "Playing Card Set",
+    "category": "tools",
+    "tags": ["tool", "gaming"],
+    "notes": "Compact gaming set for wagers, downtime, or social scenes.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "poisoners-kit",
+    "name": "Poisoner's Kit",
+    "category": "tools",
+    "tags": ["tool", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "potters-tools",
+    "name": "Potter's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting", "travel"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "shawn",
+    "name": "Shawn",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "smiths-tools",
+    "name": "Smith's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 20,
+    "currency": "gp"
+  },
+  {
+    "id": "thieves-tools",
+    "name": "Thieves' Tools",
+    "category": "tools",
+    "tags": ["tool", "kit"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "three-dragon-ante-set",
+    "name": "Three-Dragon Ante Set",
+    "category": "tools",
+    "tags": ["tool", "gaming"],
+    "notes": "Compact gaming set for wagers, downtime, or social scenes.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "tinkers-tools",
+    "name": "Tinker's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "viol",
+    "name": "Viol",
+    "category": "tools",
+    "tags": ["tool", "instrument"],
+    "notes": "Portable instrument suited for performance, rest scenes, or travel.",
+    "cost": 30,
+    "currency": "gp"
+  },
+  {
+    "id": "weavers-tools",
+    "name": "Weaver's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "woodcarvers-tools",
+    "name": "Woodcarver's Tools",
+    "category": "tools",
+    "tags": ["tool", "crafting"],
+    "notes": "Specialized kit for crafting, repair, or careful field work.",
+    "cost": 1,
+    "currency": "gp"
+  },
+  {
+    "id": "10-gp-gemstones",
+    "name": "10 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "100-gp-gemstones",
+    "name": "100 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 100,
+    "currency": "gp"
+  },
+  {
+    "id": "1000-gp-gemstones",
+    "name": "1000 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 1000,
+    "currency": "gp"
+  },
+  {
+    "id": "50-gp-gemstones",
+    "name": "50 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 50,
+    "currency": "gp"
+  },
+  {
+    "id": "500-gp-gemstones",
+    "name": "500 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 500,
+    "currency": "gp"
+  },
+  {
+    "id": "5000-gp-gemstones",
+    "name": "5000 gp Gemstones",
+    "category": "treasure",
+    "tags": ["treasure", "gem"],
+    "notes": "Tradeable gemstone that works well as loot, barter, or rewards.",
+    "cost": 5000,
+    "currency": "gp"
+  },
+  {
+    "id": "amuletnecklace-exquisite",
+    "name": "Amulet/Necklace, Exquisite",
+    "category": "treasure",
+    "tags": ["treasure", "jewelry"],
+    "notes": "Wearable treasure piece suited for barter, loot, or character flavor.",
+    "cost": 5,
+    "currency": "gp"
+  },
+  {
+    "id": "amuletnecklace-mundane",
+    "name": "Amulet/Necklace, Mundane",
+    "category": "treasure",
+    "tags": ["treasure", "jewelry"],
+    "notes": "Wearable treasure piece suited for barter, loot, or character flavor.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "earrings-exquisite",
+    "name": "Earrings, Exquisite",
+    "category": "treasure",
+    "tags": ["treasure", "jewelry"],
+    "notes": "Wearable treasure piece suited for barter, loot, or character flavor.",
+    "cost": 4,
+    "currency": "gp"
+  },
+  {
+    "id": "earrings-mundane",
+    "name": "Earrings, Mundane",
+    "category": "treasure",
+    "tags": ["treasure", "jewelry"],
+    "notes": "Wearable treasure piece suited for barter, loot, or character flavor.",
+    "cost": 0.4,
+    "currency": "sp"
+  },
+  {
+    "id": "ale-gallon",
+    "name": "Ale, Gallon",
+    "category": "consumables",
+    "tags": ["drink", "ale", "supplies"],
+    "notes": "Bulk ale for camp stores, tavern stock, or long travel legs.",
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "ale-mug",
+    "name": "Ale, Mug",
+    "category": "consumables",
+    "tags": ["drink", "ale", "tavern"],
+    "notes": "Single-serving ale for taverns, camp breaks, or quick hospitality.",
+    "cost": 0.04,
+    "currency": "cp"
+  },
+  {
+    "id": "bread-loaf",
+    "name": "Bread, Loaf",
+    "category": "consumables",
+    "tags": ["food", "rations", "travel"],
+    "notes": "Simple daily food that travels well in a pack or camp kit.",
+    "cost": 0.02,
+    "currency": "cp"
+  },
+  {
+    "id": "cheese-hunk",
+    "name": "Cheese, Hunk",
+    "category": "consumables",
+    "tags": ["food", "travel", "supplies"],
+    "notes": "Dense trail-ready food that pairs well with bread and rations.",
+    "cost": 0.1,
+    "currency": "sp"
+  },
+  {
+    "id": "meat-chunk",
+    "name": "Meat, Chunk",
+    "category": "consumables",
+    "tags": ["food", "camp", "supplies"],
+    "notes": "Fresh provisions suited for camp meals or tavern stock.",
+    "cost": 0.3,
+    "currency": "sp"
+  },
+  {
+    "id": "wine-common-pitcher",
+    "name": "Wine, Common (Pitcher)",
+    "category": "consumables",
+    "tags": ["drink", "wine", "tavern"],
+    "notes": "Common table wine for inns, feasts, or social scenes.",
+    "cost": 0.2,
+    "currency": "sp"
+  },
+  {
+    "id": "wine-fine-bottle",
+    "name": "Wine, Fine (Bottle)",
+    "category": "consumables",
+    "tags": ["drink", "wine", "luxury"],
+    "notes": "Fine wine bottle fit for gifts, nobles, or formal dinners.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "shawm",
+    "name": "Shawm",
+    "category": "tools",
+    "tags": ["instrument", "music", "performance"],
+    "notes": "Piercing reed instrument useful for performances and ceremonies.",
+    "cost": 2,
+    "currency": "gp"
+  },
+  {
+    "id": "book",
+    "name": "Book",
+    "category": "adventuringGear",
+    "tags": ["writing", "reference", "utility"],
+    "notes": "Bound volume suited for research, notes, or field records.",
+    "cost": 25,
+    "currency": "gp"
+  },
+  {
+    "id": "clothes-cold-weather",
+    "name": "Clothes, Cold Weather",
+    "category": "adventuringGear",
+    "tags": ["travel", "cold-weather", "clothing"],
+    "notes": "Heavy clothing made to keep a traveler warm in harsh climates.",
+    "cost": 10,
+    "currency": "gp"
+  },
+  {
+    "id": "magnifying-glass",
+    "name": "Magnifying Glass",
+    "category": "adventuringGear",
+    "tags": ["inspection", "utility", "investigation"],
+    "notes": "Fine lens for close inspection, clues, and detailed handiwork.",
+    "cost": 100,
+    "currency": "gp"
+  },
+  {
+    "id": "sealing-wax",
+    "name": "Sealing Wax",
+    "category": "adventuringGear",
+    "tags": ["writing", "documents", "utility"],
+    "notes": "Wax used to seal letters, parcels, and marked documents.",
+    "cost": 0.5,
+    "currency": "sp"
+  },
+  {
+    "id": "galley",
+    "name": "Galley",
+    "category": "miscellaneous",
+    "tags": ["vehicle", "waterborne", "travel"],
+    "notes": "Large oared vessel built for cargo, crews, and long journeys.",
+    "cost": 30000,
+    "currency": "gp"
+  },
+  {
+    "id": "keelboat",
+    "name": "Keelboat",
+    "category": "miscellaneous",
+    "tags": ["vehicle", "waterborne", "travel"],
+    "notes": "River-ready boat suited for cargo runs and inland travel.",
+    "cost": 3000,
+    "currency": "gp"
+  },
+  {
+    "id": "longship",
+    "name": "Longship",
+    "category": "miscellaneous",
+    "tags": ["vehicle", "waterborne", "travel"],
+    "notes": "Fast open-water vessel suited for raiding or coastal travel.",
+    "cost": 10000,
+    "currency": "gp"
+  },
+  {
+    "id": "sailing-ship",
+    "name": "Sailing Ship",
+    "category": "miscellaneous",
+    "tags": ["vehicle", "waterborne", "travel"],
+    "notes": "Seagoing ship built for long-distance trade and open water.",
+    "cost": 10000,
+    "currency": "gp"
+  },
+  {
+    "id": "warship",
+    "name": "Warship",
+    "category": "miscellaneous",
+    "tags": ["vehicle", "waterborne", "travel"],
+    "notes": "Heavy combat vessel made for crewed battle on open water.",
+    "cost": 25000,
+    "currency": "gp"
+  }
+]
