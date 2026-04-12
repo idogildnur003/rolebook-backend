@@ -35,11 +35,6 @@ func (d *DB) Rolebook() *mongo.Database {
 	return d.client.Database("rolebook")
 }
 
-// Arsenal returns the arsenal database handle.
-func (d *DB) Arsenal() *mongo.Database {
-	return d.client.Database("arsenal")
-}
-
 // Disconnect closes the MongoDB connection.
 func (d *DB) Disconnect(ctx context.Context) error {
 	return d.client.Disconnect(ctx)
