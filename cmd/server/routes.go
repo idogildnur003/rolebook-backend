@@ -18,6 +18,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	userStore := store.NewUserStore(db)
 	campaignStore := store.NewCampaignStore(db)
 	playerStore := store.NewPlayerStore(db)
+	customEquipmentStore := store.NewCustomEquipmentStore(db)
 
 	// Catalog
 	arsenalCatalog, err := catalog.Load()
@@ -33,6 +34,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog)
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
+	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public
@@ -94,6 +96,14 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			r.Route("/arsenal/equipment", func(r chi.Router) {
 				r.Get("/", arsenalHandler.ListEquipment)
 				r.Get("/{equipmentId}", arsenalHandler.GetEquipment)
+			})
+
+			// Per-campaign custom equipment (homebrew)
+			r.Route("/campaigns/{campaignId}/custom-equipment", func(r chi.Router) {
+				r.Get("/", customEquipmentHandler.List)
+				r.Post("/", customEquipmentHandler.Create)
+				r.Patch("/{id}", customEquipmentHandler.Update)
+				r.Delete("/{id}", customEquipmentHandler.Delete)
 			})
 		})
 	})
