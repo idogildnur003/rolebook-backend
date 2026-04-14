@@ -50,6 +50,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Get("/", campaignHandler.Get)
 				r.Patch("/", campaignHandler.Update)
 				r.Delete("/", campaignHandler.Delete)
+				// Player archive/restore (DM only)
+				r.Patch("/players/{playerId}", campaignHandler.SetPlayerActive)
 			})
 
 			// Sessions (campaign DM only — enforced in handler)
