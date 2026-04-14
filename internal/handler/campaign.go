@@ -194,6 +194,54 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
+// SetPlayerActive handles PATCH /api/campaigns/:id/players/:playerId (DM only).
+// Body: { "isActive": bool }
+// Used to archive (isActive=false) or restore (isActive=true) a campaign player.
+func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "id")
+	playerID := chi.URLParam(r, "playerId")
+	ctx := r.Context()
+
+	campaign, err := h.campaigns.GetByID(ctx, campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return
+	}
+
+	userID := middleware.UserIDFromContext(ctx)
+	if campaign.DM != userID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	var req struct {
+		IsActive bool `json:"isActive"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+
+	found, err := h.campaigns.SetPlayerActive(ctx, campaignID, playerID, req.IsActive)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if !found {
+		writeError(w, http.StatusNotFound, "player not found in campaign", "NOT_FOUND")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"playerId": playerID,
+		"isActive": req.IsActive,
+	})
+}
+
 // Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
 // Cascade: deletes all players in the campaign (spells and inventory are embedded).
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
