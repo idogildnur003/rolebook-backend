@@ -97,13 +97,49 @@ func (s *CustomEquipmentStore) Update(ctx context.Context, campaignID, id string
 
 // Delete removes a custom equipment entry scoped by (campaignId, id).
 // Returns true if a document was removed. Does NOT cascade to player
-// inventories — use DeleteWithCascade in the handler layer for that.
+// inventories — use DeleteWithCascade for that.
 func (s *CustomEquipmentStore) Delete(ctx context.Context, campaignID, id string) (bool, error) {
 	res, err := s.col.DeleteOne(ctx, bson.M{"_id": id, "campaignId": campaignID})
 	if err != nil {
 		return false, err
 	}
 	return res.DeletedCount > 0, nil
+}
+
+// CascadeDeleteResult captures the outcome of DeleteWithCascade.
+type CascadeDeleteResult struct {
+	CatalogDeleted     bool
+	PlayersAffected    int64
+	InventoryCleanupErr error // non-nil if the catalog delete succeeded but the
+	//                         player inventory cleanup failed. Best-effort
+	//                         semantics — the catalog entry is already gone and
+	//                         surviving inventory references are tolerated by
+	//                         the inventory list handler.
+}
+
+// DeleteWithCascade removes a custom equipment entry AND pulls it out of every
+// player inventory in the campaign. Runs as two sequential writes: catalog
+// delete first, then cleanup. If the cleanup fails, the catalog entry is still
+// considered deleted (no rollback) and the error is surfaced via the result
+// so the caller can log or alert.
+func (s *CustomEquipmentStore) DeleteWithCascade(
+	ctx context.Context,
+	campaignID, id string,
+	players *PlayerStore,
+) (CascadeDeleteResult, error) {
+	deleted, err := s.Delete(ctx, campaignID, id)
+	if err != nil {
+		return CascadeDeleteResult{}, err
+	}
+	if !deleted {
+		return CascadeDeleteResult{CatalogDeleted: false}, nil
+	}
+	affected, cleanupErr := players.RemoveEquipmentFromAllInventories(ctx, campaignID, id)
+	return CascadeDeleteResult{
+		CatalogDeleted:      true,
+		PlayersAffected:     affected,
+		InventoryCleanupErr: cleanupErr,
+	}, nil
 }
 
 // --- ID generation ---------------------------------------------------------
