@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/handler"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -16,16 +18,21 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	userStore := store.NewUserStore(db)
 	campaignStore := store.NewCampaignStore(db)
 	playerStore := store.NewPlayerStore(db)
-	arsenalStore := store.NewArsenalStore(db)
+
+	// Catalog
+	arsenalCatalog, err := catalog.Load()
+	if err != nil {
+		panic(fmt.Sprintf("failed to load arsenal catalog: %v", err))
+	}
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore)
-	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalStore)
-	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalStore)
-	arsenalHandler := handler.NewArsenalHandler(arsenalStore)
+	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog)
+	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog)
+	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public

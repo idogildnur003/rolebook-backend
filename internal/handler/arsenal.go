@@ -6,15 +6,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/elad/rolebook-backend/internal/store"
+	"github.com/elad/rolebook-backend/internal/catalog"
 )
 
 type ArsenalHandler struct {
-	arsenal *store.ArsenalStore
+	catalog *catalog.ArsenalCatalog
 }
 
-func NewArsenalHandler(arsenal *store.ArsenalStore) *ArsenalHandler {
-	return &ArsenalHandler{arsenal: arsenal}
+func NewArsenalHandler(cat *catalog.ArsenalCatalog) *ArsenalHandler {
+	return &ArsenalHandler{catalog: cat}
 }
 
 func parsePagination(r *http.Request) (page, limit int64) {
@@ -35,21 +35,13 @@ func parsePagination(r *http.Request) (page, limit int64) {
 
 func (h *ArsenalHandler) ListSpells(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePagination(r)
-	result, err := h.arsenal.ListSpells(r.Context(), page, limit)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	writeJSON(w, http.StatusOK, result)
+	data, total := h.catalog.ListSpells(page, limit)
+	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
 }
 
 func (h *ArsenalHandler) GetSpell(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "spellId")
-	spell, err := h.arsenal.GetSpell(r.Context(), id)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
+	spell := h.catalog.GetSpell(id)
 	if spell == nil {
 		writeError(w, http.StatusNotFound, "spell not found", "NOT_FOUND")
 		return
@@ -59,21 +51,13 @@ func (h *ArsenalHandler) GetSpell(w http.ResponseWriter, r *http.Request) {
 
 func (h *ArsenalHandler) ListEquipment(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePagination(r)
-	result, err := h.arsenal.ListEquipment(r.Context(), page, limit)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	writeJSON(w, http.StatusOK, result)
+	data, total := h.catalog.ListEquipment(page, limit)
+	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
 }
 
 func (h *ArsenalHandler) GetEquipment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "equipmentId")
-	item, err := h.arsenal.GetEquipment(r.Context(), id)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
+	item := h.catalog.GetEquipment(id)
 	if item == nil {
 		writeError(w, http.StatusNotFound, "equipment not found", "NOT_FOUND")
 		return

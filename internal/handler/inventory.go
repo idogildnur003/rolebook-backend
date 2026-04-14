@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -14,10 +15,10 @@ import (
 type InventoryHandler struct {
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
-	arsenal   *store.ArsenalStore
+	arsenal   *catalog.ArsenalCatalog
 }
 
-func NewInventoryHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *store.ArsenalStore) *InventoryHandler {
+func NewInventoryHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *catalog.ArsenalCatalog) *InventoryHandler {
 	return &InventoryHandler{players: players, campaigns: campaigns, arsenal: arsenal}
 }
 
@@ -79,11 +80,7 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	equipment, err := h.arsenal.GetEquipment(r.Context(), req.EquipmentID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
+	equipment := h.arsenal.GetEquipment(req.EquipmentID)
 	if equipment == nil {
 		writeError(w, http.StatusNotFound, "equipment not found in arsenal", "NOT_FOUND")
 		return

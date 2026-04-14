@@ -1,50 +1,46 @@
 package model
 
-import "time"
-
-// Spell is a reference spell in the arsenal database ("spells" collection).
+// Spell is a reference spell in the arsenal catalog.
 // It is a global catalog entry, not tied to any player.
 type Spell struct {
-	ID          string    `bson:"_id"               json:"id"`
-	Name        string    `bson:"name"              json:"name"`
-	Level       int       `bson:"level"             json:"level"`
-	School      string    `bson:"school,omitempty"  json:"school,omitempty"`
-	CastingTime string    `bson:"castingTime,omitempty" json:"castingTime,omitempty"`
-	Range       string    `bson:"range,omitempty"   json:"range,omitempty"`
-	Components  []string  `bson:"components,omitempty" json:"components,omitempty"`
-	Material    string    `bson:"material,omitempty" json:"material,omitempty"`
-	Duration    string    `bson:"duration,omitempty" json:"duration,omitempty"`
-	Description string    `bson:"description,omitempty" json:"description,omitempty"`
-	IsRitual    bool      `bson:"isRitual,omitempty" json:"isRitual,omitempty"`
-	Source      string    `bson:"source,omitempty"  json:"source,omitempty"`
-	UpdatedAt   time.Time `bson:"updatedAt"         json:"updatedAt"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Level       int      `json:"level"`
+	School      string   `json:"school,omitempty"`
+	CastingTime string   `json:"castingTime,omitempty"`
+	Range       string   `json:"range,omitempty"`
+	Components  []string `json:"components,omitempty"`
+	Material    string   `json:"material,omitempty"`
+	Duration    string   `json:"duration,omitempty"`
+	Description string   `json:"description,omitempty"`
+	IsRitual    bool     `json:"isRitual,omitempty"`
+	Source      string   `json:"source,omitempty"`
 }
 
-// Equipment is a reference item in the arsenal database ("equipment" collection).
+// Equipment is a reference item in the arsenal catalog.
 // It is a global catalog entry, not tied to any player.
 type Equipment struct {
-	ID       string   `bson:"_id"          json:"id"`
-	Name     string   `bson:"name"         json:"name"`
-	Category string   `bson:"category"     json:"category"`
-	Tags     []string `bson:"tags"         json:"tags"`
-	Notes    string   `bson:"notes,omitempty"    json:"notes,omitempty"`
-	ImageURI string   `bson:"imageUri,omitempty" json:"imageUri,omitempty"`
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	Category string   `json:"category"`
+	Tags     []string `json:"tags"`
+	Notes    string   `json:"notes,omitempty"`
+	ImageURI string   `json:"imageUri,omitempty"`
 
-	Damage     string   `bson:"damage,omitempty"     json:"damage,omitempty"`
-	DamageType string   `bson:"damageType,omitempty" json:"damageType,omitempty"`
-	WeaponType string   `bson:"weaponType,omitempty" json:"weaponType,omitempty"`
-	Properties []string `bson:"properties,omitempty" json:"properties,omitempty"`
+	Damage     string   `json:"damage,omitempty"`
+	DamageType string   `json:"damageType,omitempty"`
+	WeaponType string   `json:"weaponType,omitempty"`
+	Properties []string `json:"properties,omitempty"`
 
-	ArmorClass          *int    `bson:"armorClass,omitempty"          json:"armorClass,omitempty"`
-	ArmorBonus          *int    `bson:"armorBonus,omitempty"          json:"armorBonus,omitempty"`
-	ShieldBonus         *int    `bson:"shieldBonus,omitempty"         json:"shieldBonus,omitempty"`
-	ArmorType           string  `bson:"armorType,omitempty"           json:"armorType,omitempty"`
-	StrengthRequirement *int    `bson:"strengthRequirement,omitempty" json:"strengthRequirement,omitempty"`
-	StealthDisadvantage *bool   `bson:"stealthDisadvantage,omitempty" json:"stealthDisadvantage,omitempty"`
+	ArmorClass          *int  `json:"armorClass,omitempty"`
+	ArmorBonus          *int  `json:"armorBonus,omitempty"`
+	ShieldBonus         *int  `json:"shieldBonus,omitempty"`
+	ArmorType           string `json:"armorType,omitempty"`
+	StrengthRequirement *int  `json:"strengthRequirement,omitempty"`
+	StealthDisadvantage *bool `json:"stealthDisadvantage,omitempty"`
 
-	CompatibleWith *string  `bson:"compatibleWith,omitempty" json:"compatibleWith,omitempty"`
-	EffectSummary  string   `bson:"effectSummary,omitempty"  json:"effectSummary,omitempty"`
-	Value          *float64 `bson:"value,omitempty"          json:"value,omitempty"`
-
-	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+	CompatibleWith *string  `json:"compatibleWith,omitempty"`
+	EffectSummary  string   `json:"effectSummary,omitempty"`
+	Cost           *float64 `json:"cost,omitempty"`
+	Currency       string   `json:"currency,omitempty"`
 }

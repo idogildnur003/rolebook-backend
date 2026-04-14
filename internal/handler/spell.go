@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -15,10 +16,10 @@ import (
 type SpellHandler struct {
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
-	arsenal   *store.ArsenalStore
+	arsenal   *catalog.ArsenalCatalog
 }
 
-func NewSpellHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *store.ArsenalStore) *SpellHandler {
+func NewSpellHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *catalog.ArsenalCatalog) *SpellHandler {
 	return &SpellHandler{players: players, campaigns: campaigns, arsenal: arsenal}
 }
 
@@ -79,11 +80,7 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate spell exists in arsenal
-	spell, err := h.arsenal.GetSpell(r.Context(), req.SpellID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
+	spell := h.arsenal.GetSpell(req.SpellID)
 	if spell == nil {
 		writeError(w, http.StatusNotFound, "spell not found in arsenal", "NOT_FOUND")
 		return
