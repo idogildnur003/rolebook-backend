@@ -238,7 +238,7 @@ Server-owned fields (`id`, `campaignId`, `createdBy`, `createdAt`, `updatedAt`) 
 ```json
 {
   "name": "Runed Shortblade",
-  "category": "weapon",
+  "category": "weapons",
   "tags": ["melee", "magic"],
   "notes": "A homebrew shortsword etched with faintly glowing runes.",
   "damage": "1d6+1",
