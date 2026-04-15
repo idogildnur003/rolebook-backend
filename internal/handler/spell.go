@@ -14,13 +14,24 @@ import (
 )
 
 type SpellHandler struct {
-	players   *store.PlayerStore
-	campaigns *store.CampaignStore
-	arsenal   *catalog.ArsenalCatalog
+	players      *store.PlayerStore
+	campaigns    *store.CampaignStore
+	arsenal      *catalog.ArsenalCatalog
+	customSpells *store.CustomSpellStore
 }
 
-func NewSpellHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *catalog.ArsenalCatalog) *SpellHandler {
-	return &SpellHandler{players: players, campaigns: campaigns, arsenal: arsenal}
+func NewSpellHandler(
+	players *store.PlayerStore,
+	campaigns *store.CampaignStore,
+	arsenal *catalog.ArsenalCatalog,
+	customSpells *store.CustomSpellStore,
+) *SpellHandler {
+	return &SpellHandler{
+		players:      players,
+		campaigns:    campaigns,
+		arsenal:      arsenal,
+		customSpells: customSpells,
+	}
 }
 
 // List handles GET /api/players/:playerId/spells.
@@ -79,16 +90,26 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate spell exists in arsenal
-	spell := h.arsenal.GetSpell(req.SpellID)
-	if spell == nil {
-		writeError(w, http.StatusNotFound, "spell not found in arsenal", "NOT_FOUND")
-		return
+	// Validate spell exists — SRD arsenal first, then campaign custom spells.
+	var spellName string
+	if spell := h.arsenal.GetSpell(req.SpellID); spell != nil {
+		spellName = spell.Name
+	} else {
+		custom, err := h.customSpells.GetByID(r.Context(), access.Player.CampaignID, req.SpellID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		if custom == nil {
+			writeError(w, http.StatusNotFound, "spell not found in arsenal", "NOT_FOUND")
+			return
+		}
+		spellName = custom.Name
 	}
 
 	playerSpell := model.PlayerSpell{
 		SpellID:    req.SpellID,
-		Name:       spell.Name,
+		Name:       spellName,
 		IsPrepared: req.IsPrepared,
 	}
 
