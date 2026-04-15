@@ -181,6 +181,8 @@ Requires Bearer `{{token}}`. Spells are embedded in the player document as light
 { "spellId": "{{arsenalSpellId}}", "isPrepared": false }
 ```
 
+`spellId` is resolved against the SRD arsenal catalog first, then the campaign's custom spells — so a `customSpellId` like `custom-glacial-whisper-4b80ad` is also accepted here.
+
 **PATCH body (any mutable field):**
 ```json
 { "isPrepared": true }
@@ -253,6 +255,42 @@ Server-owned fields (`id`, `campaignId`, `createdBy`, `createdAt`, `updatedAt`) 
 **PATCH body (any mutable field):**
 ```json
 { "notes": "Updated homebrew notes", "cost": 90 }
+```
+
+---
+
+## Custom Spells
+
+Requires Bearer `{{token}}`. Per-campaign homebrew spell catalog, stored in MongoDB alongside the read-only SRD arsenal. IDs are server-issued (`custom-{slug}-{hex}`) on create. Player spell endpoints resolve `spellId` against the SRD catalog first, then the campaign custom store.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/custom-spells` | Any campaign member | List custom spells for campaign | 200 |
+| POST | `/campaigns/{{campaignId}}/custom-spells` | Any campaign member | Create custom spell → sets `customSpellId` | 201 |
+| PATCH | `/campaigns/{{campaignId}}/custom-spells/{{customSpellId}}` | Creator or campaign DM | Update custom spell fields | 200 |
+| DELETE | `/campaigns/{{campaignId}}/custom-spells/{{customSpellId}}` | Campaign DM | Delete and cascade out of every player's spell list in the campaign | 204 |
+
+Server-owned fields (`id`, `campaignId`, `createdBy`, `createdAt`, `updatedAt`) are stamped on create and stripped from PATCH bodies if supplied. `level` must be between 0 and 9.
+
+**POST body:**
+```json
+{
+  "name": "Glacial Whisper",
+  "level": 2,
+  "school": "evocation",
+  "castingTime": "1 action",
+  "range": "60 feet",
+  "components": ["V", "S", "M"],
+  "material": "a sliver of ice",
+  "duration": "Instantaneous",
+  "description": "A shard of supernatural cold pierces a single target.",
+  "isRitual": false
+}
+```
+
+**PATCH body (any mutable field):**
+```json
+{ "description": "…", "level": 3 }
 ```
 
 ---

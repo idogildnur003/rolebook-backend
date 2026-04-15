@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/custom-spells"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Glacial Whisper",
+      "level": 2,
+      "school": "evocation",
+      "castingTime": "1 action",
+      "range": "60 feet",
+      "components": ["V", "S", "M"],
+      "material": "a sliver of ice",
+      "duration": "Instantaneous",
+      "description": "A shard of supernatural cold pierces a single target.",
+      "isRitual": false
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("customSpellId", json.id);
+    language: text/javascript
+order: 2000
