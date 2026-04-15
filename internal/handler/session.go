@@ -5,8 +5,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/v2/bson"
-
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -89,24 +87,25 @@ func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req map[string]any
+	var req struct {
+		Name        *string                `json:"name"`
+		Description *string                `json:"description"`
+		Schedule    *model.SessionSchedule `json:"schedule"`
+	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	allowed := map[string]bool{"name": true, "description": true}
-	fields := bson.M{}
-	for k, v := range req {
-		if allowed[k] {
-			fields[k] = v
-		}
-	}
-	if len(fields) == 0 {
+	if req.Name == nil && req.Description == nil && req.Schedule == nil {
 		writeError(w, http.StatusBadRequest, "no valid fields to update", "BAD_REQUEST")
 		return
 	}
 
-	updated, err := h.campaigns.UpdateSession(r.Context(), campaignID, sessionID, fields)
+	updated, err := h.campaigns.UpdateSession(r.Context(), campaignID, sessionID, store.SessionUpdateFields{
+		Name:        req.Name,
+		Description: req.Description,
+		Schedule:    req.Schedule,
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
