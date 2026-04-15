@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/custom-equipment"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Runed Shortblade",
+      "category": "weapon",
+      "tags": ["melee", "magic"],
+      "notes": "A homebrew shortsword etched with faintly glowing runes.",
+      "damage": "1d6+1",
+      "damageType": "slashing",
+      "weaponType": "martial-melee",
+      "properties": ["finesse", "light"],
+      "cost": 75,
+      "currency": "gp"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("customEquipmentId", json.id);
+    language: text/javascript
+order: 2000
