@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/custom-equipment/{{customEquipmentId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "notes": "Updated homebrew notes",
+      "cost": 90
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

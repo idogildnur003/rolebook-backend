@@ -13,13 +13,24 @@ import (
 )
 
 type InventoryHandler struct {
-	players   *store.PlayerStore
-	campaigns *store.CampaignStore
-	arsenal   *catalog.ArsenalCatalog
+	players         *store.PlayerStore
+	campaigns       *store.CampaignStore
+	arsenal         *catalog.ArsenalCatalog
+	customEquipment *store.CustomEquipmentStore
 }
 
-func NewInventoryHandler(players *store.PlayerStore, campaigns *store.CampaignStore, arsenal *catalog.ArsenalCatalog) *InventoryHandler {
-	return &InventoryHandler{players: players, campaigns: campaigns, arsenal: arsenal}
+func NewInventoryHandler(
+	players *store.PlayerStore,
+	campaigns *store.CampaignStore,
+	arsenal *catalog.ArsenalCatalog,
+	customEquipment *store.CustomEquipmentStore,
+) *InventoryHandler {
+	return &InventoryHandler{
+		players:         players,
+		campaigns:       campaigns,
+		arsenal:         arsenal,
+		customEquipment: customEquipment,
+	}
 }
 
 // List handles GET /api/players/:playerId/inventory.
@@ -80,15 +91,25 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	equipment := h.arsenal.GetEquipment(req.EquipmentID)
-	if equipment == nil {
-		writeError(w, http.StatusNotFound, "equipment not found in arsenal", "NOT_FOUND")
-		return
+	var itemName string
+	if equipment := h.arsenal.GetEquipment(req.EquipmentID); equipment != nil {
+		itemName = equipment.Name
+	} else {
+		custom, err := h.customEquipment.GetByID(r.Context(), access.Player.CampaignID, req.EquipmentID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		if custom == nil {
+			writeError(w, http.StatusNotFound, "equipment not found in arsenal", "NOT_FOUND")
+			return
+		}
+		itemName = custom.Name
 	}
 
 	playerItem := model.PlayerInventoryItem{
 		EquipmentID: req.EquipmentID,
-		Name:        equipment.Name,
+		Name:        itemName,
 		Quantity:    req.Quantity,
 	}
 

@@ -30,3 +30,6 @@ values:
   - key: arsenalEquipmentId
     value: ''
     enabled: true
+  - key: customEquipmentId
+    value: ''
+    enabled: true

@@ -61,3 +61,52 @@ func isCampaignDM(ctx context.Context, campaigns *store.CampaignStore, campaignI
 	}
 	return campaign.DM == userID, true
 }
+
+// campaignMembership holds the resolved campaign and the caller's role within it.
+type campaignMembership struct {
+	Campaign *model.Campaign
+	IsDM     bool
+	IsMember bool // true if caller is DM or an active player of the campaign
+	UserID   string
+}
+
+// resolveCampaignMembership fetches the campaign and determines whether the
+// requesting user is the DM or an active player. Writes an HTTP error and
+// returns nil when the campaign does not exist, on DB error, or when the
+// caller is not a member.
+func resolveCampaignMembership(w http.ResponseWriter, r *http.Request, campaigns *store.CampaignStore, campaignID string) *campaignMembership {
+	ctx := r.Context()
+	userID := middleware.UserIDFromContext(ctx)
+
+	campaign, err := campaigns.GetByID(ctx, campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return nil
+	}
+	if campaign == nil {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return nil
+	}
+
+	isDM := campaign.DM == userID
+	isMember := isDM
+	if !isMember {
+		for _, p := range campaign.Players {
+			if p.UserID == userID && p.IsActive {
+				isMember = true
+				break
+			}
+		}
+	}
+	if !isMember {
+		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
+		return nil
+	}
+
+	return &campaignMembership{
+		Campaign: campaign,
+		IsDM:     isDM,
+		IsMember: isMember,
+		UserID:   userID,
+	}
+}

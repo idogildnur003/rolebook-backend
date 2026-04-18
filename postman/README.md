@@ -221,6 +221,42 @@ Requires Bearer `{{token}}`. Inventory items are embedded in the player document
 
 ---
 
+## Custom Equipment
+
+Requires Bearer `{{token}}`. Per-campaign homebrew equipment catalog, stored in MongoDB alongside the read-only SRD arsenal. IDs are server-issued (`custom-{slug}-{hex}`) on create. Inventory endpoints resolve `equipmentId` against the SRD catalog first, then the campaign custom store.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/custom-equipment` | Any campaign member | List custom equipment for campaign | 200 |
+| POST | `/campaigns/{{campaignId}}/custom-equipment` | Any campaign member | Create custom equipment → sets `customEquipmentId` | 201 |
+| PATCH | `/campaigns/{{campaignId}}/custom-equipment/{{customEquipmentId}}` | Creator or campaign DM | Update custom equipment fields | 200 |
+| DELETE | `/campaigns/{{campaignId}}/custom-equipment/{{customEquipmentId}}` | Campaign DM | Delete and cascade out of every player's inventory in the campaign | 204 |
+
+Server-owned fields (`id`, `campaignId`, `createdBy`, `createdAt`, `updatedAt`) are stamped on create and stripped from PATCH bodies if supplied.
+
+**POST body:**
+```json
+{
+  "name": "Runed Shortblade",
+  "category": "weapons",
+  "tags": ["melee", "magic"],
+  "notes": "A homebrew shortsword etched with faintly glowing runes.",
+  "damage": "1d6+1",
+  "damageType": "slashing",
+  "weaponType": "martial-melee",
+  "properties": ["finesse", "light"],
+  "cost": 75,
+  "currency": "gp"
+}
+```
+
+**PATCH body (any mutable field):**
+```json
+{ "notes": "Updated homebrew notes", "cost": 90 }
+```
+
+---
+
 ## Arsenal
 
 Read-only reference catalog. Data is manually curated in the `arsenal` database. Requires Bearer `{{token}}`, no role restriction.

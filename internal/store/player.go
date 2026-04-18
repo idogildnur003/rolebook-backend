@@ -261,3 +261,22 @@ func (s *PlayerStore) UpdateInventoryItem(ctx context.Context, playerID, equipme
 	}
 	return res.ModifiedCount > 0, nil
 }
+
+// RemoveEquipmentFromAllInventories pulls a given equipmentId out of every
+// player's embedded inventory array within a campaign. Returns the number of
+// player documents modified. Used by the DM cascade-delete flow for custom
+// equipment — when the catalog entry is removed, all references to it across
+// the campaign's players are cleaned up in one pass.
+func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, campaignID, equipmentID string) (int64, error) {
+	res, err := s.col.UpdateMany(ctx,
+		bson.M{"campaignId": campaignID, "inventory.equipmentId": equipmentID},
+		bson.M{
+			"$pull": bson.M{"inventory": bson.M{"equipmentId": equipmentID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount, nil
+}
