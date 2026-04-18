@@ -280,3 +280,21 @@ func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, cam
 	}
 	return res.ModifiedCount, nil
 }
+
+// RemoveSpellFromAllPlayers pulls a given spellId out of every player's
+// embedded spells array within a campaign. Returns the number of player
+// documents modified. Mirrors RemoveEquipmentFromAllInventories for the
+// custom-spell cascade flow.
+func (s *PlayerStore) RemoveSpellFromAllPlayers(ctx context.Context, campaignID, spellID string) (int64, error) {
+	res, err := s.col.UpdateMany(ctx,
+		bson.M{"campaignId": campaignID, "spells.spellId": spellID},
+		bson.M{
+			"$pull": bson.M{"spells": bson.M{"spellId": spellID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount, nil
+}
