@@ -33,3 +33,6 @@ values:
   - key: customEquipmentId
     value: ''
     enabled: true
+  - key: customSpellId
+    value: ''
+    enabled: true
