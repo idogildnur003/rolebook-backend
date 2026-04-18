@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/logic"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -82,6 +83,11 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+
+	for i := range players {
+		players[i].Derived = logic.CalculateDerivedStats(&players[i])
+	}
+
 	writeJSON(w, http.StatusOK, players)
 }
 
@@ -112,6 +118,9 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if access == nil {
 		return
 	}
+
+	access.Player.Derived = logic.CalculateDerivedStats(access.Player)
+
 	writeJSON(w, http.StatusOK, access.Player)
 }
 
@@ -228,6 +237,9 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
 	}
+
+	updated.Derived = logic.CalculateDerivedStats(updated)
+
 	writeJSON(w, http.StatusOK, updated)
 }
 

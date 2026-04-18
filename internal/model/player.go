@@ -69,7 +69,11 @@ type Player struct {
 	SpellSlots map[string]SpellSlot `bson:"spellSlots" json:"spellSlots"`
 
 	// Conditions — e.g. {"poisoned": true}
-	Conditions map[string]bool `bson:"conditions" json:"conditions"`
+	Conditions      map[string]bool `bson:"conditions"      json:"conditions"`
+	ExhaustionLevel int             `bson:"exhaustionLevel" json:"exhaustionLevel"`
+
+	// Derived fields (calculated on-the-fly, not stored in DB)
+	Derived *DerivedStats `bson:"-" json:"derived,omitempty"`
 
 	// Spells — embedded references to arsenal spells
 	Spells []PlayerSpell `bson:"spells" json:"spells"`
@@ -78,6 +82,18 @@ type Player struct {
 	Inventory []PlayerInventoryItem `bson:"inventory" json:"inventory"`
 
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+}
+
+// DerivedStats holds values calculated from conditions and other effects.
+type DerivedStats struct {
+	EffectiveSpeed int                `json:"effectiveSpeed"`
+	Warnings       []ConditionWarning `json:"warnings"`
+}
+
+// ConditionWarning represents a mechanical hint based on a condition.
+type ConditionWarning struct {
+	Condition string `json:"condition"`
+	Effect    string `json:"effect"`
 }
 
 // DefaultPlayer returns a new Player with sensible D&D 5e defaults.
