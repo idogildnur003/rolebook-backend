@@ -30,10 +30,11 @@ type Player struct {
 	CampaignID   string `bson:"campaignId"   json:"campaignId"`
 	LinkedUserID string `bson:"linkedUserId" json:"-"` // internal access-control field; not exposed in API responses
 
-	Name            string  `bson:"name"            json:"name"`
-	ClassName       *string `bson:"className"       json:"className"`
-	Level           int     `bson:"level"           json:"level"`
-	Race            string  `bson:"race,omitempty"  json:"race,omitempty"`
+	Name             string  `bson:"name"             json:"name"`
+	ClassName        *string `bson:"className"        json:"className"`
+	Level            int     `bson:"level"            json:"level"`
+	ExperiencePoints int     `bson:"experiencePoints" json:"experiencePoints"`
+	Race             string  `bson:"race,omitempty"   json:"race,omitempty"`
 	Notes           string  `bson:"notes"           json:"notes"`
 	AvatarURI       string  `bson:"avatarUri,omitempty" json:"avatarUri,omitempty"`
 	BackgroundStory string  `bson:"backgroundStory" json:"backgroundStory"`
