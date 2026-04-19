@@ -116,9 +116,17 @@ func (s *CampaignStore) AddSession(ctx context.Context, campaignID string, sess 
 	return nil, nil
 }
 
+// SessionUpdateFields holds the mutable fields that can be patched on a Session.
+// Nil pointer fields are left unchanged.
+type SessionUpdateFields struct {
+	Name        *string
+	Description *string
+	Schedule    *model.SessionSchedule
+}
+
 // UpdateSession updates fields on an embedded session using a fetch-modify-replace approach.
 // Bumps both the session's updatedAt and the campaign's updatedAt.
-func (s *CampaignStore) UpdateSession(ctx context.Context, campaignID, sessionID string, fields bson.M) (*model.Session, error) {
+func (s *CampaignStore) UpdateSession(ctx context.Context, campaignID, sessionID string, fields SessionUpdateFields) (*model.Session, error) {
 	campaign, err := s.GetByID(ctx, campaignID)
 	if err != nil {
 		return nil, err
@@ -130,11 +138,14 @@ func (s *CampaignStore) UpdateSession(ctx context.Context, campaignID, sessionID
 	var updatedSession *model.Session
 	for i := range campaign.Sessions {
 		if campaign.Sessions[i].ID == sessionID {
-			if v, ok := fields["name"].(string); ok {
-				campaign.Sessions[i].Name = v
+			if fields.Name != nil {
+				campaign.Sessions[i].Name = *fields.Name
 			}
-			if v, ok := fields["description"].(string); ok {
-				campaign.Sessions[i].Description = v
+			if fields.Description != nil {
+				campaign.Sessions[i].Description = *fields.Description
+			}
+			if fields.Schedule != nil {
+				campaign.Sessions[i].Schedule = fields.Schedule
 			}
 			campaign.Sessions[i].UpdatedAt = now
 			sess := campaign.Sessions[i]

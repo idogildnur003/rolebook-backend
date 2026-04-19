@@ -10,12 +10,38 @@ type MapPin struct {
 	Label string  `bson:"label" json:"label"`
 }
 
+// SessionAvailabilityByPart holds per-day-part availability flags for a
+// single participant on a single date.
+type SessionAvailabilityByPart struct {
+	Morning *bool `bson:"morning,omitempty" json:"morning,omitempty"`
+	Noon    *bool `bson:"noon,omitempty"    json:"noon,omitempty"`
+	Evening *bool `bson:"evening,omitempty" json:"evening,omitempty"`
+}
+
+// SessionParticipantAvailability stores one participant's availability
+// keyed by date string (e.g. "2026-04-15").
+type SessionParticipantAvailability struct {
+	UserID             string                               `bson:"userId"             json:"userId"`
+	AvailabilityByDate map[string]SessionAvailabilityByPart `bson:"availabilityByDate" json:"availabilityByDate"`
+	UpdatedAt          int64                                `bson:"updatedAt"          json:"updatedAt"`
+}
+
+// SessionSchedule holds the scheduling data for a session.
+// Timestamps (CreatedAt, UpdatedAt) are Unix milliseconds to match the
+// frontend convention.
+type SessionSchedule struct {
+	CreatedAt                 int64                            `bson:"createdAt"                 json:"createdAt"`
+	UpdatedAt                 int64                            `bson:"updatedAt"                 json:"updatedAt"`
+	ParticipantAvailabilities []SessionParticipantAvailability `bson:"participantAvailabilities" json:"participantAvailabilities"`
+}
+
 // Session is a play session embedded inside a Campaign document.
 type Session struct {
-	ID          string    `bson:"id"          json:"id"`
-	Name        string    `bson:"name"        json:"name"`
-	Description string    `bson:"description" json:"description"`
-	UpdatedAt   time.Time `bson:"updatedAt"   json:"updatedAt"`
+	ID          string           `bson:"id"          json:"id"`
+	Name        string           `bson:"name"        json:"name"`
+	Description string           `bson:"description" json:"description"`
+	Schedule    *SessionSchedule `bson:"schedule,omitempty" json:"schedule,omitempty"`
+	UpdatedAt   time.Time        `bson:"updatedAt"   json:"updatedAt"`
 }
 
 // CampaignPlayer represents a player in a campaign.

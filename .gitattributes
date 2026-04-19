@@ -1,0 +1,13 @@
+# Normalize all text files to LF on commit.
+# This prevents CRLF/LF noise in diffs when contributors use different OSes.
+* text=auto eol=lf
+
+# Binary files — never touch line endings.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.exe  binary
+*.zip  binary
+*.json -text
