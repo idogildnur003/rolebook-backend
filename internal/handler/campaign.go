@@ -25,18 +25,79 @@ func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerSto
 }
 
 // campaignListItem is the slim shape returned by List.
+// myRole and myPlayerId reflect the caller. members is included only for DM callers.
 type campaignListItem struct {
-	ID         string                `json:"id"`
-	Role       string                `json:"role"`
-	Name       string                `json:"name"`
-	ThemeImage string                `json:"themeImage"`
-	Sessions   []campaignListSession `json:"sessions"`
-	Players    []model.CampaignPlayer `json:"players,omitempty"`
+	ID         string                  `json:"id"`
+	MyRole     model.Role              `json:"myRole"`
+	MyPlayerID string                  `json:"myPlayerId"`
+	Name       string                  `json:"name"`
+	ThemeImage string                  `json:"themeImage"`
+	Sessions   []campaignListSession   `json:"sessions"`
+	Members    []campaignMemberSummary `json:"members,omitempty"`
 }
 
 type campaignListSession struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+// campaignMemberSummary is the userId-free per-member shape on the wire.
+type campaignMemberSummary struct {
+	PlayerID string     `json:"playerId"`
+	Role     model.Role `json:"role"`
+	IsActive bool       `json:"isActive"`
+}
+
+// campaignDetail is the full per-campaign shape returned by Get/Create/Update.
+// Mirrors the Campaign model (sans userId leaks) and adds the caller-specific
+// myRole + myPlayerId fields.
+type campaignDetail struct {
+	ID                string                  `json:"id"`
+	MyRole            model.Role              `json:"myRole"`
+	MyPlayerID        string                  `json:"myPlayerId"`
+	Name              string                  `json:"name"`
+	ThemeImage        string                  `json:"themeImage"`
+	MapImageURI       *string                 `json:"mapImageUri"`
+	MapPins           []model.MapPin          `json:"mapPins"`
+	Sessions          []model.Session         `json:"sessions"`
+	Members           []campaignMemberSummary `json:"members"`
+	DisabledSpells    []string                `json:"disabledSpells"`
+	DisabledEquipment []string                `json:"disabledEquipment"`
+	UpdatedAt         time.Time               `json:"updatedAt"`
+}
+
+func toMemberSummaries(members []model.CampaignMember) []campaignMemberSummary {
+	out := make([]campaignMemberSummary, len(members))
+	for i, m := range members {
+		out[i] = campaignMemberSummary{PlayerID: m.PlayerID, Role: m.Role, IsActive: m.IsActive}
+	}
+	return out
+}
+
+func toCampaignDetail(c *model.Campaign, callerUserID string) campaignDetail {
+	myRole := model.Role("")
+	myPlayerID := ""
+	for _, m := range c.Members {
+		if m.UserID == callerUserID {
+			myRole = m.Role
+			myPlayerID = m.PlayerID
+			break
+		}
+	}
+	return campaignDetail{
+		ID:                c.ID,
+		MyRole:            myRole,
+		MyPlayerID:        myPlayerID,
+		Name:              c.Name,
+		ThemeImage:        c.ThemeImage,
+		MapImageURI:       c.MapImageURI,
+		MapPins:           c.MapPins,
+		Sessions:          c.Sessions,
+		Members:           toMemberSummaries(c.Members),
+		DisabledSpells:    c.DisabledSpells,
+		DisabledEquipment: c.DisabledEquipment,
+		UpdatedAt:         c.UpdatedAt,
+	}
 }
 
 // List handles GET /api/campaigns.
@@ -52,9 +113,14 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]campaignListItem, len(campaigns))
 	for i, c := range campaigns {
-		role := model.RolePlayer
-		if c.DM == userID {
-			role = model.RoleDM
+		myRole := model.Role("")
+		myPlayerID := ""
+		for _, m := range c.Members {
+			if m.UserID == userID {
+				myRole = m.Role
+				myPlayerID = m.PlayerID
+				break
+			}
 		}
 		sessions := make([]campaignListSession, len(c.Sessions))
 		for j, s := range c.Sessions {
@@ -62,13 +128,14 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		item := campaignListItem{
 			ID:         c.ID,
-			Role:       string(role),
+			MyRole:     myRole,
+			MyPlayerID: myPlayerID,
 			Name:       c.Name,
 			ThemeImage: c.ThemeImage,
 			Sessions:   sessions,
 		}
-		if role == model.RoleDM {
-			item.Players = c.Players
+		if myRole == model.RoleDM {
+			item.Members = toMemberSummaries(c.Members)
 		}
 		items[i] = item
 	}
@@ -78,33 +145,11 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 // Get handles GET /api/campaigns/:id.
 func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	campaign, err := h.campaigns.GetByID(r.Context(), id)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, id)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
-	userID := middleware.UserIDFromContext(r.Context())
-	hasAccess := campaign.DM == userID
-	if !hasAccess {
-		for _, p := range campaign.Players {
-			if p.UserID == userID && p.IsActive {
-				hasAccess = true
-				break
-			}
-		}
-	}
-
-	if !hasAccess {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, campaign)
+	writeJSON(w, http.StatusOK, toCampaignDetail(membership.Campaign, membership.UserID))
 }
 
 // Create handles POST /api/campaigns (DM only — enforced by middleware).
