@@ -160,7 +160,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Seed the player name from their email so the DM never sees a blank/ghost entry.
 	// The player can rename their character at any time from their own profile screen.
 	initialName := displayNameFromEmail(linkedUser.Email)
-	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, initialName, 1)
+	player := model.DefaultPlayer(uuid.NewString(), req.CampaignID, linkedUser.ID, initialName, 1, model.PlayerKindPC)
 
 	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
