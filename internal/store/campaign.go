@@ -37,10 +37,7 @@ func (s *CampaignStore) ListByIDs(ctx context.Context, ids []string) ([]model.Ca
 
 // ListByUser returns campaigns where the user is the DM or a player.
 func (s *CampaignStore) ListByUser(ctx context.Context, userID string) ([]model.Campaign, error) {
-	return s.find(ctx, bson.M{"$or": bson.A{
-		bson.M{"dm": userID},
-		bson.M{"players.userId": userID},
-	}})
+	return s.find(ctx, bson.M{"members.userId": userID})
 }
 
 // GetByID returns a single campaign, or nil if not found.
@@ -179,28 +176,34 @@ func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID
 	return res.ModifiedCount > 0, nil
 }
 
-// AddPlayer appends a CampaignPlayer to the campaign's embedded players array.
-func (s *CampaignStore) AddPlayer(ctx context.Context, campaignID string, player model.CampaignPlayer) error {
+// AddMember appends a CampaignMember to the campaign's embedded members array.
+func (s *CampaignStore) AddMember(ctx context.Context, campaignID string, member model.CampaignMember) error {
 	_, err := s.col.UpdateOne(
 		ctx,
 		bson.M{"_id": campaignID},
 		bson.M{
-			"$push": bson.M{"players": player},
+			"$push": bson.M{"members": member},
 			"$set":  bson.M{"updatedAt": time.Now().UTC()},
 		},
 	)
 	return err
 }
 
-// SetPlayerActive updates the isActive flag on a specific player entry within the campaign's
-// embedded players array.  Returns (true, nil) if the document was found and modified.
+// SetPlayerActive flips isActive on a player member entry. Returns (true, nil) on match.
+// Returns (false, nil) if the member does not exist OR is the DM (DM cannot be archived).
 func (s *CampaignStore) SetPlayerActive(ctx context.Context, campaignID, playerID string, active bool) (bool, error) {
 	res, err := s.col.UpdateOne(
 		ctx,
-		bson.M{"_id": campaignID, "players.playerId": playerID},
+		bson.M{
+			"_id": campaignID,
+			"members": bson.M{"$elemMatch": bson.M{
+				"playerId": playerID,
+				"role":     model.RolePlayer,
+			}},
+		},
 		bson.M{
 			"$set": bson.M{
-				"players.$.isActive": active,
+				"members.$.isActive": active,
 				"updatedAt":          time.Now().UTC(),
 			},
 		},
