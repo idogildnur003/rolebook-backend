@@ -214,19 +214,11 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 // Update handles PATCH /api/campaigns/:id (DM only — enforced by middleware).
 func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-
-	campaign, err := h.campaigns.GetByID(r.Context(), id)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, id)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
-	userID := middleware.UserIDFromContext(r.Context())
-	if campaign.DM != userID {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -236,7 +228,6 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	// Only allow mutable fields
 	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true, "disabledSpells": true, "disabledEquipment": true}
 	fields := bson.M{}
 	for k, v := range req {
@@ -257,7 +248,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
-	writeJSON(w, http.StatusOK, updated)
+	writeJSON(w, http.StatusOK, toCampaignDetail(updated, membership.UserID))
 }
 
 // SetPlayerActive handles PATCH /api/campaigns/:id/players/:playerId (DM only).
@@ -268,18 +259,11 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 	playerID := chi.URLParam(r, "playerId")
 	ctx := r.Context()
 
-	campaign, err := h.campaigns.GetByID(ctx, campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
-	userID := middleware.UserIDFromContext(ctx)
-	if campaign.DM != userID {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -292,17 +276,39 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	found, err := h.campaigns.SetPlayerActive(ctx, campaignID, playerID, req.IsActive)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
+	// Pre-check: distinguish "member doesn't exist" from "member is the DM".
+	// resolveCampaignMembership already loaded the campaign, but we re-scan
+	// from membership.Campaign to avoid a second fetch.
+	var targetRole model.Role
+	found := false
+	for _, m := range membership.Campaign.Members {
+		if m.PlayerID == playerID {
+			targetRole = m.Role
+			found = true
+			break
+		}
 	}
 	if !found {
 		writeError(w, http.StatusNotFound, "player not found in campaign", "NOT_FOUND")
 		return
 	}
+	if targetRole == model.RoleDM {
+		writeError(w, http.StatusBadRequest, "the DM cannot be archived", "BAD_REQUEST")
+		return
+	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{
+	ok, err := h.campaigns.SetPlayerActive(ctx, campaignID, playerID, req.IsActive)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if !ok {
+		// Race: member existed at pre-check but no longer does. Treat as 404.
+		writeError(w, http.StatusNotFound, "player not found in campaign", "NOT_FOUND")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
 		"playerId": playerID,
 		"isActive": req.IsActive,
 	})
@@ -314,35 +320,24 @@ func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	ctx := r.Context()
 
-	campaign, err := h.campaigns.GetByID(ctx, id)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, id)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-
-	userID := middleware.UserIDFromContext(ctx)
-	if campaign.DM != userID {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
 
-	// Get all player IDs in this campaign for cascade
 	playerIDs, err := h.players.IDsForCampaign(ctx, id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-
-	// Cascade via PlayerStore (deletes players + their inventory + spells)
 	if err := h.players.DeleteByIDs(ctx, playerIDs); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-
 	found, err := h.campaigns.Delete(ctx, id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
