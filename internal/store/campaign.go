@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -212,6 +213,65 @@ func (s *CampaignStore) SetPlayerActive(ctx context.Context, campaignID, playerI
 		return false, err
 	}
 	return res.MatchedCount > 0, nil
+}
+
+// CreateWithDMMember inserts a new Campaign together with the DM's stub Player,
+// and seeds the campaign's members[] with a single DM entry pointing at that
+// player. The two writes are wrapped in a Mongo transaction; on any error,
+// nothing is persisted.
+//
+// The supplied Campaign must have its Members slice already containing exactly
+// one entry: {UserID: dmUserID, PlayerID: dmPlayer.ID, Role: RoleDM, IsActive: true}.
+//
+// Falls back to a non-transactional sequence (insert player, then insert campaign)
+// when the deployment does not support transactions (standalone Mongo). On a
+// retry of an interrupted run, the migration tool's idempotency check covers
+// the orphan case; for live Create traffic, the fallback also rolls back the
+// player insert on a campaign-insert failure.
+func (s *CampaignStore) CreateWithDMMember(ctx context.Context, client *mongo.Client, campaign *model.Campaign, dmPlayer *model.Player, players *PlayerStore) error {
+	sess, err := client.StartSession()
+	if err == nil {
+		defer sess.EndSession(ctx)
+		_, txErr := sess.WithTransaction(ctx, func(sc context.Context) (interface{}, error) {
+			if _, err := players.col.InsertOne(sc, dmPlayer); err != nil {
+				return nil, err
+			}
+			if _, err := s.col.InsertOne(sc, campaign); err != nil {
+				return nil, err
+			}
+			return nil, nil
+		})
+		if txErr == nil {
+			return nil
+		}
+		// Fall through to compensating sequence on transaction-not-supported
+		// errors; rethrow other errors.
+		if !isTxnUnsupported(txErr) {
+			return txErr
+		}
+	}
+
+	// Standalone Mongo path: insert player, then campaign; on failure, delete the orphan.
+	if _, err := players.col.InsertOne(ctx, dmPlayer); err != nil {
+		return err
+	}
+	if _, err := s.col.InsertOne(ctx, campaign); err != nil {
+		_, _ = players.col.DeleteOne(ctx, bson.M{"_id": dmPlayer.ID})
+		return err
+	}
+	return nil
+}
+
+// isTxnUnsupported reports whether err signals that the deployment does not
+// support transactions (e.g. standalone Mongo).
+func isTxnUnsupported(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	// Mongo returns "Transaction numbers are only allowed on a replica set member or mongos"
+	// (and similar) on standalone deployments.
+	return strings.Contains(msg, "replica set") || strings.Contains(msg, "Transaction numbers")
 }
 
 func (s *CampaignStore) find(ctx context.Context, filter bson.M) ([]model.Campaign, error) {

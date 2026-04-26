@@ -16,12 +16,14 @@ import (
 // CampaignHandler handles all campaign CRUD endpoints.
 type CampaignHandler struct {
 	campaigns *store.CampaignStore
-	players   *store.PlayerStore // needed for player-role campaign visibility
+	players   *store.PlayerStore
+	users     *store.UserStore
+	db        *store.DB
 }
 
 // NewCampaignHandler creates a CampaignHandler.
-func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore) *CampaignHandler {
-	return &CampaignHandler{campaigns: campaigns, players: players}
+func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore, users *store.UserStore, db *store.DB) *CampaignHandler {
+	return &CampaignHandler{campaigns: campaigns, players: players, users: users, db: db}
 }
 
 // campaignListItem is the slim shape returned by List.
@@ -170,24 +172,43 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.UserIDFromContext(r.Context())
 
+	// Look up the creator's email so the DM stub Player has a sensible display name.
+	user, err := h.users.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "user not found", "UNAUTHORIZED")
+		return
+	}
+
+	dmName := displayNameFromEmail(user.Email)
+	dmPlayer := model.DefaultPlayer(uuid.NewString(), "", userID, dmName, 0, model.PlayerKindDM)
+
 	campaign := &model.Campaign{
 		ID:                uuid.NewString(),
-		DM:                userID,
 		Name:              req.Name,
 		ThemeImage:        req.ThemeImage,
 		MapImageURI:       req.MapImageURI,
 		MapPins:           []model.MapPin{},
 		Sessions:          []model.Session{},
-		Players:           []model.CampaignPlayer{},
+		Members:           []model.CampaignMember{},
 		DisabledSpells:    []string{},
 		DisabledEquipment: []string{},
 		UpdatedAt:         time.Now().UTC(),
 	}
-	if err := h.campaigns.Create(r.Context(), campaign); err != nil {
+	dmPlayer.CampaignID = campaign.ID
+	campaign.Members = []model.CampaignMember{
+		{UserID: userID, PlayerID: dmPlayer.ID, Role: model.RoleDM, IsActive: true},
+	}
+
+	if err := h.campaigns.CreateWithDMMember(r.Context(), h.db.Client(), campaign, dmPlayer, h.players); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	writeJSON(w, http.StatusCreated, campaign)
+
+	writeJSON(w, http.StatusCreated, toCampaignDetail(campaign, userID))
 }
 
 // Update handles PATCH /api/campaigns/:id (DM only — enforced by middleware).
