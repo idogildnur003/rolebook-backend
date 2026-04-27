@@ -61,23 +61,18 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 // ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
-	userID := middleware.UserIDFromContext(r.Context())
 
-	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-	if campaign.DM != userID {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
+	userID := membership.UserID
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true, model.PlayerKindPC)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -91,7 +86,7 @@ func (h *PlayerHandler) GetMyPlayer(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	userID := middleware.UserIDFromContext(r.Context())
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, false)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, false, "")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -118,8 +113,6 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 // Create handles POST /api/players (campaign DM only).
 // Only campaignId and userEmail are required. The player fills in their own details later.
 func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
-	userID := middleware.UserIDFromContext(r.Context())
-
 	var req struct {
 		CampaignID string `json:"campaignId"`
 		UserEmail  string `json:"userEmail"`
@@ -133,16 +126,11 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	campaign, err := h.campaigns.GetByID(r.Context(), req.CampaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, req.CampaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-	if campaign.DM != userID {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -167,8 +155,8 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cp := model.CampaignPlayer{UserID: linkedUser.ID, PlayerID: player.ID, IsActive: true}
-	if err := h.campaigns.AddPlayer(r.Context(), req.CampaignID, cp); err != nil {
+	cm := model.CampaignMember{UserID: linkedUser.ID, PlayerID: player.ID, Role: model.RolePlayer, IsActive: true}
+	if err := h.campaigns.AddMember(r.Context(), req.CampaignID, cm); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
