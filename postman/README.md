@@ -17,7 +17,7 @@ The collection and environment are stored as YAML files under `postman/` and are
 
 The API uses two kinds of authorization:
 
-- **Campaign DM**: The user who created the campaign is its DM. Write operations on campaigns, sessions, and players check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
+- **Campaign DM**: The user who created the campaign is its DM. DM identity is recorded as a `role: "dm"` entry in the campaign's `members[]`, alongside a backing Player record (`kind: "dm"`). Write operations on campaigns, sessions, and players check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
 - **Linked user**: A player's linked user can read and update their own character, spells, and inventory.
 
 ---

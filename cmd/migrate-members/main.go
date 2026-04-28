@@ -10,6 +10,7 @@
 package main
 
 import (
+	stderrors "errors"
 	"context"
 	"fmt"
 	"log"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/elad/rolebook-backend/config"
 	"github.com/elad/rolebook-backend/internal/handler"
@@ -73,15 +75,25 @@ func main() {
 		}
 
 		// 2) Look for an orphan DM Player in this campaign (interrupted run).
+		// Distinguish "no orphan exists" (proceed with a new ID) from a real
+		// driver/connection error (record and skip — silent fall-through would
+		// create a duplicate DM Player on a retry).
 		var orphanDMID string
 		var orphan struct {
 			ID string `bson:"_id"`
 		}
-		if err := players.FindOne(ctx, bson.M{
+		lookupErr := players.FindOne(ctx, bson.M{
 			"campaignId": legacy.ID,
 			"kind":       "dm",
-		}).Decode(&orphan); err == nil {
+		}).Decode(&orphan)
+		switch {
+		case lookupErr == nil:
 			orphanDMID = orphan.ID
+		case stderrors.Is(lookupErr, mongo.ErrNoDocuments):
+			// no orphan; proceed with a fresh ID
+		default:
+			errors = append(errors, fmt.Sprintf("%s: lookup orphan dm player: %v", legacy.ID, lookupErr))
+			continue
 		}
 
 		newPlayerID := uuid.NewString()

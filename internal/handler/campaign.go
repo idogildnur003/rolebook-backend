@@ -154,7 +154,8 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toCampaignDetail(membership.Campaign, membership.UserID))
 }
 
-// Create handles POST /api/campaigns (DM only — enforced by middleware).
+// Create handles POST /api/campaigns. Any authenticated user may create a
+// campaign and becomes its DM (a first-class member with a backing Player).
 func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Name        string  `json:"name"`
@@ -211,7 +212,8 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, toCampaignDetail(campaign, userID))
 }
 
-// Update handles PATCH /api/campaigns/:id (DM only — enforced by middleware).
+// Update handles PATCH /api/campaigns/:id. DM only — enforced in handler via
+// resolveCampaignMembership.
 func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	membership := resolveCampaignMembership(w, r, h.campaigns, id)
@@ -251,7 +253,9 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toCampaignDetail(updated, membership.UserID))
 }
 
-// SetPlayerActive handles PATCH /api/campaigns/:id/players/:playerId (DM only).
+// SetPlayerActive handles PATCH /api/campaigns/:id/players/:playerId. DM only —
+// enforced in handler via resolveCampaignMembership. The DM cannot be archived;
+// returns 400 BAD_REQUEST when targeting the DM's own member entry.
 // Body: { "isActive": bool }
 // Used to archive (isActive=false) or restore (isActive=true) a campaign player.
 func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request) {
@@ -314,7 +318,8 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// Delete handles DELETE /api/campaigns/:id (DM only — enforced by middleware).
+// Delete handles DELETE /api/campaigns/:id. DM only — enforced in handler via
+// resolveCampaignMembership.
 // Cascade: deletes all players in the campaign (spells and inventory are embedded).
 func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
