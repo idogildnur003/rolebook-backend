@@ -46,6 +46,12 @@ func displayNameFromEmail(email string) string {
 	return result
 }
 
+// DisplayNameFromEmailExported is the exported alias used by the migration tool
+// (cmd/migrate-members) to derive the same display name the API uses when
+// linking a user to a campaign. Keeping the implementation private avoids
+// accidental misuse from non-DM flows.
+func DisplayNameFromEmailExported(email string) string { return displayNameFromEmail(email) }
+
 // PlayerHandler handles all player CRUD endpoints.
 type PlayerHandler struct {
 	players   *store.PlayerStore
