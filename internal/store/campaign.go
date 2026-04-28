@@ -297,14 +297,23 @@ func (s *CampaignStore) CreateWithDMMember(ctx context.Context, client *mongo.Cl
 }
 
 // isTxnUnsupported reports whether err signals that the deployment does not
-// support transactions (e.g. standalone Mongo).
+// support transactions (e.g. standalone Mongo). Prefers the driver's structured
+// error code; falls back to substring matching if the error doesn't unwrap to
+// a CommandError (for forward-compat with future driver wrapping changes).
 func isTxnUnsupported(err error) bool {
 	if err == nil {
 		return false
 	}
+	// Mongo server returns IllegalOperation (code 20) on standalone deployments
+	// when a transaction is attempted. The mongo-driver/v2 wraps server errors
+	// in CommandError, which exposes the numeric code.
+	var cmdErr mongo.CommandError
+	if errors.As(err, &cmdErr) && cmdErr.Code == 20 {
+		return true
+	}
+	// Fallback: substring match against the historical wording.
+	// "Transaction numbers are only allowed on a replica set member or mongos."
 	msg := err.Error()
-	// Mongo returns "Transaction numbers are only allowed on a replica set member or mongos"
-	// (and similar) on standalone deployments.
 	return strings.Contains(msg, "replica set") || strings.Contains(msg, "Transaction numbers")
 }
 
