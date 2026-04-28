@@ -98,3 +98,39 @@ func TestPlanCampaign_NoPlayers(t *testing.T) {
 		t.Fatalf("members = %+v", r.NewMembers)
 	}
 }
+
+func TestPlanCampaign_HalfMigrated_LegacyDMFieldStillSet(t *testing.T) {
+	// Defensive: a campaign with both the new members[] AND a leftover legacy
+	// `dm` field (e.g. hand-constructed, or a future regression where unset failed)
+	// must NOT be treated as already-migrated. A second pass should re-run and
+	// drop the legacy field via the CLI's $unset.
+	c := LegacyCampaign{
+		ID: "c1",
+		DM: "u-dm",
+		Members: []model.CampaignMember{
+			{UserID: "u-dm", PlayerID: "p-dm", Role: model.RoleDM, IsActive: true},
+			{UserID: "u-1", PlayerID: "p-1", Role: model.RolePlayer, IsActive: true},
+		},
+	}
+	r := PlanCampaign(c, "Alice", "", "p-dm-new")
+	if r.Status == StatusAlreadyMigrated {
+		t.Fatalf("expected migration to re-run; got AlreadyMigrated")
+	}
+}
+
+func TestPlanCampaign_HalfMigrated_LegacyPlayersFieldStillSet(t *testing.T) {
+	// Symmetric to the above: leftover legacy players[] must also force a re-run.
+	c := LegacyCampaign{
+		ID: "c1",
+		Members: []model.CampaignMember{
+			{UserID: "u-dm", PlayerID: "p-dm", Role: model.RoleDM, IsActive: true},
+		},
+		Players: []legacyPlayerEntry{
+			{UserID: "u-1", PlayerID: "p-1", IsActive: true},
+		},
+	}
+	r := PlanCampaign(c, "Alice", "", "p-dm-new")
+	if r.Status == StatusAlreadyMigrated {
+		t.Fatalf("expected migration to re-run; got AlreadyMigrated")
+	}
+}
