@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -302,6 +303,12 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 	}
 
 	ok, err := h.campaigns.SetPlayerActive(ctx, campaignID, playerID, req.IsActive)
+	if errors.Is(err, store.ErrCannotArchiveDM) {
+		// Backstop for the pre-check above (or for any future caller that
+		// reaches the store without doing one). Same response shape.
+		writeError(w, http.StatusBadRequest, "the DM cannot be archived", "BAD_REQUEST")
+		return
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return

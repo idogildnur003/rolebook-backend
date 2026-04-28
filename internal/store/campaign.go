@@ -13,6 +13,12 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
+// ErrCannotArchiveDM is returned by SetPlayerActive when the target member is
+// the campaign DM. Handlers translate this into a 400 BAD_REQUEST. The DM is a
+// first-class campaign member but cannot be archived (unset isActive); only
+// role:"player" entries support it.
+var ErrCannotArchiveDM = errors.New("cannot archive the campaign DM")
+
 // CampaignStore handles persistence for campaigns and embedded sessions.
 type CampaignStore struct {
 	col *mongo.Collection
@@ -190,8 +196,17 @@ func (s *CampaignStore) AddMember(ctx context.Context, campaignID string, member
 	return err
 }
 
-// SetPlayerActive flips isActive on a player member entry. Returns (true, nil) on match.
-// Returns (false, nil) if the member does not exist OR is the DM (DM cannot be archived).
+// SetPlayerActive flips isActive on a player member entry.
+// Returns:
+//   - (true, nil) on a successful flip.
+//   - (false, ErrCannotArchiveDM) when the member exists but is the DM.
+//   - (false, nil) when no member with that playerId exists in the campaign.
+//   - (false, err) on a real Mongo error.
+//
+// The DM-archive guard is double-enforced: the $elemMatch role:"player" filter
+// prevents the write atomically, and a follow-up lookup distinguishes
+// "member-is-DM" from "no-such-member" so callers (and handlers) get a
+// non-ambiguous result.
 func (s *CampaignStore) SetPlayerActive(ctx context.Context, campaignID, playerID string, active bool) (bool, error) {
 	res, err := s.col.UpdateOne(
 		ctx,
@@ -212,7 +227,26 @@ func (s *CampaignStore) SetPlayerActive(ctx context.Context, campaignID, playerI
 	if err != nil {
 		return false, err
 	}
-	return res.MatchedCount > 0, nil
+	if res.MatchedCount > 0 {
+		return true, nil
+	}
+
+	// No match. The member may not exist, OR it may exist but be the DM.
+	// Resolve the ambiguity with a second query so the caller can react.
+	var c model.Campaign
+	err = s.col.FindOne(ctx, bson.M{"_id": campaignID, "members.playerId": playerID}).Decode(&c)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	for _, m := range c.Members {
+		if m.PlayerID == playerID && m.Role == model.RoleDM {
+			return false, ErrCannotArchiveDM
+		}
+	}
+	return false, nil
 }
 
 // CreateWithDMMember inserts a new Campaign together with the DM's stub Player,
