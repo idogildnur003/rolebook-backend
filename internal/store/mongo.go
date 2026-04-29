@@ -30,6 +30,9 @@ func (d *DB) Collection(name string) *mongo.Collection {
 	return d.db.Collection(name)
 }
 
+// Client returns the underlying mongo client (used for transactions).
+func (d *DB) Client() *mongo.Client { return d.client }
+
 // Rolebook returns the rolebook database handle.
 func (d *DB) Rolebook() *mongo.Database {
 	return d.client.Database("rolebook")

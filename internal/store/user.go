@@ -44,3 +44,16 @@ func (s *UserStore) FindByEmail(ctx context.Context, email string) (*model.User,
 	}
 	return &u, nil
 }
+
+// GetByID returns the user with the given ID, or nil if not found.
+func (s *UserStore) GetByID(ctx context.Context, id string) (*model.User, error) {
+	var u model.User
+	err := s.col.FindOne(ctx, bson.M{"_id": id}).Decode(&u)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}

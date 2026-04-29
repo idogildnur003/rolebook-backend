@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
-	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -26,16 +25,11 @@ func NewSessionHandler(campaigns *store.CampaignStore) *SessionHandler {
 func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 
-	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-	if campaign.DM != middleware.UserIDFromContext(r.Context()) {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -75,16 +69,11 @@ func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	sessionID := chi.URLParam(r, "sessionId")
 
-	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-	if campaign.DM != middleware.UserIDFromContext(r.Context()) {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
@@ -123,16 +112,11 @@ func (h *SessionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	sessionID := chi.URLParam(r, "sessionId")
 
-	campaign, err := h.campaigns.GetByID(r.Context(), campaignID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
-	if campaign == nil {
-		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
-		return
-	}
-	if campaign.DM != middleware.UserIDFromContext(r.Context()) {
+	if !membership.IsDM {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}

@@ -17,7 +17,7 @@ The collection and environment are stored as YAML files under `postman/` and are
 
 The API uses two kinds of authorization:
 
-- **Campaign DM**: The user who created the campaign is its DM. Write operations on campaigns, sessions, and players check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
+- **Campaign DM**: The user who created the campaign is its DM. DM identity is recorded as a `role: "dm"` entry in the campaign's `members[]`, alongside a backing Player record (`kind: "dm"`). Write operations on campaigns, sessions, and players check that the caller is the DM of the *specific* campaign. This is enforced in handlers, not middleware.
 - **Linked user**: A player's linked user can read and update their own character, spells, and inventory.
 
 ---
@@ -44,36 +44,64 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns` | Any | List campaigns (slim: id, role, name, themeImage, sessions, players¹) | 200 |
+| GET | `/campaigns` | Any | List campaigns (slim: id, myRole, myPlayerId, name, themeImage, sessions, members¹) | 200 |
 | GET | `/campaigns/{{campaignId}}` | DM or player | Get single campaign (full) | 200 |
 | POST | `/campaigns` | Any | Create campaign (caller becomes DM) → sets `campaignId` | 201 |
 | PATCH | `/campaigns/{{campaignId}}` | Campaign DM | Update campaign fields | 200 |
 | DELETE | `/campaigns/{{campaignId}}` | Campaign DM | Delete campaign + all sub-resources | 204 |
+| PATCH | `/campaigns/{{campaignId}}/players/{{playerId}}` | Campaign DM | Archive/restore a player member (`isActive`) | 200 / 400² |
 
 **GET `/campaigns` response:**
 ```json
 [
   {
     "id": "abc-123",
-    "role": "dm",
+    "myRole": "dm",
+    "myPlayerId": "player-dm-1",
     "name": "Lost Mine of Phandelver",
     "themeImage": "forest",
     "sessions": [
       { "id": "sess-1", "name": "Session 1 — The Cave" }
     ],
-    "players": [
-      { "playerId": "player-1", "isActive": true }
+    "members": [
+      { "playerId": "player-dm-1", "role": "dm", "isActive": true },
+      { "playerId": "player-1",    "role": "player", "isActive": true }
     ]
   }
 ]
 ```
 
-¹ `players` is only included when `role` is `"dm"`. Omitted for player-role campaigns.
+¹ `members` is only included when `myRole` is `"dm"`. Omitted for player-role campaigns. Member entries never include `userId` — identity on the wire is by `playerId`.
+
+**GET `/campaigns/{{campaignId}}` response (full detail):**
+```json
+{
+  "id": "abc-123",
+  "myRole": "dm",
+  "myPlayerId": "player-dm-1",
+  "name": "Lost Mine of Phandelver",
+  "themeImage": "forest",
+  "mapImageUri": null,
+  "mapPins": [],
+  "sessions": [{ "id": "sess-1", "name": "Session 1 — The Cave", "description": "" }],
+  "members": [
+    { "playerId": "player-dm-1", "role": "dm", "isActive": true },
+    { "playerId": "player-1",    "role": "player", "isActive": true }
+  ],
+  "disabledSpells": [],
+  "disabledEquipment": [],
+  "updatedAt": "2026-04-28T10:00:00Z"
+}
+```
+
+`members` is included for both DM and player callers on the detail view (visible to all members; still no userIds).
 
 **POST body:**
 ```json
 { "name": "Lost Mine of Phandelver", "themeImage": "forest" }
 ```
+
+The created campaign returns `myRole: "dm"` and a `myPlayerId` for a freshly-minted DM stub Player (`kind: "dm"`). The DM is a first-class member with a real Player record — created atomically alongside the campaign — so the campaign always has at least one member.
 
 **PATCH body (all mutable fields):**
 ```json
@@ -84,6 +112,13 @@ Requires Bearer `{{token}}`. The user who creates a campaign becomes its DM.
   "disabledEquipment": ["equip-id-1"]
 }
 ```
+
+**PATCH `/campaigns/{{campaignId}}/players/{{playerId}}` body (archive/restore):**
+```json
+{ "isActive": false }
+```
+
+² Returns `400 BAD_REQUEST` with message `"the DM cannot be archived"` if the target member is the campaign DM. The DM is a first-class member but cannot be archived — only `role: "player"` members can be flipped active/inactive.
 
 ---
 
@@ -110,10 +145,10 @@ Requires Bearer `{{token}}`.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| GET | `/campaigns/{{campaignId}}/player` | Any campaign member | Get caller's own player in campaign → sets `playerId` | 200 |
-| GET | `/campaigns/{{campaignId}}/players` | Campaign DM | List all players in campaign | 200 |
+| GET | `/campaigns/{{campaignId}}/player` | Any campaign member | Get caller's own player in campaign (any kind, including the DM's stub) → sets `playerId` | 200 |
+| GET | `/campaigns/{{campaignId}}/players` | Campaign DM | List all PC players in campaign (`kind:"pc"` only — excludes the DM's stub Player and any future NPC/enemy/boss records) | 200 |
 | GET | `/players/{{playerId}}` | Campaign DM or linked user | Get single player | 200 |
-| POST | `/players` | Campaign DM | Create player → sets `playerId` | 201 |
+| POST | `/players` | Campaign DM | Create a new PC player (`kind:"pc"`) → sets `playerId` | 201 |
 | PATCH | `/players/{{playerId}}` | Campaign DM or linked user | Update player fields | 200 |
 | DELETE | `/players/{{playerId}}` | Campaign DM | Delete player (spells/inventory embedded, deleted with player) | 204 |
 
@@ -121,6 +156,8 @@ Requires Bearer `{{token}}`.
 ```json
 { "campaignId": "{{campaignId}}", "userEmail": "player@example.com" }
 ```
+
+The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is created together with the campaign in `POST /campaigns` and is **not** part of this endpoint — there is no `POST /players` path for creating a DM record. `POST /players` also appends the new member to the campaign's `members[]` with `role: "player"` and `isActive: true`.
 
 **PATCH body (all editable fields):**
 ```json
