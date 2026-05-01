@@ -34,3 +34,6 @@ temp/
 
 # Claude
 .claude/settgings.local.json
+
+# Binaries
+*.exe
