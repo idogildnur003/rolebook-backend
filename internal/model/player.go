@@ -24,11 +24,23 @@ type PlayerInventoryItem struct {
 	Quantity    int    `bson:"quantity"    json:"quantity"`
 }
 
+// PlayerKind classifies a Player record.
+// "pc" — a real player character.
+// "dm" — a DM stub Player (one per campaign), the anchor for per-member features.
+// Future: "npc" | "enemy" | "boss" — game entities, intentionally not members.
+type PlayerKind string
+
+const (
+	PlayerKindPC PlayerKind = "pc"
+	PlayerKindDM PlayerKind = "dm"
+)
+
 // Player represents a D&D character sheet stored in the "players" collection.
 type Player struct {
 	ID           string `bson:"_id"          json:"id"`
 	CampaignID   string `bson:"campaignId"   json:"campaignId"`
 	LinkedUserID string `bson:"linkedUserId" json:"-"` // internal access-control field; not exposed in API responses
+	Kind         string `bson:"kind"         json:"kind"`
 
 	Name             string  `bson:"name"             json:"name"`
 	ClassName        *string `bson:"className"        json:"className"`
@@ -83,8 +95,8 @@ type Player struct {
 
 // DefaultPlayer returns a new Player with sensible D&D 5e defaults.
 // All maps and slices are initialized (never nil) to ensure clean JSON serialisation.
-func DefaultPlayer(id, campaignID, linkedUserID, name string, level int) *Player {
-	return &Player{
+func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind PlayerKind) *Player {
+	p := &Player{
 		ID:           id,
 		CampaignID:   campaignID,
 		LinkedUserID: linkedUserID,
@@ -117,4 +129,6 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int) *Player
 		Inventory: []PlayerInventoryItem{},
 		UpdatedAt:  time.Now().UTC(),
 	}
+	p.Kind = string(kind)
+	return p
 }

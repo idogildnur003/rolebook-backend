@@ -55,10 +55,14 @@ func (s *PlayerStore) Get(ctx context.Context, id, userID string, isDM bool) (*m
 
 // ListForCampaign returns players in a campaign.
 // DM: all players. Non-DM: only the player whose linkedUserId matches.
-func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool) ([]model.Player, error) {
+// If kind is non-empty, restricts to players with that kind (e.g. PlayerKindPC).
+func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool, kind model.PlayerKind) ([]model.Player, error) {
 	filter := bson.M{"campaignId": campaignID}
 	if !isDM {
 		filter["linkedUserId"] = userID
+	}
+	if kind != "" {
+		filter["kind"] = kind
 	}
 	cursor, err := s.col.Find(ctx, filter)
 	if err != nil {

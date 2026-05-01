@@ -6,7 +6,7 @@ scripts:
     code: |-
       pm.test("Status 200", () => pm.response.to.have.status(200));
       const json = pm.response.json();
-      const dm = json.find(c => c.role === "dm");
+      const dm = json.find(c => c.myRole === "dm");
       if (dm) pm.environment.set("campaignId", dm.id);
     language: text/javascript
 order: 1000

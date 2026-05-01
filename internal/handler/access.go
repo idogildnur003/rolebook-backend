@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/elad/rolebook-backend/internal/middleware"
@@ -23,7 +22,6 @@ func resolvePlayerAccess(w http.ResponseWriter, r *http.Request, players *store.
 	ctx := r.Context()
 	userID := middleware.UserIDFromContext(ctx)
 
-	// Fetch the player without ownership filter so we can check campaign DM.
 	player, err := players.Get(ctx, playerID, "", true)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -34,13 +32,18 @@ func resolvePlayerAccess(w http.ResponseWriter, r *http.Request, players *store.
 		return nil
 	}
 
-	isDM, ok := isCampaignDM(ctx, campaigns, player.CampaignID, userID)
-	if !ok {
+	campaign, err := campaigns.GetByID(ctx, player.CampaignID)
+	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return nil
 	}
+	isDM := false
+	if campaign != nil {
+		if m := findMember(campaign, userID); m != nil && m.Role == model.RoleDM {
+			isDM = true
+		}
+	}
 
-	// Allow if the user is the campaign DM or the player's linked user.
 	if !isDM && player.LinkedUserID != userID {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return nil
@@ -49,31 +52,20 @@ func resolvePlayerAccess(w http.ResponseWriter, r *http.Request, players *store.
 	return &playerAccess{Player: player, IsDM: isDM}
 }
 
-// isCampaignDM checks whether userID is the DM of the given campaign.
-// Returns (isDM, ok). ok is false if there was a DB error.
-func isCampaignDM(ctx context.Context, campaigns *store.CampaignStore, campaignID, userID string) (bool, bool) {
-	campaign, err := campaigns.GetByID(ctx, campaignID)
-	if err != nil {
-		return false, false
-	}
-	if campaign == nil {
-		return false, true
-	}
-	return campaign.DM == userID, true
-}
-
 // campaignMembership holds the resolved campaign and the caller's role within it.
 type campaignMembership struct {
 	Campaign *model.Campaign
 	IsDM     bool
-	IsMember bool // true if caller is DM or an active player of the campaign
+	IsMember bool
 	UserID   string
+	PlayerID string // caller's playerId in this campaign (empty when not a member)
 }
 
-// resolveCampaignMembership fetches the campaign and determines whether the
-// requesting user is the DM or an active player. Writes an HTTP error and
-// returns nil when the campaign does not exist, on DB error, or when the
-// caller is not a member.
+// resolveCampaignMembership loads a campaign and resolves the caller's membership.
+// Writes an HTTP error and returns nil on DB error, missing campaign, or non-member.
+// IsMember is true when the caller has any entry in members[] (DM included);
+// archived (isActive=false) players are still considered members for read access.
+// Per-feature gating on isActive must be applied by the handler if needed.
 func resolveCampaignMembership(w http.ResponseWriter, r *http.Request, campaigns *store.CampaignStore, campaignID string) *campaignMembership {
 	ctx := r.Context()
 	userID := middleware.UserIDFromContext(ctx)
@@ -88,25 +80,28 @@ func resolveCampaignMembership(w http.ResponseWriter, r *http.Request, campaigns
 		return nil
 	}
 
-	isDM := campaign.DM == userID
-	isMember := isDM
-	if !isMember {
-		for _, p := range campaign.Players {
-			if p.UserID == userID && p.IsActive {
-				isMember = true
-				break
-			}
-		}
-	}
-	if !isMember {
+	m := findMember(campaign, userID)
+	if m == nil {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return nil
 	}
 
 	return &campaignMembership{
 		Campaign: campaign,
-		IsDM:     isDM,
-		IsMember: isMember,
+		IsDM:     m.Role == model.RoleDM,
+		IsMember: true,
 		UserID:   userID,
+		PlayerID: m.PlayerID,
 	}
+}
+
+// findMember returns the member entry for userID, or nil if none.
+// Pure function over a Campaign value; safe to test without Mongo.
+func findMember(c *model.Campaign, userID string) *model.CampaignMember {
+	for i := range c.Members {
+		if c.Members[i].UserID == userID {
+			return &c.Members[i]
+		}
+	}
+	return nil
 }

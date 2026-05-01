@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/players/{{playerId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    { "isActive": false }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200 (player) or 400 (DM)", () =>
+        pm.expect(pm.response.code).to.be.oneOf([200, 400]));
+      if (pm.response.code === 400) {
+        const json = pm.response.json();
+        pm.test("DM-archive guard returns BAD_REQUEST", () =>
+          pm.expect(json.code).to.eql("BAD_REQUEST"));
+      }
+    language: text/javascript
+order: 5000
