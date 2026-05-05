@@ -139,6 +139,45 @@ Requires Bearer `{{token}}`. All operations require campaign DM.
 
 ---
 
+## Uploads
+
+Requires Bearer `{{token}}`. Issues short-lived presigned URLs for direct-to-S3 uploads.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| POST | `/uploads/url` | Player's linked user | Get a presigned PUT URL for a player avatar → sets `avatarUploadUrl`, `avatarKey` | 200 / 503¹ |
+
+**Body (only `kind: "player-avatar"` is supported in this iteration):**
+```json
+{
+  "kind": "player-avatar",
+  "playerId": "{{playerId}}",
+  "contentType": "image/png"
+}
+```
+
+`contentType` must be `image/jpeg`, `image/png`, or `image/webp`.
+
+**Response:**
+```json
+{
+  "uploadUrl": "https://<bucket>.s3.<region>.amazonaws.com/players/<id>/avatar/<uuid>.png?X-Amz-…",
+  "key": "players/<id>/avatar/<uuid>.png",
+  "expiresAt": "2026-05-04T12:34:56Z"
+}
+```
+
+**Client flow:**
+1. POST `/uploads/url` → receive `uploadUrl` + `key`.
+2. PUT the file bytes directly to `uploadUrl` with the same `Content-Type` you requested. **Do not** attach the API Bearer token to this request — S3 rejects unrecognized headers it didn't sign.
+3. PATCH `/players/{{playerId}}` with `{ "avatarUri": "<key>" }`.
+
+The S3 bucket is private; subsequent reads of the player are served via short-lived presigned GET URLs (see Players → `avatarUri` semantics).
+
+¹ Returns `503` with `{ "error": "...", "code": "UPLOAD_NOT_CONFIGURED" }` when the server is running without the four AWS env vars (`AWS_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) — typical for local dev.
+
+---
+
 ## Players
 
 Requires Bearer `{{token}}`.
@@ -159,6 +198,8 @@ Requires Bearer `{{token}}`.
 
 The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is created together with the campaign in `POST /campaigns` and is **not** part of this endpoint — there is no `POST /players` path for creating a DM record. `POST /players` also appends the new member to the campaign's `members[]` with `role: "player"` and `isActive: true`.
 
+**`avatarUri` semantics:** on PATCH, send an S3 object key (no scheme), e.g. `"players/{{playerId}}/avatar/abc.png"`, obtained from `POST /uploads/url` after uploading the file directly to S3 (see **Uploads** below). On read responses, the server rewrites the stored key into a short-lived presigned `https://…` GET URL (TTL 1 minute). Legacy values that already look like URLs are returned unchanged. When AWS is unconfigured (local dev), the field passes through both ways without rewriting.
+
 **PATCH body (all editable fields):**
 ```json
 {
@@ -167,7 +208,7 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
   "level": 5,
   "race": "Wood Elf",
   "notes": "Prefers ranged combat",
-  "avatarUri": "https://example.com/avatar.png",
+  "avatarUri": "players/{{playerId}}/avatar/abc.png",
   "backgroundStory": "Raised in the Emerald Forest by druids.",
   "alignment": "Neutral Good",
   "speciesOrRegion": "Sylvan",

@@ -34,3 +34,14 @@ temp/
 
 # Claude
 .claude/settgings.local.json
+
+# Worktrees
+.worktrees/
+
+# Compiled binaries left by `go build` at the repo root
+/server
+
+# Postman client occasionally generates a duplicate workspace inside the
+# checked-in one. Don't track the duplicates.
+postman/postman/.postman/
+postman/postman/postman/
