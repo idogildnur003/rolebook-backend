@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/uploads/url"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "kind": "player-avatar",
+      "playerId": "{{playerId}}",
+      "contentType": "image/png"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+      const json = pm.response.json();
+      pm.environment.set("avatarUploadUrl", json.uploadUrl);
+      pm.environment.set("avatarKey", json.key);
+    language: text/javascript
+order: 1000

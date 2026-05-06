@@ -36,3 +36,9 @@ values:
   - key: customSpellId
     value: ''
     enabled: true
+  - key: avatarUploadUrl
+    value: ''
+    enabled: true
+  - key: avatarKey
+    value: ''
+    enabled: true

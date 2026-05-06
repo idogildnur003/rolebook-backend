@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"unicode"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -57,11 +59,31 @@ type PlayerHandler struct {
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
 	users     *store.UserStore
+	avatars   *avatarstore.Store
 }
 
 // NewPlayerHandler creates a PlayerHandler.
-func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore, users *store.UserStore) *PlayerHandler {
-	return &PlayerHandler{players: players, campaigns: campaigns, users: users}
+func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore, users *store.UserStore, avatars *avatarstore.Store) *PlayerHandler {
+	return &PlayerHandler{players: players, campaigns: campaigns, users: users, avatars: avatars}
+}
+
+// resolveAvatarURI rewrites a stored avatarUri (typically an S3 key) into a
+// short-lived presigned GET URL suitable for the wire. Pass-through when the
+// store is unconfigured or the value already looks like a URL.
+func (h *PlayerHandler) resolveAvatarURI(ctx context.Context, p *model.Player) {
+	if p == nil || p.AvatarURI == "" {
+		return
+	}
+	p.AvatarURI = h.avatars.ResolveAvatarURI(ctx, p.AvatarURI)
+}
+
+func (h *PlayerHandler) resolveAvatarURIs(ctx context.Context, ps []model.Player) {
+	for i := range ps {
+		if ps[i].AvatarURI == "" {
+			continue
+		}
+		ps[i].AvatarURI = h.avatars.ResolveAvatarURI(ctx, ps[i].AvatarURI)
+	}
 }
 
 // ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
@@ -83,6 +105,7 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	h.resolveAvatarURIs(r.Context(), players)
 	writeJSON(w, http.StatusOK, players)
 }
 
@@ -101,6 +124,7 @@ func (h *PlayerHandler) GetMyPlayer(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
 	}
+	h.resolveAvatarURI(r.Context(), &players[0])
 	writeJSON(w, http.StatusOK, players[0])
 }
 
@@ -113,6 +137,7 @@ func (h *PlayerHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if access == nil {
 		return
 	}
+	h.resolveAvatarURI(r.Context(), access.Player)
 	writeJSON(w, http.StatusOK, access.Player)
 }
 
@@ -222,6 +247,7 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
 	}
+	h.resolveAvatarURI(r.Context(), updated)
 	writeJSON(w, http.StatusOK, updated)
 }
 

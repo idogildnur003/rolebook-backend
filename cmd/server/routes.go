@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/handler"
 	"github.com/elad/rolebook-backend/internal/middleware"
@@ -21,6 +22,10 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	customEquipmentStore := store.NewCustomEquipmentStore(db)
 	customSpellStore := store.NewCustomSpellStore(db)
 
+	// Avatar storage (S3). Unconfigured in local dev — uploads disabled,
+	// avatarUri pass-through on Player reads.
+	avatars := avatarstore.New(cfg)
+
 	// Catalog
 	arsenalCatalog, err := catalog.Load()
 	if err != nil {
@@ -31,12 +36,13 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
-	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore)
+	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog, customEquipmentStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore)
+	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public
@@ -64,6 +70,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Patch("/{sessionId}", sessionHandler.Update)
 				r.Delete("/{sessionId}", sessionHandler.Delete)
 			})
+
+			// Uploads (presigned S3 URLs)
+			r.Post("/uploads/url", uploadsHandler.CreateURL)
 
 			// Players
 			r.Get("/campaigns/{campaignId}/player", playerHandler.GetMyPlayer)

@@ -12,6 +12,7 @@ body:
       "level": 5,
       "race": "Wood Elf",
       "notes": "Prefers ranged combat",
+      "avatarUri": "{{avatarKey}}",
       "backgroundStory": "Raised in the Emerald Forest by druids.",
       "alignment": "Neutral Good",
       "speciesOrRegion": "Sylvan",
