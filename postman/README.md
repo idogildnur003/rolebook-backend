@@ -139,30 +139,184 @@ Requires Bearer `{{token}}`. All operations require campaign DM.
 
 ---
 
+## Locations
+
+Per-campaign journal entries for places. Owned per-member: any campaign member can List and Create; only the owner can Update, Delete, or Share. Read visibility is owner-only by default; widened via `visibility.sharedWithAll` or `visibility.sharedPlayerIds`. Sub-locations are supported one level deep (a location with `parentLocationId` cannot itself be a parent).
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/locations` | Any member | List locations visible to caller | 200 |
+| POST | `/campaigns/{{campaignId}}/locations` | Any member | Create a location (owner = caller) → sets `locationId` | 201 |
+| PATCH | `/campaigns/{{campaignId}}/locations/{{locationId}}` | Owner | Update fields, optionally `visibility`/`shareNote` | 200 |
+| DELETE | `/campaigns/{{campaignId}}/locations/{{locationId}}` | Owner | Delete (cascade-deletes pointing pins) | 204 |
+| POST | `/campaigns/{{campaignId}}/locations/{{locationId}}/share` | Owner | Clone for recipients, optional NPC + pin cascade | 200 |
+
+**Body (POST):**
+```json
+{
+  "name": "The Sunken Vault",
+  "shortNotes": "Old dwarven stronghold",
+  "fullDescription": "Buried below the river — guarded by water elementals.",
+  "thumbnailUri": "",
+  "sessionId": "{{sessionId}}",
+  "parentLocationId": "",
+  "linkedNpcIds": []
+}
+```
+
+**Body (PATCH):** Any subset of the create fields, plus optional:
+```json
+{
+  "visibility": { "sharedWithAll": true, "sharedPlayerIds": [] },
+  "shareNote": "…"
+}
+```
+
+**Body (POST /share):**
+```json
+{
+  "recipientPlayerIds": ["{{otherPlayerId}}"],
+  "sharedWithAll": false,
+  "note": "Sharing because it's relevant to your subplot.",
+  "cascade": {
+    "npcIds": [],
+    "mapPinIds": []
+  }
+}
+```
+
+Returns: array of clones (one per recipient, with thumbnails resolved to short-lived signed URLs).
+
+---
+
+## NPCs
+
+Per-campaign journal entries for non-player characters. Owned per-member: any campaign member can List and Create; only the owner can Update, Delete, or Share. Read visibility is owner-only by default; widened via `visibility.sharedWithAll` or `visibility.sharedPlayerIds`.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/npcs` | Any member | List NPCs visible to caller | 200 |
+| POST | `/campaigns/{{campaignId}}/npcs` | Any member | Create an NPC (owner = caller) → sets `npcId` | 201 |
+| PATCH | `/campaigns/{{campaignId}}/npcs/{{npcId}}` | Owner | Update fields, optionally `visibility`/`shareNote` | 200 |
+| DELETE | `/campaigns/{{campaignId}}/npcs/{{npcId}}` | Owner | Delete (cascade-deletes pointing pins) | 204 |
+| POST | `/campaigns/{{campaignId}}/npcs/{{npcId}}/share` | Owner | Clone for recipients, optional location + pin cascade | 200 |
+
+**Body (POST):**
+```json
+{
+  "name": "Sildar Hallwinter",
+  "shortNotes": "Lord's Alliance member, traveling companion",
+  "fullDescription": "A human warrior who has seen better days…",
+  "avatarUri": "",
+  "sessionId": "{{sessionId}}",
+  "linkedLocationIds": []
+}
+```
+
+**Body (PATCH):** Any subset of the create fields, plus optional:
+```json
+{
+  "visibility": { "sharedWithAll": true, "sharedPlayerIds": [] },
+  "shareNote": "…"
+}
+```
+
+**Body (POST /share):**
+```json
+{
+  "recipientPlayerIds": ["{{otherPlayerId}}"],
+  "sharedWithAll": false,
+  "note": "Their backstory is tied to this NPC.",
+  "cascade": {
+    "locationIds": [],
+    "mapPinIds": []
+  }
+}
+```
+
+Returns: array of clones (one per recipient, with avatars resolved to short-lived signed URLs).
+
+---
+
+## Map Pins
+
+Per-campaign map pins. Six types: `location`, `npc`, `item`, `majorFinding`, `travelMarker`, `custom`. Pins of type `location`/`npc` reference an entity via `entityId`; the others carry their own `title` and optional `notes`.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/map-pins` | Any member | List pins visible to caller | 200 |
+| POST | `/campaigns/{{campaignId}}/map-pins` | Any member | Create a pin (owner = caller) → sets `mapPinId` | 201 |
+| PATCH | `/campaigns/{{campaignId}}/map-pins/{{mapPinId}}` | Owner | Update position/notes (type+entityId are immutable) | 200 |
+| DELETE | `/campaigns/{{campaignId}}/map-pins/{{mapPinId}}` | Owner | Delete | 204 |
+| POST | `/campaigns/{{campaignId}}/map-pins/{{mapPinId}}/share` | Owner | Clone for recipients, optional entity cascade | 200 |
+
+**Body (POST — location pin example):**
+```json
+{
+  "type": "location",
+  "entityId": "{{locationId}}",
+  "x": 0.42,
+  "y": 0.71,
+  "sessionId": "{{sessionId}}"
+}
+```
+
+**Body (POST — custom pin example):**
+```json
+{
+  "type": "custom",
+  "title": "Hidden trapdoor",
+  "notes": "Seen during session 4",
+  "x": 0.18,
+  "y": 0.55,
+  "sessionId": "{{sessionId}}"
+}
+```
+
+**Body (PATCH):**
+```json
+{
+  "x": 0.5,
+  "y": 0.5,
+  "notes": "Moved by the player"
+}
+```
+
+**Body (POST /share):**
+```json
+{
+  "recipientPlayerIds": ["{{otherPlayerId}}"],
+  "sharedWithAll": false,
+  "note": "",
+  "cascadeEntity": true
+}
+```
+
+Returns: array of clones (one per recipient).
+
+---
+
 ## Uploads
 
 Requires Bearer `{{token}}`. Issues short-lived presigned URLs for direct-to-S3 uploads.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
-| POST | `/uploads/url` | Player's linked user | Get a presigned PUT URL for a player avatar → sets `avatarUploadUrl`, `avatarKey` | 200 / 503¹ |
+| POST | `/uploads/url` | Varies by `kind` | Get a presigned PUT URL for upload | 200 / 503¹ |
 
-**Body (only `kind: "player-avatar"` is supported in this iteration):**
-```json
-{
-  "kind": "player-avatar",
-  "playerId": "{{playerId}}",
-  "contentType": "image/png"
-}
-```
+**Supported `kind` values:**
+- `player-avatar` — body: `kind, playerId, contentType`. Caller must be the player's linked user.
+- `map` — body: `kind, campaignId, contentType`. Caller must be the campaign DM.
+- `location-thumbnail` — body: `kind, campaignId, contentType`. Caller must be a campaign member.
+- `npc-avatar` — body: `kind, campaignId, contentType`. Caller must be a campaign member.
 
 `contentType` must be `image/jpeg`, `image/png`, or `image/webp`.
 
-**Response:**
+**Response (all kinds):**
 ```json
 {
-  "uploadUrl": "https://<bucket>.s3.<region>.amazonaws.com/players/<id>/avatar/<uuid>.png?X-Amz-…",
-  "key": "players/<id>/avatar/<uuid>.png",
+  "uploadUrl": "https://<bucket>.s3.<region>.amazonaws.com/.../file.png?X-Amz-…",
+  "key": "…/file.png",
   "expiresAt": "2026-05-04T12:34:56Z"
 }
 ```
@@ -170,9 +324,9 @@ Requires Bearer `{{token}}`. Issues short-lived presigned URLs for direct-to-S3 
 **Client flow:**
 1. POST `/uploads/url` → receive `uploadUrl` + `key`.
 2. PUT the file bytes directly to `uploadUrl` with the same `Content-Type` you requested. **Do not** attach the API Bearer token to this request — S3 rejects unrecognized headers it didn't sign.
-3. PATCH `/players/{{playerId}}` with `{ "avatarUri": "<key>" }`.
+3. Store the returned `key` on the entity (`mapImageUri` for map, `thumbnailUri` for location, `avatarUri` for NPC).
 
-The S3 bucket is private; subsequent reads of the player are served via short-lived presigned GET URLs (see Players → `avatarUri` semantics).
+The S3 bucket is private; subsequent reads are served via short-lived presigned GET URLs. Legacy values that already look like URLs are returned unchanged. When AWS is unconfigured (local dev), keys pass through both ways without rewriting.
 
 ¹ Returns `503` with `{ "error": "...", "code": "UPLOAD_NOT_CONFIGURED" }` when the server is running without the four AWS env vars (`AWS_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) — typical for local dev.
 
