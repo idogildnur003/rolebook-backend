@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
@@ -88,5 +91,27 @@ func TestNormalizeAnySlice_EmptyInputReturnsEmptyNotNil(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Errorf("nil input → %v, want empty", got)
+	}
+}
+
+func TestLocationHandler_ResolveThumbnails_PassesThroughWhenUnconfigured(t *testing.T) {
+	// Unconfigured store → ResolveImageURI is identity.
+	avatars := avatarstore.New(config.Config{})
+	h := &LocationHandler{avatars: avatars}
+
+	locs := []model.Location{
+		{ID: "l1", ThumbnailURI: "campaigns/c1/locations/abc.png"},
+		{ID: "l2", ThumbnailURI: "https://cdn.example/x.png"},
+		{ID: "l3", ThumbnailURI: ""},
+	}
+	out := h.resolveThumbnails(context.Background(), locs)
+	if out[0].ThumbnailURI != "campaigns/c1/locations/abc.png" {
+		t.Errorf("l1: got %q, want passthrough key (unconfigured store)", out[0].ThumbnailURI)
+	}
+	if out[1].ThumbnailURI != "https://cdn.example/x.png" {
+		t.Errorf("l2: got %q, want passthrough URL", out[1].ThumbnailURI)
+	}
+	if out[2].ThumbnailURI != "" {
+		t.Errorf("l3: got %q, want empty", out[2].ThumbnailURI)
 	}
 }

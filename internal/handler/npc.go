@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -23,11 +25,12 @@ type NPCHandler struct {
 	npcs      *store.NPCStore
 	pins      *store.MapPinStore
 	campaigns *store.CampaignStore
+	avatars   *avatarstore.Store
 }
 
 // NewNPCHandler creates an NPCHandler.
-func NewNPCHandler(npcs *store.NPCStore, pins *store.MapPinStore, campaigns *store.CampaignStore) *NPCHandler {
-	return &NPCHandler{npcs: npcs, pins: pins, campaigns: campaigns}
+func NewNPCHandler(npcs *store.NPCStore, pins *store.MapPinStore, campaigns *store.CampaignStore, avatars *avatarstore.Store) *NPCHandler {
+	return &NPCHandler{npcs: npcs, pins: pins, campaigns: campaigns, avatars: avatars}
 }
 
 // List handles GET /api/campaigns/:campaignId/npcs.
@@ -43,8 +46,7 @@ func (h *NPCHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	// TODO(image-rewrite): Task 13 expands this to call avatarstore.ResolveImageURI on avatarUri.
-	writeJSON(w, http.StatusOK, npcs)
+	writeJSON(w, http.StatusOK, h.resolveAvatars(r.Context(), npcs))
 }
 
 type createNPCRequest struct {
@@ -95,6 +97,7 @@ func (h *NPCHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	npc.AvatarURI = h.avatars.ResolveImageURI(r.Context(), npc.AvatarURI)
 	writeJSON(w, http.StatusCreated, npc)
 }
 
@@ -149,6 +152,7 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "npc not found", "NOT_FOUND")
 		return
 	}
+	updated.AvatarURI = h.avatars.ResolveImageURI(r.Context(), updated.AvatarURI)
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -184,4 +188,14 @@ func (h *NPCHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[npc] pin cascade failed for %s/%s: %v", campaignID, id, err)
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// resolveAvatars rewrites each NPC's avatarUri to a signed GET URL when the
+// value looks like an S3 key. Pass-through for fully-qualified URLs and empty
+// values — see avatarstore.LooksLikeKey for the rule.
+func (h *NPCHandler) resolveAvatars(ctx context.Context, npcs []model.NPC) []model.NPC {
+	for i := range npcs {
+		npcs[i].AvatarURI = h.avatars.ResolveImageURI(ctx, npcs[i].AvatarURI)
+	}
+	return npcs
 }

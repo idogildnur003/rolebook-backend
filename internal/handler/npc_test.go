@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
@@ -30,5 +33,27 @@ func TestNPC_OmitsOwnerUserIDOnWire(t *testing.T) {
 	}
 	if !strings.Contains(got, "p-1") {
 		t.Errorf("NPC missing ownerPlayerId: %s", got)
+	}
+}
+
+func TestNPCHandler_ResolveAvatars_PassesThroughWhenUnconfigured(t *testing.T) {
+	// Unconfigured store → ResolveImageURI is identity.
+	avatars := avatarstore.New(config.Config{})
+	h := &NPCHandler{avatars: avatars}
+
+	npcs := []model.NPC{
+		{ID: "n1", AvatarURI: "campaigns/c1/npcs/abc.png"},
+		{ID: "n2", AvatarURI: "https://cdn.example/npc.png"},
+		{ID: "n3", AvatarURI: ""},
+	}
+	out := h.resolveAvatars(context.Background(), npcs)
+	if out[0].AvatarURI != "campaigns/c1/npcs/abc.png" {
+		t.Errorf("n1: got %q, want passthrough key (unconfigured store)", out[0].AvatarURI)
+	}
+	if out[1].AvatarURI != "https://cdn.example/npc.png" {
+		t.Errorf("n2: got %q, want passthrough URL", out[1].AvatarURI)
+	}
+	if out[2].AvatarURI != "" {
+		t.Errorf("n3: got %q, want empty", out[2].AvatarURI)
 	}
 }

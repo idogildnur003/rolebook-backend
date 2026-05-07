@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -20,11 +22,12 @@ type CampaignHandler struct {
 	players   *store.PlayerStore
 	users     *store.UserStore
 	db        *store.DB
+	avatars   *avatarstore.Store
 }
 
 // NewCampaignHandler creates a CampaignHandler.
-func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore, users *store.UserStore, db *store.DB) *CampaignHandler {
-	return &CampaignHandler{campaigns: campaigns, players: players, users: users, db: db}
+func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore, users *store.UserStore, db *store.DB, avatars *avatarstore.Store) *CampaignHandler {
+	return &CampaignHandler{campaigns: campaigns, players: players, users: users, db: db, avatars: avatars}
 }
 
 // campaignListItem is the slim shape returned by List.
@@ -101,6 +104,19 @@ func toCampaignDetail(c *model.Campaign, callerUserID string) campaignDetail {
 	}
 }
 
+// toCampaignDetailWithImages is the same as toCampaignDetail but rewrites any
+// S3-key-shaped image fields to short-lived signed GET URLs. Used by all
+// single-campaign response handlers (Get, Create, Update). The List handler
+// does the rewrite inline since it doesn't go through toCampaignDetail.
+func toCampaignDetailWithImages(ctx context.Context, c *model.Campaign, callerUserID string, avatars *avatarstore.Store) campaignDetail {
+	d := toCampaignDetail(c, callerUserID)
+	if d.MapImageURI != nil && *d.MapImageURI != "" {
+		resolved := avatars.ResolveImageURI(ctx, *d.MapImageURI)
+		d.MapImageURI = &resolved
+	}
+	return d
+}
+
 // List handles GET /api/campaigns.
 func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -150,7 +166,7 @@ func (h *CampaignHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if membership == nil {
 		return
 	}
-	writeJSON(w, http.StatusOK, toCampaignDetail(membership.Campaign, membership.UserID))
+	writeJSON(w, http.StatusOK, toCampaignDetailWithImages(r.Context(), membership.Campaign, membership.UserID, h.avatars))
 }
 
 // Create handles POST /api/campaigns. Any authenticated user may create a
@@ -207,7 +223,7 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toCampaignDetail(campaign, userID))
+	writeJSON(w, http.StatusCreated, toCampaignDetailWithImages(r.Context(), campaign, userID, h.avatars))
 }
 
 // Update handles PATCH /api/campaigns/:id. DM only — enforced in handler via
@@ -248,7 +264,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
-	writeJSON(w, http.StatusOK, toCampaignDetail(updated, membership.UserID))
+	writeJSON(w, http.StatusOK, toCampaignDetailWithImages(r.Context(), updated, membership.UserID, h.avatars))
 }
 
 // SetPlayerActive handles PATCH /api/campaigns/:id/players/:playerId. DM only —

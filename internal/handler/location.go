@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -24,11 +26,12 @@ type LocationHandler struct {
 	locations *store.LocationStore
 	pins      *store.MapPinStore
 	campaigns *store.CampaignStore
+	avatars   *avatarstore.Store
 }
 
 // NewLocationHandler creates a LocationHandler.
-func NewLocationHandler(locations *store.LocationStore, pins *store.MapPinStore, campaigns *store.CampaignStore) *LocationHandler {
-	return &LocationHandler{locations: locations, pins: pins, campaigns: campaigns}
+func NewLocationHandler(locations *store.LocationStore, pins *store.MapPinStore, campaigns *store.CampaignStore, avatars *avatarstore.Store) *LocationHandler {
+	return &LocationHandler{locations: locations, pins: pins, campaigns: campaigns, avatars: avatars}
 }
 
 // List handles GET /api/campaigns/:campaignId/locations.
@@ -44,8 +47,7 @@ func (h *LocationHandler) List(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	// TODO(image-rewrite): Task 13 expands this to call avatarstore.ResolveImageURI on thumbnailUri.
-	writeJSON(w, http.StatusOK, locs)
+	writeJSON(w, http.StatusOK, h.resolveThumbnails(r.Context(), locs))
 }
 
 type createLocationRequest struct {
@@ -104,6 +106,7 @@ func (h *LocationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	loc.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), loc.ThumbnailURI)
 	writeJSON(w, http.StatusCreated, loc)
 }
 
@@ -200,6 +203,7 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
 		return
 	}
+	updated.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), updated.ThumbnailURI)
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -256,4 +260,14 @@ func (h *LocationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[location] pin cascade failed for %s/%s: %v", campaignID, id, err)
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// resolveThumbnails rewrites each location's thumbnailUri to a signed GET URL
+// when the value looks like an S3 key. Pass-through for local file URIs and
+// existing https:// URLs — see avatarstore.LooksLikeKey for the rule.
+func (h *LocationHandler) resolveThumbnails(ctx context.Context, locs []model.Location) []model.Location {
+	for i := range locs {
+		locs[i].ThumbnailURI = h.avatars.ResolveImageURI(ctx, locs[i].ThumbnailURI)
+	}
+	return locs
 }

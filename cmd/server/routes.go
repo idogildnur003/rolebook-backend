@@ -37,7 +37,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
-	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db)
+	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
@@ -45,8 +45,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore)
-	locationHandler := handler.NewLocationHandler(locationStore, mapPinStore, campaignStore)
-	npcHandler := handler.NewNPCHandler(npcStore, mapPinStore, campaignStore)
+	locationHandler := handler.NewLocationHandler(locationStore, mapPinStore, campaignStore, avatars)
+	npcHandler := handler.NewNPCHandler(npcStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
 
