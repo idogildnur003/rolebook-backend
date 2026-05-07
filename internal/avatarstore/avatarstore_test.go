@@ -179,3 +179,50 @@ func (s *stubPresign) PresignGetObject(_ context.Context, in *s3.GetObjectInput,
 	}
 	return &presignedRequest{URL: s.getURL}, nil
 }
+
+func TestPresignPutForKey_BuildsCustomKey(t *testing.T) {
+	stub := &stubPresign{putURL: "https://stub.example/PUT"}
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(stub)
+
+	out, err := s.PresignPutForKey(context.Background(), "campaigns/abc/maps", "image/png")
+	if err != nil {
+		t.Fatalf("PresignPutForKey: %v", err)
+	}
+	if !strings.HasPrefix(out.Key, "campaigns/abc/maps/") {
+		t.Errorf("Key = %q, want campaigns/abc/maps/ prefix", out.Key)
+	}
+	if !strings.HasSuffix(out.Key, ".png") {
+		t.Errorf("Key = %q, want .png suffix", out.Key)
+	}
+	if out.URL != "https://stub.example/PUT" {
+		t.Errorf("URL = %q, want stub URL", out.URL)
+	}
+}
+
+func TestPresignPutForKey_ValidatesContentType(t *testing.T) {
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(&stubPresign{})
+
+	if _, err := s.PresignPutForKey(context.Background(), "campaigns/abc/maps", "image/gif"); !errors.Is(err, ErrInvalidContentType) {
+		t.Fatalf("expected ErrInvalidContentType, got %v", err)
+	}
+}
+
+func TestPresignPutForKey_NotConfigured(t *testing.T) {
+	s := New(config.Config{})
+	if _, err := s.PresignPutForKey(context.Background(), "campaigns/abc/maps", "image/png"); !errors.Is(err, ErrNotConfigured) {
+		t.Fatalf("expected ErrNotConfigured, got %v", err)
+	}
+}
+
+func TestResolveImageURI_DelegatesToResolveAvatarURI(t *testing.T) {
+	s := New(config.Config{})
+	// Unconfigured: passthrough.
+	if got := s.ResolveImageURI(context.Background(), "campaigns/abc/maps/x.png"); got != "campaigns/abc/maps/x.png" {
+		t.Errorf("got %q, want passthrough", got)
+	}
+	if got := s.ResolveImageURI(context.Background(), "https://cdn.example/x.png"); got != "https://cdn.example/x.png" {
+		t.Errorf("got %q, want passthrough", got)
+	}
+}
