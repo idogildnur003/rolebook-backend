@@ -61,7 +61,6 @@ type campaignDetail struct {
 	Name              string                  `json:"name"`
 	ThemeImage        string                  `json:"themeImage"`
 	MapImageURI       *string                 `json:"mapImageUri"`
-	MapPins           []model.MapPin          `json:"mapPins"`
 	Sessions          []model.Session         `json:"sessions"`
 	Members           []campaignMemberSummary `json:"members"`
 	DisabledSpells    []string                `json:"disabledSpells"`
@@ -94,7 +93,6 @@ func toCampaignDetail(c *model.Campaign, callerUserID string) campaignDetail {
 		Name:              c.Name,
 		ThemeImage:        c.ThemeImage,
 		MapImageURI:       c.MapImageURI,
-		MapPins:           c.MapPins,
 		Sessions:          c.Sessions,
 		Members:           toMemberSummaries(c.Members),
 		DisabledSpells:    c.DisabledSpells,
@@ -193,7 +191,6 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name:              req.Name,
 		ThemeImage:        req.ThemeImage,
 		MapImageURI:       req.MapImageURI,
-		MapPins:           []model.MapPin{},
 		Sessions:          []model.Session{},
 		Members:           []model.CampaignMember{},
 		DisabledSpells:    []string{},
@@ -231,7 +228,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "mapPins": true, "disabledSpells": true, "disabledEquipment": true}
+	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "disabledSpells": true, "disabledEquipment": true}
 	fields := bson.M{}
 	for k, v := range req {
 		if allowed[k] {
