@@ -48,7 +48,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	locationHandler := handler.NewLocationHandler(locationStore, mapPinStore, campaignStore)
 	npcHandler := handler.NewNPCHandler(npcStore, mapPinStore, campaignStore)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
-	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore)
+	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public
