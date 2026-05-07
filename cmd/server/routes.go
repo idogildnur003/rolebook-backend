@@ -21,6 +21,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	playerStore := store.NewPlayerStore(db)
 	customEquipmentStore := store.NewCustomEquipmentStore(db)
 	customSpellStore := store.NewCustomSpellStore(db)
+	locationStore := store.NewLocationStore(db)
+	npcStore := store.NewNPCStore(db)
+	mapPinStore := store.NewMapPinStore(db)
 
 	// Avatar storage (S3). Unconfigured in local dev — uploads disabled,
 	// avatarUri pass-through on Player reads.
@@ -42,6 +45,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore)
+	locationHandler := handler.NewLocationHandler(locationStore, mapPinStore, campaignStore)
+	npcHandler := handler.NewNPCHandler(npcStore, mapPinStore, campaignStore)
+	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore)
 
 	r.Route("/api", func(r chi.Router) {
@@ -123,6 +129,30 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/", customSpellHandler.Create)
 				r.Patch("/{id}", customSpellHandler.Update)
 				r.Delete("/{id}", customSpellHandler.Delete)
+			})
+
+			// Per-campaign locations
+			r.Route("/campaigns/{campaignId}/locations", func(r chi.Router) {
+				r.Get("/", locationHandler.List)
+				r.Post("/", locationHandler.Create)
+				r.Patch("/{id}", locationHandler.Update)
+				r.Delete("/{id}", locationHandler.Delete)
+			})
+
+			// Per-campaign NPCs
+			r.Route("/campaigns/{campaignId}/npcs", func(r chi.Router) {
+				r.Get("/", npcHandler.List)
+				r.Post("/", npcHandler.Create)
+				r.Patch("/{id}", npcHandler.Update)
+				r.Delete("/{id}", npcHandler.Delete)
+			})
+
+			// Per-campaign map pins
+			r.Route("/campaigns/{campaignId}/map-pins", func(r chi.Router) {
+				r.Get("/", mapPinHandler.List)
+				r.Post("/", mapPinHandler.Create)
+				r.Patch("/{id}", mapPinHandler.Update)
+				r.Delete("/{id}", mapPinHandler.Delete)
 			})
 		})
 	})
