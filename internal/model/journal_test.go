@@ -24,4 +24,13 @@ func TestMapPinTypeReferencesEntity(t *testing.T) {
 	if MapPinTypeReferencesEntity(MapPinItem) {
 		t.Error("item must NOT reference entity")
 	}
+	if MapPinTypeReferencesEntity(MapPinMajorFinding) {
+		t.Error("majorFinding must NOT reference entity")
+	}
+	if MapPinTypeReferencesEntity(MapPinTravelMarker) {
+		t.Error("travelMarker must NOT reference entity")
+	}
+	if MapPinTypeReferencesEntity(MapPinCustom) {
+		t.Error("custom must NOT reference entity")
+	}
 }
