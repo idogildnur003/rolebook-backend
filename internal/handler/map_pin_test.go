@@ -65,3 +65,50 @@ func TestMapPin_OmitsOwnerUserIDOnWire(t *testing.T) {
 		t.Errorf("MapPin missing ownerPlayerId: %s", got)
 	}
 }
+
+func TestIsValidVisibilityPatch_AcceptsCompleteShape(t *testing.T) {
+	v := map[string]any{
+		"sharedWithAll":   true,
+		"sharedPlayerIds": []any{"p-1", "p-2"},
+	}
+	if !isValidVisibilityPatch(v) {
+		t.Errorf("expected valid")
+	}
+}
+
+func TestIsValidVisibilityPatch_AcceptsPartialShape(t *testing.T) {
+	if !isValidVisibilityPatch(map[string]any{"sharedWithAll": false}) {
+		t.Errorf("expected sharedWithAll-only patch to be valid")
+	}
+	if !isValidVisibilityPatch(map[string]any{"sharedPlayerIds": []any{}}) {
+		t.Errorf("expected sharedPlayerIds-only patch to be valid")
+	}
+}
+
+func TestIsValidVisibilityPatch_AcceptsEmptyMap(t *testing.T) {
+	// Vacuous patch — neither field present. Caller's $set is a no-op.
+	if !isValidVisibilityPatch(map[string]any{}) {
+		t.Errorf("expected empty map to be valid")
+	}
+}
+
+func TestIsValidVisibilityPatch_RejectsNonMap(t *testing.T) {
+	cases := []any{"all", 42, true, []any{"p-1"}, nil}
+	for _, c := range cases {
+		if isValidVisibilityPatch(c) {
+			t.Errorf("expected %v (%T) to be rejected", c, c)
+		}
+	}
+}
+
+func TestIsValidVisibilityPatch_RejectsBadFieldTypes(t *testing.T) {
+	if isValidVisibilityPatch(map[string]any{"sharedWithAll": "yes"}) {
+		t.Errorf("string sharedWithAll must be rejected")
+	}
+	if isValidVisibilityPatch(map[string]any{"sharedPlayerIds": "p-1"}) {
+		t.Errorf("string sharedPlayerIds must be rejected")
+	}
+	if isValidVisibilityPatch(map[string]any{"sharedPlayerIds": []any{"p-1", 42}}) {
+		t.Errorf("non-string entry in sharedPlayerIds must be rejected")
+	}
+}

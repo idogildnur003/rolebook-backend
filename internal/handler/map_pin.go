@@ -165,6 +165,13 @@ func (h *MapPinHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if v, ok := patch["visibility"]; ok {
+		if !isValidVisibilityPatch(v) {
+			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
+			return
+		}
+	}
+
 	updated, err := h.pins.Update(r.Context(), campaignID, id, bson.M(patch))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -230,26 +237,4 @@ func (h *MapPinHandler) assertEntityVisible(r *http.Request, campaignID string, 
 		}
 	}
 	return nil
-}
-
-// visibilityAllowsRead encodes the read filter:
-//   - owner can always read,
-//   - sharedWithAll opens it to every member,
-//   - sharedPlayerIds opens it to specific members.
-//
-// Lives here for now; Task 14 will move it to internal/handler/journal_share.go
-// alongside the clone-share helpers.
-func visibilityAllowsRead(ownerPlayerID string, v model.Visibility, callerPlayerID string) bool {
-	if ownerPlayerID == callerPlayerID {
-		return true
-	}
-	if v.SharedWithAll {
-		return true
-	}
-	for _, id := range v.SharedPlayerIds {
-		if id == callerPlayerID {
-			return true
-		}
-	}
-	return false
 }

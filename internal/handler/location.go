@@ -184,6 +184,13 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if v, ok := patch["visibility"]; ok {
+		if !isValidVisibilityPatch(v) {
+			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
+			return
+		}
+	}
+
 	if v, ok := patch["parentLocationId"].(string); ok && v != "" {
 		if err := h.checkSubLocationDepth(r, campaignID, v); err != nil {
 			writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")

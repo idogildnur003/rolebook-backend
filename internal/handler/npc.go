@@ -139,6 +139,13 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if v, ok := patch["visibility"]; ok {
+		if !isValidVisibilityPatch(v) {
+			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
+			return
+		}
+	}
+
 	if v, ok := patch["linkedLocationIds"].([]any); ok {
 		patch["linkedLocationIds"] = normalizeAnySlice(v)
 	}
