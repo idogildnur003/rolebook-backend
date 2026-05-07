@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/locations/{{locationId}}/share"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "recipientPlayerIds": ["{{otherPlayerId}}"],
+      "sharedWithAll": false,
+      "note": "Sharing because it's relevant to your subplot.",
+      "cascade": {
+        "npcIds": [],
+        "mapPinIds": []
+      }
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000
