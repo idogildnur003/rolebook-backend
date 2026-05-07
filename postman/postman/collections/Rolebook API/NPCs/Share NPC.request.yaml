@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/npcs/{{npcId}}/share"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "recipientPlayerIds": ["{{otherPlayerId}}"],
+      "sharedWithAll": false,
+      "note": "Their backstory is tied to this NPC.",
+      "cascade": {
+        "locationIds": [],
+        "mapPinIds": []
+      }
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000
