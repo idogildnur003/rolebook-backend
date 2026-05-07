@@ -155,6 +155,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/", mapPinHandler.Create)
 				r.Patch("/{id}", mapPinHandler.Update)
 				r.Delete("/{id}", mapPinHandler.Delete)
+				r.Post("/{id}/share", mapPinHandler.Share)
 			})
 		})
 	})

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -237,4 +238,117 @@ func (h *MapPinHandler) assertEntityVisible(r *http.Request, campaignID string, 
 		}
 	}
 	return nil
+}
+
+type shareMapPinRequest struct {
+	RecipientPlayerIds []string `json:"recipientPlayerIds"`
+	SharedWithAll      bool     `json:"sharedWithAll"`
+	Note               string   `json:"note"`
+	CascadeEntity      bool     `json:"cascadeEntity"`
+}
+
+// Share handles POST /api/campaigns/:campaignId/map-pins/:id/share.
+// Owner only. Pin cloning is the simplest of the three share flows: just clone
+// the pin per recipient. If cascadeEntity is true AND the pin is a location/npc
+// pin, also clone the underlying entity (and repoint the pin clone's entityId
+// to the entity clone).
+func (h *MapPinHandler) Share(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	id := chi.URLParam(r, "id")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+
+	source, err := h.pins.GetByID(r.Context(), campaignID, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if source == nil {
+		writeError(w, http.StatusNotFound, "pin not found", "NOT_FOUND")
+		return
+	}
+	if source.OwnerPlayerID != membership.PlayerID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	var req shareMapPinRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+
+	recipients, err := resolveShareRecipients(r.Context(), h.campaigns, campaignID, source.OwnerPlayerID, req.RecipientPlayerIds, req.SharedWithAll)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
+		return
+	}
+
+	clones := make([]model.MapPin, 0, len(recipients))
+	for _, recip := range recipients {
+		clone, err := h.cloneMapPinForRecipient(r.Context(), source, recip, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		clones = append(clones, *clone)
+	}
+	writeJSON(w, http.StatusOK, clones)
+}
+
+// cloneMapPinForRecipient produces (and persists) a clone of the source pin
+// for the given recipient, idempotently. If req.CascadeEntity is true and
+// the pin references a location/npc, also clone the entity and repoint the
+// pin's entityId.
+func (h *MapPinHandler) cloneMapPinForRecipient(ctx context.Context, source *model.MapPin, recip recipient, req shareMapPinRequest) (*model.MapPin, error) {
+	existing, err := h.pins.FindCloneOf(ctx, source.CampaignID, source.ID, recip.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		return existing, nil
+	}
+
+	now := time.Now().UTC()
+	clone := *source
+	clone.ID = uuid.NewString()
+	clone.OwnerPlayerID = recip.PlayerID
+	clone.OwnerUserID = recip.UserID
+	clone.Visibility = model.Visibility{SharedPlayerIds: []string{}}
+	clone.ShareNote = req.Note
+	clone.Clone = &model.CloneAudit{
+		ClonedFromEntryId:       source.ID,
+		ClonedFromOwnerPlayerId: source.OwnerPlayerID,
+		ClonedAt:                now,
+	}
+	clone.CreatedAt = now
+	clone.UpdatedAt = now
+
+	if req.CascadeEntity && source.EntityID != "" {
+		switch source.Type {
+		case model.MapPinLocation:
+			cloneEntityID, err := cloneLocationForRecipientShallow(ctx, h.locations, source.CampaignID, source.EntityID, recip)
+			if err != nil {
+				return nil, err
+			}
+			if cloneEntityID != "" {
+				clone.EntityID = cloneEntityID
+			}
+		case model.MapPinNPC:
+			cloneEntityID, err := cloneNpcForRecipient(ctx, h.npcs, source.CampaignID, source.EntityID, recip)
+			if err != nil {
+				return nil, err
+			}
+			if cloneEntityID != "" {
+				clone.EntityID = cloneEntityID
+			}
+		}
+	}
+
+	if err := h.pins.Create(ctx, &clone); err != nil {
+		return nil, err
+	}
+	return &clone, nil
 }
