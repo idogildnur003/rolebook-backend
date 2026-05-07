@@ -67,3 +67,26 @@ func TestLocation_OmitsOwnerUserIDOnWire(t *testing.T) {
 		t.Errorf("Location missing ownerPlayerId: %s", got)
 	}
 }
+
+func TestNormalizeAnySlice_FiltersAndDedupes(t *testing.T) {
+	got := normalizeAnySlice([]any{"a", "", "b", 42, "a", nil, "c", "b"})
+	want := []string{"a", "b", "c"}
+	if len(got) != len(want) {
+		t.Fatalf("length: got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestNormalizeAnySlice_EmptyInputReturnsEmptyNotNil(t *testing.T) {
+	got := normalizeAnySlice(nil)
+	if got == nil {
+		t.Errorf("nil input → nil, want empty non-nil slice")
+	}
+	if len(got) != 0 {
+		t.Errorf("nil input → %v, want empty", got)
+	}
+}

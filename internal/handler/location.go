@@ -2,11 +2,13 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -139,4 +141,119 @@ func normalizeStringSlice(in []string) []string {
 		out = append(out, s)
 	}
 	return out
+}
+
+// Update handles PATCH /api/campaigns/:campaignId/locations/:id.
+// Owner only. Accepts a partial of the createLocationRequest fields plus
+// optional `visibility` and `shareNote`. Server-owned fields are stripped.
+func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	id := chi.URLParam(r, "id")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+
+	existing, err := h.locations.GetByID(r.Context(), campaignID, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if existing == nil {
+		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
+		return
+	}
+	if existing.OwnerPlayerID != membership.PlayerID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	var patch map[string]any
+	if err := decodeJSON(r, &patch); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	for _, k := range []string{"id", "_id", "campaignId", "ownerPlayerId", "ownerUserId", "createdAt", "updatedAt", "clone"} {
+		delete(patch, k)
+	}
+	if len(patch) == 0 {
+		writeError(w, http.StatusBadRequest, "no valid fields to update", "BAD_REQUEST")
+		return
+	}
+
+	if v, ok := patch["parentLocationId"].(string); ok && v != "" {
+		if err := h.checkSubLocationDepth(r, campaignID, v); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
+			return
+		}
+	}
+	if v, ok := patch["linkedNpcIds"].([]any); ok {
+		patch["linkedNpcIds"] = normalizeAnySlice(v)
+	}
+
+	updated, err := h.locations.Update(r.Context(), campaignID, id, bson.M(patch))
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if updated == nil {
+		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
+		return
+	}
+	writeJSON(w, http.StatusOK, updated)
+}
+
+// normalizeAnySlice converts a JSON-decoded []any of strings to []string,
+// dropping empties and duplicates.
+func normalizeAnySlice(in []any) []string {
+	out := make([]string, 0, len(in))
+	seen := make(map[string]struct{}, len(in))
+	for _, v := range in {
+		s, ok := v.(string)
+		if !ok || s == "" {
+			continue
+		}
+		if _, dup := seen[s]; dup {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, s)
+	}
+	return out
+}
+
+// Delete handles DELETE /api/campaigns/:campaignId/locations/:id.
+// Owner only. Cascades to pins where entityId == this location's id.
+func (h *LocationHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	id := chi.URLParam(r, "id")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+
+	existing, err := h.locations.GetByID(r.Context(), campaignID, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if existing == nil {
+		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
+		return
+	}
+	if existing.OwnerPlayerID != membership.PlayerID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	if _, err := h.locations.Delete(r.Context(), campaignID, id); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if _, err := h.pins.DeleteByEntity(r.Context(), campaignID, id); err != nil {
+		// Pin cascade failed but the location is gone. Log and continue.
+		// Dangling pins are tolerated — UI degrades gracefully.
+		log.Printf("[location] pin cascade failed for %s/%s: %v", campaignID, id, err)
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
