@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/map-pins/{{mapPinId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "x": 0.5,
+      "y": 0.5,
+      "notes": "Moved by the player"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

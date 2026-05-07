@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/map-pins"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "location",
+      "entityId": "{{locationId}}",
+      "x": 0.42,
+      "y": 0.71,
+      "sessionId": "{{sessionId}}"
+    }
+# Alternative body — custom pin (replace the content above when testing):
+#   {
+#     "type": "custom",
+#     "title": "Hidden trapdoor",
+#     "notes": "Seen during session 4",
+#     "x": 0.18,
+#     "y": 0.55,
+#     "sessionId": "{{sessionId}}"
+#   }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("mapPinId", json.id);
+    language: text/javascript
+order: 2000
