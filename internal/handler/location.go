@@ -24,14 +24,15 @@ import (
 //   - DM has no override (matches the spec's "private journal" model).
 type LocationHandler struct {
 	locations *store.LocationStore
+	npcs      *store.NPCStore
 	pins      *store.MapPinStore
 	campaigns *store.CampaignStore
 	avatars   *avatarstore.Store
 }
 
 // NewLocationHandler creates a LocationHandler.
-func NewLocationHandler(locations *store.LocationStore, pins *store.MapPinStore, campaigns *store.CampaignStore, avatars *avatarstore.Store) *LocationHandler {
-	return &LocationHandler{locations: locations, pins: pins, campaigns: campaigns, avatars: avatars}
+func NewLocationHandler(locations *store.LocationStore, npcs *store.NPCStore, pins *store.MapPinStore, campaigns *store.CampaignStore, avatars *avatarstore.Store) *LocationHandler {
+	return &LocationHandler{locations: locations, npcs: npcs, pins: pins, campaigns: campaigns, avatars: avatars}
 }
 
 // List handles GET /api/campaigns/:campaignId/locations.
@@ -277,4 +278,150 @@ func (h *LocationHandler) resolveThumbnails(ctx context.Context, locs []model.Lo
 		locs[i].ThumbnailURI = h.avatars.ResolveImageURI(ctx, locs[i].ThumbnailURI)
 	}
 	return locs
+}
+
+type shareLocationRequest struct {
+	RecipientPlayerIds []string `json:"recipientPlayerIds"`
+	SharedWithAll      bool     `json:"sharedWithAll"`
+	Note               string   `json:"note"`
+	Cascade            struct {
+		NpcIds    []string `json:"npcIds"`
+		MapPinIds []string `json:"mapPinIds"`
+	} `json:"cascade"`
+}
+
+// Share handles POST /api/campaigns/:campaignId/locations/:id/share.
+// Owner only. Creates clones (or reuses existing clones) for each recipient
+// and optionally cascades linked NPCs and pins.
+func (h *LocationHandler) Share(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	id := chi.URLParam(r, "id")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+
+	source, err := h.locations.GetByID(r.Context(), campaignID, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if source == nil {
+		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
+		return
+	}
+	if source.OwnerPlayerID != membership.PlayerID {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	var req shareLocationRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+
+	recipients, err := resolveShareRecipients(r.Context(), h.campaigns, campaignID, source.OwnerPlayerID, req.RecipientPlayerIds, req.SharedWithAll)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
+		return
+	}
+
+	clones := make([]model.Location, 0, len(recipients))
+	for _, recip := range recipients {
+		clone, err := h.cloneLocationForRecipient(r.Context(), source, recip, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
+		clones = append(clones, *clone)
+	}
+
+	for i := range clones {
+		clones[i].ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), clones[i].ThumbnailURI)
+	}
+	writeJSON(w, http.StatusOK, clones)
+}
+
+// cloneLocationForRecipient produces (and persists) a clone of source for the
+// given recipient. If a clone already exists, it's returned as-is (idempotent).
+// Cascades NPCs and pins per the request.
+func (h *LocationHandler) cloneLocationForRecipient(ctx context.Context, source *model.Location, recip recipient, req shareLocationRequest) (*model.Location, error) {
+	existing, err := h.locations.FindCloneOf(ctx, source.CampaignID, source.ID, recip.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		return existing, nil
+	}
+
+	npcMap, err := cascadeLinkedNpcs(ctx, h.npcs, source.CampaignID, source.LinkedNpcIds, recip, req.Cascade.NpcIds)
+	if err != nil {
+		return nil, err
+	}
+	rewrittenLinks := rewriteIds(source.LinkedNpcIds, npcMap)
+
+	now := time.Now().UTC()
+	clone := *source
+	clone.ID = uuid.NewString()
+	clone.OwnerPlayerID = recip.PlayerID
+	clone.OwnerUserID = recip.UserID
+	clone.LinkedNpcIds = rewrittenLinks
+	clone.Visibility = model.Visibility{SharedPlayerIds: []string{}}
+	clone.ShareNote = req.Note
+	clone.Clone = &model.CloneAudit{
+		ClonedFromEntryId:       source.ID,
+		ClonedFromOwnerPlayerId: source.OwnerPlayerID,
+		ClonedAt:                now,
+	}
+	clone.CreatedAt = now
+	clone.UpdatedAt = now
+	if err := h.locations.Create(ctx, &clone); err != nil {
+		return nil, err
+	}
+
+	if err := h.cascadePinsForRecipient(ctx, source.CampaignID, source.ID, clone.ID, recip, req.Cascade.MapPinIds); err != nil {
+		return nil, err
+	}
+	return &clone, nil
+}
+
+// cascadePinsForRecipient clones each pin in cascadeIds for the recipient,
+// repointing entityId from the source location to the cloned location.
+// Pins that don't reference the source location (or don't exist) are skipped.
+func (h *LocationHandler) cascadePinsForRecipient(ctx context.Context, campaignID, sourceLocationID, cloneLocationID string, recip recipient, cascadeIds []string) error {
+	for _, pinID := range cascadeIds {
+		pin, err := h.pins.GetByID(ctx, campaignID, pinID)
+		if err != nil {
+			return err
+		}
+		if pin == nil || pin.EntityID != sourceLocationID || pin.Type != model.MapPinLocation {
+			continue
+		}
+		existing, err := h.pins.FindCloneOf(ctx, campaignID, pin.ID, recip.PlayerID)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			continue
+		}
+		now := time.Now().UTC()
+		clone := *pin
+		clone.ID = uuid.NewString()
+		clone.OwnerPlayerID = recip.PlayerID
+		clone.OwnerUserID = recip.UserID
+		clone.EntityID = cloneLocationID
+		clone.Visibility = model.Visibility{SharedPlayerIds: []string{}}
+		clone.Clone = &model.CloneAudit{
+			ClonedFromEntryId:       pin.ID,
+			ClonedFromOwnerPlayerId: pin.OwnerPlayerID,
+			ClonedAt:                now,
+		}
+		clone.CreatedAt = now
+		clone.UpdatedAt = now
+		if err := h.pins.Create(ctx, &clone); err != nil {
+			return err
+		}
+	}
+	return nil
 }

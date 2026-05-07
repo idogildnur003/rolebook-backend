@@ -94,6 +94,37 @@ func TestNormalizeAnySlice_EmptyInputReturnsEmptyNotNil(t *testing.T) {
 	}
 }
 
+func TestRewriteIds_Substitutes(t *testing.T) {
+	src := []string{"a", "b", "c"}
+	got := rewriteIds(src, map[string]string{"b": "BB"})
+	want := []string{"a", "BB", "c"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
+	}
+}
+
+func TestRewriteIds_PassthroughOnEmptyMap(t *testing.T) {
+	src := []string{"a", "b"}
+	got := rewriteIds(src, map[string]string{})
+	for i := range src {
+		if got[i] != src[i] {
+			t.Fatalf("got %v, want %v", got, src)
+		}
+	}
+}
+
+func TestRewriteIds_EmptyInput(t *testing.T) {
+	got := rewriteIds(nil, map[string]string{"a": "b"})
+	if got == nil {
+		t.Errorf("nil input → nil; want empty non-nil slice")
+	}
+	if len(got) != 0 {
+		t.Errorf("nil input → %v, want empty", got)
+	}
+}
+
 func TestLocationHandler_ResolveThumbnails_PassesThroughWhenUnconfigured(t *testing.T) {
 	// Unconfigured store → ResolveImageURI is identity.
 	avatars := avatarstore.New(config.Config{})

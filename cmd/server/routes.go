@@ -45,7 +45,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore)
-	locationHandler := handler.NewLocationHandler(locationStore, mapPinStore, campaignStore, avatars)
+	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
@@ -137,6 +137,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/", locationHandler.Create)
 				r.Patch("/{id}", locationHandler.Update)
 				r.Delete("/{id}", locationHandler.Delete)
+				r.Post("/{id}/share", locationHandler.Share)
 			})
 
 			// Per-campaign NPCs
