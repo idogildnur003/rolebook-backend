@@ -136,10 +136,13 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 	return s.client, nil
 }
 
-// PresignPut returns a presigned PUT URL for a new avatar object belonging to
-// playerID. The contentType is signed into the URL; the client must use the
-// same value when uploading.
-func (s *Store) PresignPut(ctx context.Context, playerID, contentType string) (*PresignedPut, error) {
+// PresignPutForKey returns a presigned PUT URL whose object key lives under
+// the given prefix. The prefix should be a slash-delimited path with NO
+// trailing slash and NO scheme (e.g. "campaigns/abc/maps", "players/p1/avatar").
+//
+// Returns ErrInvalidContentType if contentType is outside AllowedContentTypes.
+// Returns ErrNotConfigured if the store has no AWS credentials.
+func (s *Store) PresignPutForKey(ctx context.Context, prefix, contentType string) (*PresignedPut, error) {
 	ext, ok := AllowedContentTypes[contentType]
 	if !ok {
 		return nil, ErrInvalidContentType
@@ -148,7 +151,7 @@ func (s *Store) PresignPut(ctx context.Context, playerID, contentType string) (*
 	if err != nil {
 		return nil, err
 	}
-	key := fmt.Sprintf("players/%s/avatar/%s.%s", playerID, uuid.NewString(), ext)
+	key := fmt.Sprintf("%s/%s.%s", prefix, uuid.NewString(), ext)
 	req, err := client.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(s.bucket),
 		Key:         aws.String(key),
@@ -164,6 +167,13 @@ func (s *Store) PresignPut(ctx context.Context, playerID, contentType string) (*
 		Key:       key,
 		ExpiresAt: time.Now().Add(PutPresignTTL).UTC(),
 	}, nil
+}
+
+// PresignPut returns a presigned PUT URL for a new avatar object belonging to
+// playerID. The contentType is signed into the URL; the client must use the
+// same value when uploading.
+func (s *Store) PresignPut(ctx context.Context, playerID, contentType string) (*PresignedPut, error) {
+	return s.PresignPutForKey(ctx, fmt.Sprintf("players/%s/avatar", playerID), contentType)
 }
 
 // PresignGet returns a short-lived signed URL for reading the given key.
@@ -238,4 +248,12 @@ func (s *Store) ResolveAvatarURI(ctx context.Context, avatarUri string) string {
 		return avatarUri
 	}
 	return url
+}
+
+// ResolveImageURI is identical to ResolveAvatarURI; it's named generically so
+// handlers for non-player resources don't read as "resolve avatar URI for a
+// location thumbnail." Same pass-through rules: bare keys → presigned GET URL
+// (when the store is configured), fully-qualified URLs → unchanged.
+func (s *Store) ResolveImageURI(ctx context.Context, uri string) string {
+	return s.ResolveAvatarURI(ctx, uri)
 }

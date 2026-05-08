@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/locations/{{locationId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "shortNotes": "Updated short notes",
+      "visibility": { "sharedWithAll": true, "sharedPlayerIds": [] }
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

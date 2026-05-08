@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/locations"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "The Sunken Vault",
+      "shortNotes": "Old dwarven stronghold",
+      "fullDescription": "Buried below the river — guarded by water elementals.",
+      "thumbnailUri": "",
+      "sessionId": "{{sessionId}}",
+      "parentLocationId": "",
+      "linkedNpcIds": []
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("locationId", json.id);
+    language: text/javascript
+order: 2000

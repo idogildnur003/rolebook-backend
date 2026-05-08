@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/npcs/{{npcId}}"
+method: PATCH
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "shortNotes": "Updated NPC short notes"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 3000

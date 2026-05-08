@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
 
+	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
@@ -72,5 +75,31 @@ func TestToMemberSummaries_OmitsUserIDOnWire(t *testing.T) {
 	got := string(b)
 	if strings.Contains(got, "u-secret") {
 		t.Errorf("toMemberSummaries leaked userId: %s", got)
+	}
+}
+
+func TestToCampaignDetailWithImages_PassesThroughWhenUnconfigured(t *testing.T) {
+	avatars := avatarstore.New(config.Config{})
+	mapKey := "campaigns/c1/maps/abc.png"
+	c := &model.Campaign{
+		ID:          "c1",
+		Name:        "Test",
+		MapImageURI: &mapKey,
+		Members: []model.CampaignMember{
+			{UserID: "u1", PlayerID: "p1", Role: model.RoleDM, IsActive: true},
+		},
+	}
+	d := toCampaignDetailWithImages(context.Background(), c, "u1", avatars)
+	if d.MapImageURI == nil || *d.MapImageURI != "campaigns/c1/maps/abc.png" {
+		t.Errorf("MapImageURI = %v, want passthrough key", d.MapImageURI)
+	}
+}
+
+func TestToCampaignDetailWithImages_NilMapImage(t *testing.T) {
+	avatars := avatarstore.New(config.Config{})
+	c := &model.Campaign{ID: "c1", Name: "Test"}
+	d := toCampaignDetailWithImages(context.Background(), c, "", avatars)
+	if d.MapImageURI != nil {
+		t.Errorf("MapImageURI = %v, want nil", d.MapImageURI)
 	}
 }

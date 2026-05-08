@@ -2,14 +2,6 @@ package model
 
 import "time"
 
-// MapPin is a labelled point on a campaign map image.
-type MapPin struct {
-	ID    string  `bson:"id"    json:"id"`
-	X     float64 `bson:"x"     json:"x"`
-	Y     float64 `bson:"y"     json:"y"`
-	Label string  `bson:"label" json:"label"`
-}
-
 // Session is a play session embedded inside a Campaign document.
 type Session struct {
 	ID          string    `bson:"id"          json:"id"`
@@ -35,7 +27,6 @@ type Campaign struct {
 	Name              string           `bson:"name"              json:"name"`
 	ThemeImage        string           `bson:"themeImage"        json:"themeImage"`
 	MapImageURI       *string          `bson:"mapImageUri"       json:"mapImageUri"`
-	MapPins           []MapPin         `bson:"mapPins"           json:"mapPins"`
 	Sessions          []Session        `bson:"sessions"          json:"sessions"`
 	Members           []CampaignMember `bson:"members"           json:"members"`
 	DisabledSpells    []string         `bson:"disabledSpells"    json:"disabledSpells"`
