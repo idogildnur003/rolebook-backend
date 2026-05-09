@@ -33,13 +33,14 @@ func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerSto
 // campaignListItem is the slim shape returned by List.
 // myRole and myPlayerId reflect the caller. members is included only for DM callers.
 type campaignListItem struct {
-	ID         string                  `json:"id"`
-	MyRole     model.Role              `json:"myRole"`
-	MyPlayerID string                  `json:"myPlayerId"`
-	Name       string                  `json:"name"`
-	ThemeImage string                  `json:"themeImage"`
-	Sessions   []campaignListSession   `json:"sessions"`
-	Members    []campaignMemberSummary `json:"members,omitempty"`
+	ID          string                  `json:"id"`
+	MyRole      model.Role              `json:"myRole"`
+	MyPlayerID  string                  `json:"myPlayerId"`
+	Name        string                  `json:"name"`
+	ThemeImage  string                  `json:"themeImage"`
+	MapImageURI *string                 `json:"mapImageUri,omitempty"`
+	Sessions    []campaignListSession   `json:"sessions"`
+	Members     []campaignMemberSummary `json:"members,omitempty"`
 }
 
 type campaignListSession struct {
@@ -150,6 +151,10 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 			Name:       c.Name,
 			ThemeImage: c.ThemeImage,
 			Sessions:   sessions,
+		}
+		if c.MapImageURI != nil && *c.MapImageURI != "" {
+			resolved := h.avatars.ResolveImageURI(ctx, *c.MapImageURI)
+			item.MapImageURI = &resolved
 		}
 		if myRole == model.RoleDM {
 			item.Members = toMemberSummaries(c.Members)

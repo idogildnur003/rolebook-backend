@@ -103,3 +103,27 @@ func TestToCampaignDetailWithImages_NilMapImage(t *testing.T) {
 		t.Errorf("MapImageURI = %v, want nil", d.MapImageURI)
 	}
 }
+
+func TestCampaignListItem_IncludesMapImageURIWhenSet(t *testing.T) {
+	mapKey := "campaigns/c1/maps/abc.png"
+	item := campaignListItem{ID: "c1", Name: "Test", MapImageURI: &mapKey}
+	b, err := json.Marshal(item)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	got := string(b)
+	if !strings.Contains(got, `"mapImageUri":"campaigns/c1/maps/abc.png"`) {
+		t.Errorf("campaignListItem missing mapImageUri: %s", got)
+	}
+}
+
+func TestCampaignListItem_OmitsMapImageURIWhenNil(t *testing.T) {
+	item := campaignListItem{ID: "c1", Name: "Test"}
+	b, err := json.Marshal(item)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(b), "mapImageUri") {
+		t.Errorf("campaignListItem leaked nil mapImageUri: %s", b)
+	}
+}
