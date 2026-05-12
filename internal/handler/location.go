@@ -185,6 +185,27 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var oldThumbKey, newThumbKey string
+	thumbKeyChanged := false
+	if v, ok := patch["thumbnailUri"]; ok {
+		newStr, _ := v.(string)
+		newThumbKey = newStr
+		oldThumbKey = existing.ThumbnailURI
+		if newThumbKey != oldThumbKey {
+			thumbKeyChanged = true
+			if newThumbKey != "" {
+				if err := h.avatars.Verify(r.Context(), newThumbKey); err != nil {
+					if errors.Is(err, avatarstore.ErrNotFound) {
+						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
+						return
+					}
+					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+					return
+				}
+			}
+		}
+	}
+
 	if v, ok := patch["visibility"]; ok {
 		if !isValidVisibilityPatch(v) {
 			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
@@ -210,6 +231,11 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if updated == nil {
 		writeError(w, http.StatusNotFound, "location not found", "NOT_FOUND")
 		return
+	}
+	if thumbKeyChanged && oldThumbKey != "" {
+		if err := h.avatars.Delete(r.Context(), oldThumbKey); err != nil {
+			log.Printf("location %s/%s: delete old thumbnail %q: %v", campaignID, id, oldThumbKey, err)
+		}
 	}
 	updated.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), updated.ThumbnailURI)
 	writeJSON(w, http.StatusOK, updated)
