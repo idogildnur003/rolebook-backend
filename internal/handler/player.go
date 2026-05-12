@@ -240,11 +240,10 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var oldAvatarKey, newAvatarKey string
+	var oldAvatarKey string
 	avatarKeyChanged := false
 	if v, ok := req["avatarUri"]; ok {
-		newStr, _ := v.(string)
-		newAvatarKey = newStr
+		newAvatarKey, _ := v.(string)
 		oldAvatarKey = access.Player.AvatarURI
 		if newAvatarKey != oldAvatarKey {
 			avatarKeyChanged = true

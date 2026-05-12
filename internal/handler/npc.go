@@ -141,11 +141,21 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var oldAvatarKey, newAvatarKey string
+	if v, ok := patch["visibility"]; ok {
+		if !isValidVisibilityPatch(v) {
+			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
+			return
+		}
+	}
+
+	if v, ok := patch["linkedLocationIds"].([]any); ok {
+		patch["linkedLocationIds"] = normalizeAnySlice(v)
+	}
+
+	var oldAvatarKey string
 	avatarKeyChanged := false
 	if v, ok := patch["avatarUri"]; ok {
-		newStr, _ := v.(string)
-		newAvatarKey = newStr
+		newAvatarKey, _ := v.(string)
 		oldAvatarKey = existing.AvatarURI
 		if newAvatarKey != oldAvatarKey {
 			avatarKeyChanged = true
@@ -160,17 +170,6 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-	}
-
-	if v, ok := patch["visibility"]; ok {
-		if !isValidVisibilityPatch(v) {
-			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
-			return
-		}
-	}
-
-	if v, ok := patch["linkedLocationIds"].([]any); ok {
-		patch["linkedLocationIds"] = normalizeAnySlice(v)
 	}
 
 	updated, err := h.npcs.Update(r.Context(), campaignID, id, bson.M(patch))

@@ -202,7 +202,8 @@ func (s *Store) PresignGet(ctx context.Context, key string) (string, error) {
 }
 
 // Verify checks that the object referenced by key exists in S3.
-// No-op (returns nil) when the store is unconfigured or the value is not a key.
+// No-op (returns nil) when the store is unconfigured or the value is not a key
+// (e.g., empty string or legacy fully-qualified URL).
 // Returns ErrNotFound for missing objects; wraps other S3 errors.
 func (s *Store) Verify(ctx context.Context, key string) error {
 	if !LooksLikeKey(key) || !s.IsConfigured() {
@@ -230,10 +231,10 @@ func (s *Store) Verify(ctx context.Context, key string) error {
 	return nil
 }
 
-// Delete removes the S3 object at key. No-op when the store is unconfigured,
-// key is empty, or key is not in our key-format (e.g., legacy fully-qualified
-// URLs). Callers should treat returned errors as best-effort signals: a failed
-// delete should be logged but not fail the user-facing request.
+// Delete removes the S3 object at key. No-op when the store is unconfigured or
+// the value is not a key (e.g., empty string or legacy fully-qualified URL).
+// Callers should treat returned errors as best-effort signals: a failed delete
+// should be logged but not fail the user-facing request.
 func (s *Store) Delete(ctx context.Context, key string) error {
 	if !LooksLikeKey(key) || !s.IsConfigured() {
 		return nil

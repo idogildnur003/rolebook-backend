@@ -185,27 +185,6 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var oldThumbKey, newThumbKey string
-	thumbKeyChanged := false
-	if v, ok := patch["thumbnailUri"]; ok {
-		newStr, _ := v.(string)
-		newThumbKey = newStr
-		oldThumbKey = existing.ThumbnailURI
-		if newThumbKey != oldThumbKey {
-			thumbKeyChanged = true
-			if newThumbKey != "" {
-				if err := h.avatars.Verify(r.Context(), newThumbKey); err != nil {
-					if errors.Is(err, avatarstore.ErrNotFound) {
-						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
-						return
-					}
-					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-					return
-				}
-			}
-		}
-	}
-
 	if v, ok := patch["visibility"]; ok {
 		if !isValidVisibilityPatch(v) {
 			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
@@ -221,6 +200,26 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, ok := patch["linkedNpcIds"].([]any); ok {
 		patch["linkedNpcIds"] = normalizeAnySlice(v)
+	}
+
+	var oldThumbKey string
+	thumbKeyChanged := false
+	if v, ok := patch["thumbnailUri"]; ok {
+		newThumbKey, _ := v.(string)
+		oldThumbKey = existing.ThumbnailURI
+		if newThumbKey != oldThumbKey {
+			thumbKeyChanged = true
+			if newThumbKey != "" {
+				if err := h.avatars.Verify(r.Context(), newThumbKey); err != nil {
+					if errors.Is(err, avatarstore.ErrNotFound) {
+						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
+						return
+					}
+					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+					return
+				}
+			}
+		}
 	}
 
 	updated, err := h.locations.Update(r.Context(), campaignID, id, bson.M(patch))

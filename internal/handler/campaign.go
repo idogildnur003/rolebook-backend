@@ -262,11 +262,10 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var oldMapKey, newMapKey string
+	var oldMapKey string
 	mapKeyChanged := false
 	if v, ok := fields["mapImageUri"]; ok {
-		newStr, _ := v.(string)
-		newMapKey = newStr
+		newMapKey, _ := v.(string)
 		if membership.Campaign.MapImageURI != nil {
 			oldMapKey = *membership.Campaign.MapImageURI
 		}
