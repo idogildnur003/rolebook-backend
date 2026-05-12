@@ -28,6 +28,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/elad/rolebook-backend/config"
 	"github.com/google/uuid"
 )
@@ -56,6 +57,9 @@ var ErrInvalidContentType = errors.New("invalid content type")
 // ErrNotConfigured is returned when avatar storage is not configured.
 var ErrNotConfigured = errors.New("avatar storage not configured")
 
+// ErrNotFound indicates the requested S3 object does not exist.
+var ErrNotFound = errors.New("object not found")
+
 // PresignedPut is the result of a successful PresignPut call.
 type PresignedPut struct {
 	URL       string
@@ -68,6 +72,7 @@ type PresignedPut struct {
 type presignClient interface {
 	PresignPutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error)
 	PresignGetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error)
+	HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
 }
 
 // presignedRequest mirrors v4.PresignedHTTPRequest (URL only — that's all we expose).
@@ -128,7 +133,7 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 			return
 		}
 		s3client := s3.NewFromConfig(cfg)
-		s.client = realPresign{ps: s3.NewPresignClient(s3client)}
+		s.client = realPresign{ps: s3.NewPresignClient(s3client), s3: s3client}
 	})
 	if s.initEr != nil {
 		return nil, s.initEr
@@ -195,6 +200,35 @@ func (s *Store) PresignGet(ctx context.Context, key string) (string, error) {
 	return req.URL, nil
 }
 
+// Verify checks that the object referenced by key exists in S3.
+// No-op (returns nil) when the store is unconfigured or the value is not a key.
+// Returns ErrNotFound for missing objects; wraps other S3 errors.
+func (s *Store) Verify(ctx context.Context, key string) error {
+	if !LooksLikeKey(key) || !s.IsConfigured() {
+		return nil
+	}
+	client, err := s.ensureClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		var nf *s3types.NotFound
+		if errors.As(err, &nf) {
+			return ErrNotFound
+		}
+		var nsk *s3types.NoSuchKey
+		if errors.As(err, &nsk) {
+			return ErrNotFound
+		}
+		return fmt.Errorf("avatarstore: head object: %w", err)
+	}
+	return nil
+}
+
 // LooksLikeKey reports whether s should be treated as an S3 object key (true)
 // versus a fully-qualified URL (false). Anything with a "<scheme>:" prefix
 // (http, https, file, content, data, idb, blob, …) is a URL.
@@ -217,6 +251,7 @@ func LooksLikeKey(s string) bool {
 // realPresign adapts an *s3.PresignClient to our presignClient interface.
 type realPresign struct {
 	ps *s3.PresignClient
+	s3 *s3.Client
 }
 
 func (r realPresign) PresignPutObject(ctx context.Context, in *s3.PutObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error) {
@@ -233,6 +268,10 @@ func (r realPresign) PresignGetObject(ctx context.Context, in *s3.GetObjectInput
 		return nil, err
 	}
 	return &presignedRequest{URL: out.URL}, nil
+}
+
+func (r realPresign) HeadObject(ctx context.Context, in *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
+	return r.s3.HeadObject(ctx, in, optFns...)
 }
 
 // ResolveAvatarURI returns either a presigned GET URL (if avatarUri looks like
