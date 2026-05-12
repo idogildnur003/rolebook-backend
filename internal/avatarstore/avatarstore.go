@@ -73,6 +73,7 @@ type presignClient interface {
 	PresignPutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error)
 	PresignGetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error)
 	HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+	DeleteObject(ctx context.Context, params *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error)
 }
 
 // presignedRequest mirrors v4.PresignedHTTPRequest (URL only — that's all we expose).
@@ -133,7 +134,7 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 			return
 		}
 		s3client := s3.NewFromConfig(cfg)
-		s.client = realPresign{ps: s3.NewPresignClient(s3client), s3: s3client}
+		s.client = realPresign{ps: s3.NewPresignClient(s3client), client: s3client}
 	})
 	if s.initEr != nil {
 		return nil, s.initEr
@@ -229,6 +230,28 @@ func (s *Store) Verify(ctx context.Context, key string) error {
 	return nil
 }
 
+// Delete removes the S3 object at key. No-op when the store is unconfigured,
+// key is empty, or key is not in our key-format (e.g., legacy fully-qualified
+// URLs). Callers should treat returned errors as best-effort signals: a failed
+// delete should be logged but not fail the user-facing request.
+func (s *Store) Delete(ctx context.Context, key string) error {
+	if !LooksLikeKey(key) || !s.IsConfigured() {
+		return nil
+	}
+	client, err := s.ensureClient(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return fmt.Errorf("avatarstore: delete object: %w", err)
+	}
+	return nil
+}
+
 // LooksLikeKey reports whether s should be treated as an S3 object key (true)
 // versus a fully-qualified URL (false). Anything with a "<scheme>:" prefix
 // (http, https, file, content, data, idb, blob, …) is a URL.
@@ -250,8 +273,8 @@ func LooksLikeKey(s string) bool {
 
 // realPresign adapts an *s3.PresignClient to our presignClient interface.
 type realPresign struct {
-	ps *s3.PresignClient
-	s3 *s3.Client
+	ps     *s3.PresignClient
+	client *s3.Client
 }
 
 func (r realPresign) PresignPutObject(ctx context.Context, in *s3.PutObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error) {
@@ -271,7 +294,11 @@ func (r realPresign) PresignGetObject(ctx context.Context, in *s3.GetObjectInput
 }
 
 func (r realPresign) HeadObject(ctx context.Context, in *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
-	return r.s3.HeadObject(ctx, in, optFns...)
+	return r.client.HeadObject(ctx, in, optFns...)
+}
+
+func (r realPresign) DeleteObject(ctx context.Context, in *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error) {
+	return r.client.DeleteObject(ctx, in, optFns...)
 }
 
 // ResolveAvatarURI returns either a presigned GET URL (if avatarUri looks like

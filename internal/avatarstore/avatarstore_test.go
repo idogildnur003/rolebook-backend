@@ -164,9 +164,11 @@ type stubPresign struct {
 	lastPutContentType string
 	lastGetKey         string
 
-	// Head/Delete recorders (Task 1/2)
 	headKey string
 	headErr error
+
+	deleteKey string
+	deleteErr error
 }
 
 func (s *stubPresign) HeadObject(_ context.Context, in *s3.HeadObjectInput, _ ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
@@ -175,6 +177,14 @@ func (s *stubPresign) HeadObject(_ context.Context, in *s3.HeadObjectInput, _ ..
 		return nil, s.headErr
 	}
 	return &s3.HeadObjectOutput{}, nil
+}
+
+func (s *stubPresign) DeleteObject(_ context.Context, in *s3.DeleteObjectInput, _ ...func(*s3.Options)) (*s3.DeleteObjectOutput, error) {
+	s.deleteKey = aws.ToString(in.Key)
+	if s.deleteErr != nil {
+		return nil, s.deleteErr
+	}
+	return &s3.DeleteObjectOutput{}, nil
 }
 
 func (s *stubPresign) PresignPutObject(_ context.Context, in *s3.PutObjectInput, _ ...func(*s3.PresignOptions)) (*presignedRequest, error) {
@@ -275,6 +285,45 @@ func TestVerifyOtherError(t *testing.T) {
 	err := s.Verify(context.Background(), "campaigns/c/maps/k.png")
 	if err == nil || errors.Is(err, ErrNotFound) {
 		t.Fatalf("expected wrapped non-NotFound error, got %v", err)
+	}
+}
+
+func TestDeleteNotConfigured(t *testing.T) {
+	s := New(config.Config{})
+	if err := s.Delete(context.Background(), "campaigns/c/maps/k.png"); err != nil {
+		t.Fatalf("expected nil on unconfigured store, got %v", err)
+	}
+}
+
+func TestDeleteNonKey(t *testing.T) {
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(&stubPresign{})
+	if err := s.Delete(context.Background(), "https://example/x"); err != nil {
+		t.Fatalf("expected nil for URL value, got %v", err)
+	}
+	if err := s.Delete(context.Background(), ""); err != nil {
+		t.Fatalf("expected nil for empty, got %v", err)
+	}
+}
+
+func TestDeleteSuccess(t *testing.T) {
+	stub := &stubPresign{}
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(stub)
+	if err := s.Delete(context.Background(), "campaigns/c/maps/old.png"); err != nil {
+		t.Fatalf("expected nil, got %v", err)
+	}
+	if stub.deleteKey != "campaigns/c/maps/old.png" {
+		t.Fatalf("DeleteObject not called with expected key, got %q", stub.deleteKey)
+	}
+}
+
+func TestDeleteError(t *testing.T) {
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(&stubPresign{deleteErr: errors.New("boom")})
+	err := s.Delete(context.Background(), "campaigns/c/maps/old.png")
+	if err == nil {
+		t.Fatalf("expected error, got nil")
 	}
 }
 
