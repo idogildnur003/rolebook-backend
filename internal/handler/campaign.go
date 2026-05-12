@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -260,6 +261,30 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "no valid fields to update", "BAD_REQUEST")
 		return
 	}
+
+	var oldMapKey, newMapKey string
+	mapKeyChanged := false
+	if v, ok := fields["mapImageUri"]; ok {
+		newStr, _ := v.(string)
+		newMapKey = newStr
+		if membership.Campaign.MapImageURI != nil {
+			oldMapKey = *membership.Campaign.MapImageURI
+		}
+		if newMapKey != oldMapKey {
+			mapKeyChanged = true
+			if newMapKey != "" {
+				if err := h.avatars.Verify(r.Context(), newMapKey); err != nil {
+					if errors.Is(err, avatarstore.ErrNotFound) {
+						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
+						return
+					}
+					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+					return
+				}
+			}
+		}
+	}
+
 	updated, err := h.campaigns.Update(r.Context(), id, fields)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -268,6 +293,11 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if updated == nil {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
+	}
+	if mapKeyChanged && oldMapKey != "" {
+		if err := h.avatars.Delete(r.Context(), oldMapKey); err != nil {
+			log.Printf("campaign %s: delete old map image %q: %v", id, oldMapKey, err)
+		}
 	}
 	writeJSON(w, http.StatusOK, toCampaignDetailWithImages(r.Context(), updated, membership.UserID, h.avatars))
 }
