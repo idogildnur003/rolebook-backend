@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -140,6 +141,27 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var oldAvatarKey, newAvatarKey string
+	avatarKeyChanged := false
+	if v, ok := patch["avatarUri"]; ok {
+		newStr, _ := v.(string)
+		newAvatarKey = newStr
+		oldAvatarKey = existing.AvatarURI
+		if newAvatarKey != oldAvatarKey {
+			avatarKeyChanged = true
+			if newAvatarKey != "" {
+				if err := h.avatars.Verify(r.Context(), newAvatarKey); err != nil {
+					if errors.Is(err, avatarstore.ErrNotFound) {
+						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
+						return
+					}
+					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+					return
+				}
+			}
+		}
+	}
+
 	if v, ok := patch["visibility"]; ok {
 		if !isValidVisibilityPatch(v) {
 			writeError(w, http.StatusBadRequest, "visibility must be { sharedWithAll: bool, sharedPlayerIds: string[] }", "BAD_REQUEST")
@@ -159,6 +181,11 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if updated == nil {
 		writeError(w, http.StatusNotFound, "npc not found", "NOT_FOUND")
 		return
+	}
+	if avatarKeyChanged && oldAvatarKey != "" {
+		if err := h.avatars.Delete(r.Context(), oldAvatarKey); err != nil {
+			log.Printf("npc %s/%s: delete old avatar %q: %v", campaignID, id, oldAvatarKey, err)
+		}
 	}
 	updated.AvatarURI = h.avatars.ResolveImageURI(r.Context(), updated.AvatarURI)
 	writeJSON(w, http.StatusOK, updated)
