@@ -317,6 +317,74 @@ func isTxnUnsupported(err error) bool {
 	return strings.Contains(msg, "replica set") || strings.Contains(msg, "Transaction numbers")
 }
 
+// GetMemberSessionNotes returns the caller's session notes map for a campaign.
+// Returns an empty (non-nil) map if the campaign or member doesn't exist or
+// has no notes saved.
+func (s *CampaignStore) GetMemberSessionNotes(ctx context.Context, campaignID, userID string) (map[string]string, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return map[string]string{}, nil
+	}
+	for _, m := range campaign.Members {
+		if m.UserID == userID {
+			if m.SessionNotes == nil {
+				return map[string]string{}, nil
+			}
+			out := make(map[string]string, len(m.SessionNotes))
+			for k, v := range m.SessionNotes {
+				out[k] = v
+			}
+			return out, nil
+		}
+	}
+	return map[string]string{}, nil
+}
+
+// UpsertMemberSessionNote sets a single session note for the given member.
+// Returns (false, nil) if the campaign or member is not found.
+func (s *CampaignStore) UpsertMemberSessionNote(ctx context.Context, campaignID, userID, sessionID, text string) (bool, error) {
+	now := time.Now().UTC()
+	res, err := s.col.UpdateOne(
+		ctx,
+		bson.M{"_id": campaignID, "members.userId": userID},
+		bson.M{
+			"$set": bson.M{
+				"members.$.sessionNotes." + sessionID: text,
+				"updatedAt":                          now,
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.MatchedCount > 0, nil
+}
+
+// DeleteMemberSessionNote removes a single session note for the given member.
+// Returns (false, nil) if the campaign or member is not found.
+func (s *CampaignStore) DeleteMemberSessionNote(ctx context.Context, campaignID, userID, sessionID string) (bool, error) {
+	now := time.Now().UTC()
+	res, err := s.col.UpdateOne(
+		ctx,
+		bson.M{"_id": campaignID, "members.userId": userID},
+		bson.M{
+			"$unset": bson.M{
+				"members.$.sessionNotes." + sessionID: "",
+			},
+			"$set": bson.M{
+				"updatedAt": now,
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return res.MatchedCount > 0, nil
+}
+
 func (s *CampaignStore) find(ctx context.Context, filter bson.M) ([]model.Campaign, error) {
 	cursor, err := s.col.Find(ctx, filter)
 	if err != nil {
