@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -52,5 +53,51 @@ func TestNormalizeSessionNoteText_AcceptsAtLimit(t *testing.T) {
 	}
 	if len(text) != 10000 {
 		t.Errorf("text length = %d, want 10000", len(text))
+	}
+}
+
+func TestSessionNotesGetResponse_ShapeAndOmissions(t *testing.T) {
+	resp := sessionNotesGetResponse{
+		Notes: map[string]string{
+			"s-1": "hello",
+		},
+	}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	got := string(b)
+	if !strings.Contains(got, `"notes"`) {
+		t.Errorf("response missing 'notes' key: %s", got)
+	}
+	if !strings.Contains(got, `"s-1":"hello"`) {
+		t.Errorf("response missing note entry: %s", got)
+	}
+}
+
+func TestSessionNotesGetResponse_EmptyNotesIsEmptyObject(t *testing.T) {
+	resp := sessionNotesGetResponse{Notes: map[string]string{}}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	got := string(b)
+	if got != `{"notes":{}}` {
+		t.Errorf("empty response = %s, want {\"notes\":{}}", got)
+	}
+}
+
+func TestSessionNotesPutResponse_Shape(t *testing.T) {
+	resp := sessionNotesPutResponse{SessionID: "s-1", Text: "ok"}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	got := string(b)
+	if !strings.Contains(got, `"sessionId":"s-1"`) {
+		t.Errorf("missing sessionId: %s", got)
+	}
+	if !strings.Contains(got, `"text":"ok"`) {
+		t.Errorf("missing text: %s", got)
 	}
 }
