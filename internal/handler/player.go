@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"unicode"
@@ -238,6 +240,26 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var oldAvatarKey string
+	avatarKeyChanged := false
+	if v, ok := req["avatarUri"]; ok {
+		newAvatarKey, _ := v.(string)
+		oldAvatarKey = access.Player.AvatarURI
+		if newAvatarKey != oldAvatarKey {
+			avatarKeyChanged = true
+			if newAvatarKey != "" {
+				if err := h.avatars.Verify(r.Context(), newAvatarKey); err != nil {
+					if errors.Is(err, avatarstore.ErrNotFound) {
+						writeError(w, http.StatusBadRequest, "uploaded image not found", "UPLOAD_NOT_FOUND")
+						return
+					}
+					writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+					return
+				}
+			}
+		}
+	}
+
 	updated, err := h.players.Update(r.Context(), playerID, userID, access.IsDM, bson.M(req))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -246,6 +268,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if updated == nil {
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
+	}
+	if avatarKeyChanged && oldAvatarKey != "" {
+		if err := h.avatars.Delete(r.Context(), oldAvatarKey); err != nil {
+			log.Printf("player %s: delete old avatar %q: %v", playerID, oldAvatarKey, err)
+		}
 	}
 	h.resolveAvatarURI(r.Context(), updated)
 	writeJSON(w, http.StatusOK, updated)
