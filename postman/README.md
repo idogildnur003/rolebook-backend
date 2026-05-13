@@ -125,18 +125,56 @@ The created campaign returns `myRole: "dm"` and a `myPlayerId` for a freshly-min
 
 ## Sessions
 
-Requires Bearer `{{token}}`. All operations require campaign DM.
+Requires Bearer `{{token}}`. Session CRUD requires the campaign DM; schedule sub-resources are open to active members as noted below.
 
 | Method | Path | Description | Status |
 |---|---|---|---|
 | POST | `/campaigns/{{campaignId}}/sessions` | Create session → sets `sessionId` | 201 |
 | PATCH | `/campaigns/{{campaignId}}/sessions/{{sessionId}}` | Update session | 200 |
 | DELETE | `/campaigns/{{campaignId}}/sessions/{{sessionId}}` | Delete session | 204 |
+| PUT    | `/campaigns/{{campaignId}}/sessions/{{sessionId}}/availability`     | Upsert caller's availability grid; X-Timezone required on first write — any active member | 200 |
+| DELETE | `/campaigns/{{campaignId}}/sessions/{{sessionId}}/availability`     | Remove caller's availability entry — any active member                                    | 204 |
+| PUT    | `/campaigns/{{campaignId}}/sessions/{{sessionId}}/confirmed-slot`   | Set/replace the confirmed slot — DM only                                                  | 200 |
+| DELETE | `/campaigns/{{campaignId}}/sessions/{{sessionId}}/confirmed-slot`   | Clear the confirmed slot — DM only                                                        | 204 |
 
 **POST body:**
 ```json
 { "name": "Session 1 — The Cave", "description": "The party entered the goblin cave." }
 ```
+
+### Session Schedule
+
+`session.schedule` is an optional sub-document on each session. Identity is by `playerId` — `userId` never appears.
+
+```json
+{
+  "schedule": {
+    "dmTimezone": "America/New_York",
+    "participantAvailabilities": [
+      {
+        "playerId": "player-dm-1",
+        "availabilityByDate": {
+          "2026-05-04": { "morning": true, "noon": true, "evening": false },
+          "2026-05-11": { "morning": false, "noon": true, "evening": true }
+        },
+        "updatedAt": "2026-04-20T10:30:00Z"
+      }
+    ],
+    "confirmedSlot": {
+      "date": "2026-05-11",
+      "dayPart": "evening",
+      "startAt": "2026-05-11T23:00:00Z",
+      "durationMinutes": 240,
+      "confirmedAt": "2026-04-20T10:31:00Z"
+    },
+    "updatedAt": "2026-04-20T10:31:00Z"
+  }
+}
+```
+
+**Bootstrap rule:** the *first* write on a session bootstraps `schedule` with `dmTimezone`. The DM must make this call (with `X-Timezone: <IANA>`). A non-DM caller writing first gets `409 SCHEDULE_NOT_INITIALIZED`.
+
+**Error codes:** `SCHEDULE_NOT_INITIALIZED` (409), `INVALID_TIMEZONE` (400), `INVALID_DAY_PART` (400), `INVALID_DATE_KEY` (400), `INVALID_DURATION` (400).
 
 ---
 

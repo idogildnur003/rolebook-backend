@@ -39,6 +39,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
+	sessionScheduleHandler := handler.NewSessionScheduleHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog, customEquipmentStore)
@@ -75,6 +76,12 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/", sessionHandler.Create)
 				r.Patch("/{sessionId}", sessionHandler.Update)
 				r.Delete("/{sessionId}", sessionHandler.Delete)
+
+				// Session schedule sub-resources
+				r.Put("/{sessionId}/availability", sessionScheduleHandler.PutAvailability)
+				r.Delete("/{sessionId}/availability", sessionScheduleHandler.DeleteAvailability)
+				r.Put("/{sessionId}/confirmed-slot", sessionScheduleHandler.PutConfirmedSlot)
+				r.Delete("/{sessionId}/confirmed-slot", sessionScheduleHandler.DeleteConfirmedSlot)
 			})
 
 			// Uploads (presigned S3 URLs)

@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/sessions/{{sessionId}}/availability"
+method: PUT
+headers:
+  Content-Type: application/json
+  X-Timezone: America/New_York
+body:
+  type: json
+  content: |-
+    {
+      "availabilityByDate": {
+        "2026-05-04": { "morning": true, "noon": true, "evening": false },
+        "2026-05-11": { "morning": false, "noon": true, "evening": true }
+      }
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 4000

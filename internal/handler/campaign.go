@@ -306,6 +306,10 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 // returns 400 BAD_REQUEST when targeting the DM's own member entry.
 // Body: { "isActive": bool }
 // Used to archive (isActive=false) or restore (isActive=true) a campaign player.
+//
+// Archive cascade: on archive, the player's availability entries are pruned
+// from every session schedule. The prune is idempotent, so a 500 from this
+// step is safe to retry by re-PATCHing isActive=false.
 func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "id")
 	playerID := chi.URLParam(r, "playerId")
@@ -364,6 +368,15 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 		// Race: member existed at pre-check but no longer does. Treat as 404.
 		writeError(w, http.StatusNotFound, "player not found in campaign", "NOT_FOUND")
 		return
+	}
+
+	// Archive cascade: remove the player's availability from every session's
+	// schedule. No-op on restore (isActive == true).
+	if !req.IsActive {
+		if err := h.campaigns.PruneSchedulesForPlayer(ctx, campaignID, playerID); err != nil {
+			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+			return
+		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
