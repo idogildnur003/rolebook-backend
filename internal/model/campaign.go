@@ -12,10 +12,15 @@ type Session struct {
 }
 
 // SessionDayParts flags which day-parts a participant can make for a date.
+//
+// Each part is a *bool with omitempty so the wire/BSON distinguishes
+// "unvoted" (absent / nil) from explicit "unavailable" (false). Plain bool
+// would coerce a missing key to false on JSON decode, silently turning an
+// unvoted slot into an explicit "X" on every round-trip.
 type SessionDayParts struct {
-	Morning bool `bson:"morning" json:"morning"`
-	Noon    bool `bson:"noon"    json:"noon"`
-	Evening bool `bson:"evening" json:"evening"`
+	Morning *bool `bson:"morning,omitempty" json:"morning,omitempty"`
+	Noon    *bool `bson:"noon,omitempty"    json:"noon,omitempty"`
+	Evening *bool `bson:"evening,omitempty" json:"evening,omitempty"`
 }
 
 // SessionAvailability records one campaign member's availability across dates.
