@@ -158,7 +158,8 @@ func (s *CampaignStore) UpdateSession(ctx context.Context, campaignID, sessionID
 	return updatedSession, nil
 }
 
-// DeleteSession removes an embedded session from a campaign and bumps updatedAt.
+// DeleteSession removes an embedded session from a campaign, strips the
+// sessionId from every member's session notes map, and bumps updatedAt.
 // Returns (false, nil) if the campaign or session is not found.
 func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID string) (bool, error) {
 	campaign, err := s.GetByID(ctx, campaignID)
@@ -169,6 +170,8 @@ func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID
 		return false, nil
 	}
 	now := time.Now().UTC()
+
+	// 1. Remove the session itself.
 	res, err := s.col.UpdateOne(
 		ctx,
 		bson.M{"_id": campaignID},
@@ -180,7 +183,25 @@ func (s *CampaignStore) DeleteSession(ctx context.Context, campaignID, sessionID
 	if err != nil {
 		return false, err
 	}
-	return res.ModifiedCount > 0, nil
+	if res.ModifiedCount == 0 {
+		return false, nil
+	}
+
+	// 2. Strip the orphan note key from every member's sessionNotes map.
+	//    Uses the all-positional operator $[] to touch every element of members[].
+	_, err = s.col.UpdateOne(
+		ctx,
+		bson.M{"_id": campaignID},
+		bson.M{
+			"$unset": bson.M{
+				"members.$[].sessionNotes." + sessionID: "",
+			},
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // AddMember appends a CampaignMember to the campaign's embedded members array.
