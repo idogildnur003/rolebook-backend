@@ -140,6 +140,41 @@ Requires Bearer `{{token}}`. All operations require campaign DM.
 
 ---
 
+## Session Notes
+
+Per-user, per-session private notes. Each campaign member (DM and players alike) has their own private notes for each session in a campaign. Notes are never visible to other members and are never serialized in any other endpoint's response.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/my-session-notes` | Any member (active or inactive) | Returns the caller's notes for every session in the campaign | 200 |
+| PUT | `/campaigns/{{campaignId}}/sessions/{{sessionId}}/my-notes` | Active member | Upsert the caller's note for a single session | 200 |
+
+**GET response:**
+```json
+{ "notes": { "sess-1": "I rolled a nat 20", "sess-2": "TPK avoided" } }
+```
+
+Returns `{ "notes": {} }` when the caller has no notes. Inactive (archived) members retain read access.
+
+**PUT body:**
+```json
+{ "text": "Today the party explored the cave..." }
+```
+
+**PUT response:**
+```json
+{ "sessionId": "sess-1", "text": "Today the party explored the cave..." }
+```
+
+- `text` is trimmed of leading/trailing whitespace before storage.
+- Empty / whitespace-only `text` removes the note entry and returns `{ sessionId, text: "" }`. No separate DELETE endpoint.
+- `text` length cap: 10,000 characters. Over the cap → `400 BAD_REQUEST`.
+- Unknown `sessionId` → `404 NOT_FOUND`.
+- Inactive members on PUT → `403 FORBIDDEN`.
+- Deleting a session via `DELETE /sessions/{{sessionId}}` strips that sessionId from every member's notes map.
+
+---
+
 ## Locations
 
 Per-campaign journal entries for places. Owned per-member: any campaign member can List and Create; only the owner can Update, Delete, or Share. Read visibility is owner-only by default; widened via `visibility.sharedWithAll` or `visibility.sharedPlayerIds`. Sub-locations are supported one level deep (a location with `parentLocationId` cannot itself be a parent).
