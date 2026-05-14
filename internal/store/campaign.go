@@ -19,6 +19,11 @@ import (
 // role:"player" entries support it.
 var ErrCannotArchiveDM = errors.New("cannot archive the campaign DM")
 
+// ErrScheduleNotInitialized is returned by SetSessionAvailability when a
+// non-DM caller tries to write availability before the DM has bootstrapped
+// the session schedule.
+var ErrScheduleNotInitialized = errors.New("session schedule not initialized")
+
 // CampaignStore handles persistence for campaigns and embedded sessions.
 type CampaignStore struct {
 	col *mongo.Collection
@@ -404,6 +409,270 @@ func (s *CampaignStore) DeleteMemberSessionNote(ctx context.Context, campaignID,
 		return false, err
 	}
 	return res.MatchedCount > 0, nil
+}
+
+// SetSessionAvailability upserts the caller's availability entry on the
+// session's schedule. If the schedule does not exist yet:
+//   - DM caller: bootstraps the schedule with dmTimezone + the caller's entry.
+//   - non-DM caller: returns ErrScheduleNotInitialized (handler -> 409).
+//
+// If the schedule exists, the entry whose playerId matches is replaced; if
+// none matches, the entry is appended.
+func (s *CampaignStore) SetSessionAvailability(
+	ctx context.Context,
+	campaignID, sessionID, playerID string,
+	availability map[string]model.SessionDayParts,
+	dmTimezone string,
+	isDM bool,
+) (*model.Session, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return nil, nil
+	}
+	idx := -1
+	for i := range campaign.Sessions {
+		if campaign.Sessions[i].ID == sessionID {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return nil, nil
+	}
+
+	now := time.Now().UTC()
+	sess := campaign.Sessions[idx]
+
+	if sess.Schedule == nil {
+		if !isDM {
+			return nil, ErrScheduleNotInitialized
+		}
+		sess.Schedule = &model.SessionSchedule{
+			DMTimezone:                dmTimezone,
+			ParticipantAvailabilities: []model.SessionAvailability{},
+			ConfirmedSlot:             nil,
+			UpdatedAt:                 now,
+		}
+	}
+
+	entry := model.SessionAvailability{
+		PlayerID:           playerID,
+		AvailabilityByDate: availability,
+		UpdatedAt:          now,
+	}
+	replaced := false
+	for i := range sess.Schedule.ParticipantAvailabilities {
+		if sess.Schedule.ParticipantAvailabilities[i].PlayerID == playerID {
+			sess.Schedule.ParticipantAvailabilities[i] = entry
+			replaced = true
+			break
+		}
+	}
+	if !replaced {
+		sess.Schedule.ParticipantAvailabilities = append(sess.Schedule.ParticipantAvailabilities, entry)
+	}
+
+	sess.Schedule.UpdatedAt = now
+	sess.UpdatedAt = now
+	campaign.Sessions[idx] = sess
+
+	if _, err := s.col.UpdateOne(ctx, bson.M{"_id": campaignID}, bson.M{
+		"$set": bson.M{"sessions": campaign.Sessions, "updatedAt": now},
+	}); err != nil {
+		return nil, err
+	}
+	return &sess, nil
+}
+
+// DeleteSessionAvailability removes the caller's availability entry from the
+// session schedule. No-op if the schedule or entry doesn't exist.
+func (s *CampaignStore) DeleteSessionAvailability(
+	ctx context.Context,
+	campaignID, sessionID, playerID string,
+) (*model.Session, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return nil, nil
+	}
+	idx := -1
+	for i := range campaign.Sessions {
+		if campaign.Sessions[i].ID == sessionID {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return nil, nil
+	}
+	sess := campaign.Sessions[idx]
+	if sess.Schedule == nil {
+		return &sess, nil
+	}
+
+	filtered := sess.Schedule.ParticipantAvailabilities[:0]
+	for _, entry := range sess.Schedule.ParticipantAvailabilities {
+		if entry.PlayerID != playerID {
+			filtered = append(filtered, entry)
+		}
+	}
+	sess.Schedule.ParticipantAvailabilities = filtered
+
+	now := time.Now().UTC()
+	sess.Schedule.UpdatedAt = now
+	sess.UpdatedAt = now
+	campaign.Sessions[idx] = sess
+
+	if _, err := s.col.UpdateOne(ctx, bson.M{"_id": campaignID}, bson.M{
+		"$set": bson.M{"sessions": campaign.Sessions, "updatedAt": now},
+	}); err != nil {
+		return nil, err
+	}
+	return &sess, nil
+}
+
+// SetSessionConfirmedSlot sets or replaces the confirmed slot. If the schedule
+// is missing it is auto-initialized — only DM callers reach this path (handler
+// enforces the role gate).
+func (s *CampaignStore) SetSessionConfirmedSlot(
+	ctx context.Context,
+	campaignID, sessionID string,
+	slot model.SessionConfirmedSlot,
+	dmTimezone string,
+) (*model.Session, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return nil, nil
+	}
+	idx := -1
+	for i := range campaign.Sessions {
+		if campaign.Sessions[i].ID == sessionID {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return nil, nil
+	}
+
+	now := time.Now().UTC()
+	sess := campaign.Sessions[idx]
+	if sess.Schedule == nil {
+		sess.Schedule = &model.SessionSchedule{
+			DMTimezone:                dmTimezone,
+			ParticipantAvailabilities: []model.SessionAvailability{},
+			UpdatedAt:                 now,
+		}
+	}
+	slot.ConfirmedAt = now
+	slotCopy := slot
+	sess.Schedule.ConfirmedSlot = &slotCopy
+	sess.Schedule.UpdatedAt = now
+	sess.UpdatedAt = now
+	campaign.Sessions[idx] = sess
+
+	if _, err := s.col.UpdateOne(ctx, bson.M{"_id": campaignID}, bson.M{
+		"$set": bson.M{"sessions": campaign.Sessions, "updatedAt": now},
+	}); err != nil {
+		return nil, err
+	}
+	return &sess, nil
+}
+
+// DeleteSessionConfirmedSlot clears the confirmed slot. No-op if no schedule.
+func (s *CampaignStore) DeleteSessionConfirmedSlot(
+	ctx context.Context,
+	campaignID, sessionID string,
+) (*model.Session, error) {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return nil, err
+	}
+	if campaign == nil {
+		return nil, nil
+	}
+	idx := -1
+	for i := range campaign.Sessions {
+		if campaign.Sessions[i].ID == sessionID {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		return nil, nil
+	}
+	sess := campaign.Sessions[idx]
+	if sess.Schedule == nil {
+		return &sess, nil
+	}
+
+	now := time.Now().UTC()
+	sess.Schedule.ConfirmedSlot = nil
+	sess.Schedule.UpdatedAt = now
+	sess.UpdatedAt = now
+	campaign.Sessions[idx] = sess
+
+	if _, err := s.col.UpdateOne(ctx, bson.M{"_id": campaignID}, bson.M{
+		"$set": bson.M{"sessions": campaign.Sessions, "updatedAt": now},
+	}); err != nil {
+		return nil, err
+	}
+	return &sess, nil
+}
+
+// PruneSchedulesForPlayer removes every availability entry for playerID from
+// every session schedule in the campaign. Called when a player is archived.
+// No-op if no schedules contain an entry for playerID.
+func (s *CampaignStore) PruneSchedulesForPlayer(
+	ctx context.Context,
+	campaignID, playerID string,
+) error {
+	campaign, err := s.GetByID(ctx, campaignID)
+	if err != nil {
+		return err
+	}
+	if campaign == nil {
+		return nil
+	}
+	now := time.Now().UTC()
+	touched := false
+	for i := range campaign.Sessions {
+		sched := campaign.Sessions[i].Schedule
+		if sched == nil {
+			continue
+		}
+		filtered := sched.ParticipantAvailabilities[:0]
+		removed := false
+		for _, entry := range sched.ParticipantAvailabilities {
+			if entry.PlayerID != playerID {
+				filtered = append(filtered, entry)
+			} else {
+				removed = true
+			}
+		}
+		if removed {
+			sched.ParticipantAvailabilities = filtered
+			sched.UpdatedAt = now
+			campaign.Sessions[i].Schedule = sched
+			campaign.Sessions[i].UpdatedAt = now
+			touched = true
+		}
+	}
+	if !touched {
+		return nil
+	}
+	_, err = s.col.UpdateOne(ctx, bson.M{"_id": campaignID}, bson.M{
+		"$set": bson.M{"sessions": campaign.Sessions, "updatedAt": now},
+	})
+	return err
 }
 
 func (s *CampaignStore) find(ctx context.Context, filter bson.M) ([]model.Campaign, error) {
