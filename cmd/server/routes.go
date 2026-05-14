@@ -39,6 +39,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
+	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
 	sessionScheduleHandler := handler.NewSessionScheduleHandler(campaignStore)
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
@@ -83,6 +84,10 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Put("/{sessionId}/confirmed-slot", sessionScheduleHandler.PutConfirmedSlot)
 				r.Delete("/{sessionId}/confirmed-slot", sessionScheduleHandler.DeleteConfirmedSlot)
 			})
+
+			// Per-user session notes (any active member can write; any member can read).
+			r.Get("/campaigns/{campaignId}/my-session-notes", sessionNotesHandler.GetMine)
+			r.Put("/campaigns/{campaignId}/sessions/{sessionId}/my-notes", sessionNotesHandler.PutMine)
 
 			// Uploads (presigned S3 URLs)
 			r.Post("/uploads/url", uploadsHandler.CreateURL)

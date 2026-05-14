@@ -54,10 +54,11 @@ type SessionSchedule struct {
 // CampaignMember represents a member of a campaign — the DM or a player.
 // Every member has a backing Player record (DM's has kind: "dm").
 type CampaignMember struct {
-	UserID   string `bson:"userId"   json:"-"`
-	PlayerID string `bson:"playerId" json:"playerId"`
-	Role     Role   `bson:"role"     json:"role"`
-	IsActive bool   `bson:"isActive" json:"isActive"`
+	UserID       string            `bson:"userId"                 json:"-"`
+	PlayerID     string            `bson:"playerId"               json:"playerId"`
+	Role         Role              `bson:"role"                   json:"role"`
+	IsActive     bool              `bson:"isActive"               json:"isActive"`
+	SessionNotes map[string]string `bson:"sessionNotes,omitempty" json:"-"`
 }
 
 // Campaign is stored in the "campaigns" collection.

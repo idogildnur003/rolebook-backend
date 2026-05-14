@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/campaigns/{{campaignId}}/sessions/{{sessionId}}/my-notes"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "text": "I rolled a nat 20 vs the goblin chief"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 2000
