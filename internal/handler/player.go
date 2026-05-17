@@ -206,6 +206,47 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, player)
 }
 
+// CreateNPC handles POST /api/campaigns/:campaignId/npcs (campaign DM only).
+// Creates an unlinked, DM-owned character (kind "npc" or "enemy"). The DM
+// fills in the rest of the sheet via PATCH /api/players/:playerId afterward.
+func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+
+	var req struct {
+		Name string `json:"name"`
+		Kind string `json:"kind"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required", "BAD_REQUEST")
+		return
+	}
+	if !model.IsDMCreatableKind(req.Kind) {
+		writeError(w, http.StatusBadRequest, "kind must be npc or enemy", "BAD_REQUEST")
+		return
+	}
+
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	player := model.DefaultPlayer(uuid.NewString(), campaignID, "", req.Name, 1, model.PlayerKind(req.Kind))
+	if err := h.players.Create(r.Context(), player); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, player)
+}
+
 // Update handles PATCH /api/players/:playerId.
 // DM of the player's campaign or the player's linked user can update.
 // Protected fields (campaignId, linkedUserId) are stripped before applying.

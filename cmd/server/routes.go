@@ -96,6 +96,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			r.Get("/campaigns/{campaignId}/player", playerHandler.GetMyPlayer)
 			r.Get("/campaigns/{campaignId}/players", playerHandler.ListForCampaign)
 			r.Post("/players", playerHandler.Create)
+			r.Post("/campaigns/{campaignId}/npcs", playerHandler.CreateNPC)
 			r.Route("/players/{playerId}", func(r chi.Router) {
 				r.Get("/", playerHandler.Get)
 				r.Patch("/", playerHandler.Update)
