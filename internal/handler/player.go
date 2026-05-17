@@ -88,6 +88,15 @@ func (h *PlayerHandler) resolveAvatarURIs(ctx context.Context, ps []model.Player
 	}
 }
 
+// listKindForRole returns the kind filter for the campaign roster listing.
+// The DM sees every kind (PCs, NPCs, enemies); any non-DM path stays PC-only.
+func listKindForRole(isDM bool) model.PlayerKind {
+	if isDM {
+		return ""
+	}
+	return model.PlayerKindPC
+}
+
 // ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
@@ -102,7 +111,7 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 	}
 	userID := membership.UserID
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true, model.PlayerKindPC)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true, listKindForRole(membership.IsDM))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
