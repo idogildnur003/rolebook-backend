@@ -206,7 +206,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, player)
 }
 
-// CreateNPC handles POST /api/campaigns/:campaignId/npcs (campaign DM only).
+// CreateNPC handles POST /api/campaigns/:campaignId/players (campaign DM only).
 // Creates an unlinked, DM-owned character (kind "npc" or "enemy"). The DM
 // fills in the rest of the sheet via PATCH /api/players/:playerId afterward.
 func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
