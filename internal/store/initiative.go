@@ -61,6 +61,8 @@ func (s *InitiativeStore) StartReplace(ctx context.Context, c *model.InitiativeC
 
 // UpdateWithVersion writes next only if the stored version still equals
 // expectedVersion, bumping it. Returns ErrInitiativeVersionConflict on mismatch.
+// Note: next.Version is overwritten in place; on error next.Version is left
+// at the attempted value and must not be relied on — use the returned call.
 func (s *InitiativeStore) UpdateWithVersion(ctx context.Context, next *model.InitiativeCall, expectedVersion int) (*model.InitiativeCall, error) {
 	next.Version = expectedVersion + 1
 	res := s.col.FindOneAndReplace(
@@ -81,14 +83,16 @@ func (s *InitiativeStore) UpdateWithVersion(ctx context.Context, next *model.Ini
 
 // Resolve marks the call resolved and stamps resolvedAt (arms the TTL).
 // DM-only and terminal, so it does not use optimistic versioning.
-func (s *InitiativeStore) Resolve(ctx context.Context, campaignID string, nowMillis int64) (*model.InitiativeCall, error) {
+// Returns (nil, nil) when no call exists for the campaign (same not-found
+// convention as Get); the handler maps that to 404.
+func (s *InitiativeStore) Resolve(ctx context.Context, campaignID string) (*model.InitiativeCall, error) {
 	now := time.Now().UTC()
 	res := s.col.FindOneAndUpdate(
 		ctx,
 		bson.M{"_id": campaignID},
 		bson.M{"$set": bson.M{
 			"status":     "resolved",
-			"updatedAt":  nowMillis,
+			"updatedAt":  now.UnixMilli(),
 			"resolvedAt": now,
 		}},
 		options.FindOneAndUpdate().SetReturnDocument(options.After),
