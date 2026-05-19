@@ -31,9 +31,18 @@ type PlayerInventoryItem struct {
 type PlayerKind string
 
 const (
-	PlayerKindPC PlayerKind = "pc"
-	PlayerKindDM PlayerKind = "dm"
+	PlayerKindPC    PlayerKind = "pc"
+	PlayerKindDM    PlayerKind = "dm"
+	PlayerKindNPC   PlayerKind = "npc"
+	PlayerKindEnemy PlayerKind = "enemy"
 )
+
+// IsDMCreatableKind reports whether kind is one a DM may create directly
+// (an unlinked, DM-owned character). PC and DM records are created through
+// other flows and are not creatable via the NPC endpoint.
+func IsDMCreatableKind(kind string) bool {
+	return kind == string(PlayerKindNPC) || kind == string(PlayerKindEnemy)
+}
 
 // Player represents a D&D character sheet stored in the "players" collection.
 type Player struct {
@@ -47,14 +56,14 @@ type Player struct {
 	Level            int     `bson:"level"            json:"level"`
 	ExperiencePoints int     `bson:"experiencePoints" json:"experiencePoints"`
 	Race             string  `bson:"race,omitempty"   json:"race,omitempty"`
-	Notes           string  `bson:"notes"           json:"notes"`
-	AvatarURI       string  `bson:"avatarUri,omitempty" json:"avatarUri,omitempty"`
-	BackgroundStory string  `bson:"backgroundStory" json:"backgroundStory"`
-	Alignment       *string `bson:"alignment"       json:"alignment"`
-	SpeciesOrRegion *string `bson:"speciesOrRegion" json:"speciesOrRegion"`
-	Subclass        *string `bson:"subclass"        json:"subclass"`
-	Region          *string `bson:"region"          json:"region"`
-	Size            string  `bson:"size"            json:"size"`
+	Notes            string  `bson:"notes"           json:"notes"`
+	AvatarURI        string  `bson:"avatarUri,omitempty" json:"avatarUri,omitempty"`
+	BackgroundStory  string  `bson:"backgroundStory" json:"backgroundStory"`
+	Alignment        *string `bson:"alignment"       json:"alignment"`
+	SpeciesOrRegion  *string `bson:"speciesOrRegion" json:"speciesOrRegion"`
+	Subclass         *string `bson:"subclass"        json:"subclass"`
+	Region           *string `bson:"region"          json:"region"`
+	Size             string  `bson:"size"            json:"size"`
 
 	// Combat stats
 	CurrentHP          int `bson:"currentHp"          json:"currentHp"`
@@ -97,17 +106,17 @@ type Player struct {
 // All maps and slices are initialized (never nil) to ensure clean JSON serialisation.
 func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind PlayerKind) *Player {
 	p := &Player{
-		ID:           id,
-		CampaignID:   campaignID,
-		LinkedUserID: linkedUserID,
-		Name:         name,
-		Level:        level,
-		Size:         "Medium",
-		CurrentHP:    10,
-		MaxHP:        10,
-		TempHP:       0,
-		AC:           10,
-		Speed:        30,
+		ID:               id,
+		CampaignID:       campaignID,
+		LinkedUserID:     linkedUserID,
+		Name:             name,
+		Level:            level,
+		Size:             "Medium",
+		CurrentHP:        10,
+		MaxHP:            10,
+		TempHP:           0,
+		AC:               10,
+		Speed:            30,
 		ProficiencyBonus: 2,
 		AbilityScores: map[string]int{
 			"STR": 10, "DEX": 10, "CON": 10,
@@ -125,8 +134,8 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 			"6": {}, "7": {}, "8": {}, "9": {},
 		},
 		Conditions: make(map[string]bool),
-		Spells:    []PlayerSpell{},
-		Inventory: []PlayerInventoryItem{},
+		Spells:     []PlayerSpell{},
+		Inventory:  []PlayerInventoryItem{},
 		UpdatedAt:  time.Now().UTC(),
 	}
 	p.Kind = string(kind)

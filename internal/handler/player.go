@@ -88,6 +88,15 @@ func (h *PlayerHandler) resolveAvatarURIs(ctx context.Context, ps []model.Player
 	}
 }
 
+// listKindForRole returns the kind filter for the campaign roster listing.
+// The DM sees every kind (PCs, NPCs, enemies); any non-DM path stays PC-only.
+func listKindForRole(isDM bool) model.PlayerKind {
+	if isDM {
+		return ""
+	}
+	return model.PlayerKindPC
+}
+
 // ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
@@ -102,7 +111,7 @@ func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) 
 	}
 	userID := membership.UserID
 
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true, model.PlayerKindPC)
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, userID, true, listKindForRole(membership.IsDM))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -190,6 +199,47 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	cm := model.CampaignMember{UserID: linkedUser.ID, PlayerID: player.ID, Role: model.RolePlayer, IsActive: true}
 	if err := h.campaigns.AddMember(r.Context(), req.CampaignID, cm); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, player)
+}
+
+// CreateNPC handles POST /api/campaigns/:campaignId/players (campaign DM only).
+// Creates an unlinked, DM-owned character (kind "npc" or "enemy"). The DM
+// fills in the rest of the sheet via PATCH /api/players/:playerId afterward.
+func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+
+	var req struct {
+		Name string `json:"name"`
+		Kind string `json:"kind"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	if req.Name == "" {
+		writeError(w, http.StatusBadRequest, "name is required", "BAD_REQUEST")
+		return
+	}
+	if !model.IsDMCreatableKind(req.Kind) {
+		writeError(w, http.StatusBadRequest, "kind must be npc or enemy", "BAD_REQUEST")
+		return
+	}
+
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+
+	player := model.DefaultPlayer(uuid.NewString(), campaignID, "", req.Name, 1, model.PlayerKind(req.Kind))
+	if err := h.players.Create(r.Context(), player); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}

@@ -27,3 +27,22 @@ func TestDefaultPlayerKindDM(t *testing.T) {
 		t.Fatalf("Level = %d, want 0 for DM stub", p.Level)
 	}
 }
+
+func TestIsDMCreatableKind(t *testing.T) {
+	cases := []struct {
+		kind string
+		want bool
+	}{
+		{"npc", true},
+		{"enemy", true},
+		{"pc", false},
+		{"dm", false},
+		{"", false},
+		{"NPC", false},
+	}
+	for _, c := range cases {
+		if got := IsDMCreatableKind(c.kind); got != c.want {
+			t.Errorf("IsDMCreatableKind(%q) = %v, want %v", c.kind, got, c.want)
+		}
+	}
+}
