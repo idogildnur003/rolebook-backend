@@ -74,3 +74,27 @@ func TestSyncTurnState_SetsCurrentToFirst(t *testing.T) {
 		t.Fatalf("order = %v", out.TurnOrderParticipantIDs)
 	}
 }
+
+func TestTurnOrderIDs_NilCall_ReturnsEmpty(t *testing.T) {
+	if got := TurnOrderParticipantIDs(nil); !reflect.DeepEqual(got, []string{}) {
+		t.Fatalf("got %v want []", got)
+	}
+}
+
+func TestTurnOrderIDs_ResolvedCall_ReturnsEmpty(t *testing.T) {
+	c := &model.InitiativeCall{
+		Status: "resolved",
+		Participants: []model.InitiativeParticipant{
+			ip("a", intp(5), "A"),
+		},
+	}
+	if got := TurnOrderParticipantIDs(c); !reflect.DeepEqual(got, []string{}) {
+		t.Fatalf("got %v want []", got)
+	}
+}
+
+func TestSyncTurnState_NilCall_ReturnsNil(t *testing.T) {
+	if SyncTurnState(nil) != nil {
+		t.Fatal("SyncTurnState(nil) must return nil")
+	}
+}

@@ -12,6 +12,8 @@ func SortParticipants(in []model.InitiativeParticipant) []model.InitiativePartic
 	out := make([]model.InitiativeParticipant, len(in))
 	copy(out, in)
 	sort.SliceStable(out, func(i, j int) bool {
+		// -999 mirrors the testApp sortInitiativeParticipants sentinel:
+		// participants with no roll (nil) sort to the end.
 		li, ri := -999, -999
 		if out[i].Initiative != nil {
 			li = *out[i].Initiative
@@ -96,6 +98,9 @@ func TurnOrderParticipantIDs(c *model.InitiativeCall) []string {
 // SyncTurnState recomputes turn order and current turn after a mutation.
 // Mirrors testApp syncInitiativeCallTurnState.
 func SyncTurnState(c *model.InitiativeCall) *model.InitiativeCall {
+	if c == nil {
+		return nil
+	}
 	order := TurnOrderParticipantIDs(c)
 	c.TurnOrderParticipantIDs = order
 	if len(order) > 0 {
