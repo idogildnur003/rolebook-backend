@@ -24,6 +24,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	locationStore := store.NewLocationStore(db)
 	npcStore := store.NewNPCStore(db)
 	mapPinStore := store.NewMapPinStore(db)
+	initiativeStore := store.NewInitiativeStore(db)
 
 	// Avatar storage (S3). Unconfigured in local dev — uploads disabled,
 	// avatarUri pass-through on Player reads.
@@ -50,6 +51,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
+	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
 
 	r.Route("/api", func(r chi.Router) {
@@ -160,6 +162,16 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Patch("/{id}", npcHandler.Update)
 				r.Delete("/{id}", npcHandler.Delete)
 				r.Post("/{id}/share", npcHandler.Share)
+			})
+
+			// Per-campaign initiative tracker
+			r.Route("/campaigns/{campaignId}/initiative", func(r chi.Router) {
+				r.Get("/", initiativeHandler.Get)
+				r.Post("/", initiativeHandler.Start)
+				r.Post("/submit", initiativeHandler.Submit)
+				r.Post("/enemies", initiativeHandler.Enemy)
+				r.Post("/end-turn", initiativeHandler.EndTurn)
+				r.Post("/resolve", initiativeHandler.Resolve)
 			})
 
 			// Per-campaign map pins
