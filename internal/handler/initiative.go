@@ -64,6 +64,7 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
+	// isDM=true: DM access already asserted above; fetch all PC players regardless of caller.
 	players, err := h.players.ListForCampaign(r.Context(), campaignID, m.UserID, true, model.PlayerKindPC)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
