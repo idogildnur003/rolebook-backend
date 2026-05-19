@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -126,7 +127,7 @@ func (h *InitiativeHandler) mutateWithRetry(
 		call.UpdatedAt = nowMillis()
 		initiative.SyncTurnState(call)
 		updated, err := h.calls.UpdateWithVersion(r.Context(), call, expected)
-		if err == store.ErrInitiativeVersionConflict {
+		if errors.Is(err, store.ErrInitiativeVersionConflict) {
 			continue
 		}
 		if err != nil {
@@ -215,6 +216,7 @@ func (h *InitiativeHandler) Enemy(w http.ResponseWriter, r *http.Request) {
 					return 0, "", ""
 				}
 			}
+			return http.StatusNotFound, "NOT_FOUND", "enemy participant not found"
 		}
 		c.Participants = append(c.Participants, model.InitiativeParticipant{
 			ID:                  uuid.NewString(),

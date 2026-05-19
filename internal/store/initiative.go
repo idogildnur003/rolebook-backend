@@ -81,15 +81,16 @@ func (s *InitiativeStore) UpdateWithVersion(ctx context.Context, next *model.Ini
 	return &out, nil
 }
 
-// Resolve marks the call resolved and stamps resolvedAt (arms the TTL).
-// DM-only and terminal, so it does not use optimistic versioning.
-// Returns (nil, nil) when no call exists for the campaign (same not-found
-// convention as Get); the handler maps that to 404.
+// Resolve marks an open call resolved and stamps resolvedAt (arms the TTL).
+// DM-only and terminal. Idempotent: if the call is already resolved it is
+// returned unchanged (the TTL is NOT reset). Returns (nil, nil) when no call
+// exists for the campaign (same not-found convention as Get); the handler
+// maps that to 404.
 func (s *InitiativeStore) Resolve(ctx context.Context, campaignID string) (*model.InitiativeCall, error) {
 	now := time.Now().UTC()
 	res := s.col.FindOneAndUpdate(
 		ctx,
-		bson.M{"_id": campaignID},
+		bson.M{"_id": campaignID, "status": "open"},
 		bson.M{"$set": bson.M{
 			"status":     "resolved",
 			"updatedAt":  now.UnixMilli(),
@@ -98,11 +99,15 @@ func (s *InitiativeStore) Resolve(ctx context.Context, campaignID string) (*mode
 		options.FindOneAndUpdate().SetReturnDocument(options.After),
 	)
 	var out model.InitiativeCall
-	if err := res.Decode(&out); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
-		}
+	err := res.Decode(&out)
+	if err == nil {
+		return &out, nil
+	}
+	if !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, err
 	}
-	return &out, nil
+	// No OPEN call matched: either it's already resolved, or there is no
+	// call at all. Re-read to disambiguate — return an already-resolved
+	// call unchanged (idempotent, TTL untouched); nil when truly absent.
+	return s.Get(ctx, campaignID)
 }
