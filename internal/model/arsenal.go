@@ -3,18 +3,23 @@ package model
 // Spell is a reference spell in the arsenal catalog.
 // It is a global catalog entry, not tied to any player.
 type Spell struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Level       int      `json:"level"`
-	School      string   `json:"school,omitempty"`
-	CastingTime string   `json:"castingTime,omitempty"`
-	Range       string   `json:"range,omitempty"`
-	Components  []string `json:"components,omitempty"`
-	Material    string   `json:"material,omitempty"`
-	Duration    string   `json:"duration,omitempty"`
-	Description string   `json:"description,omitempty"`
-	IsRitual    bool     `json:"isRitual,omitempty"`
-	Source      string   `json:"source,omitempty"`
+	ID                 string   `json:"id"`
+	Name               string   `json:"name"`
+	Level              int      `json:"level"`
+	School             string   `json:"school,omitempty"`
+	CastingTime        string   `json:"castingTime,omitempty"`
+	Range              string   `json:"range,omitempty"`
+	Components         []string `json:"components,omitempty"`
+	Material           string   `json:"material,omitempty"`
+	Duration           string   `json:"duration,omitempty"`
+	Description        string   `json:"description,omitempty"`
+	IsRitual           bool     `json:"isRitual,omitempty"`
+	Source             string   `json:"source,omitempty"`
+	Classes            []string `json:"classes,omitempty"`
+	Concentration      bool     `json:"concentration,omitempty"`
+	Damage             string   `json:"damage,omitempty"`
+	DamageType         string   `json:"damageType,omitempty"`
+	SavingThrowAbility string   `json:"savingThrowAbility,omitempty"`
 }
 
 // Equipment is a reference item in the arsenal catalog.
