@@ -305,3 +305,52 @@ func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, call)
 }
+
+// RemoveEnemy handles DELETE /api/campaigns/{campaignId}/initiative/enemies/{participantId}
+// (DM only). Removes an enemy-type participant from the active call.
+// Refuses to remove player-type participants — those are the campaign's
+// human players and should stay through resolve/start cycles.
+func (h *InitiativeHandler) RemoveEnemy(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	participantID := chi.URLParam(r, "participantId")
+	m := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if m == nil {
+		return
+	}
+	if !m.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+	h.mutateWithRetry(w, r, campaignID, func(c *model.InitiativeCall) (int, string, string) {
+		next := make([]model.InitiativeParticipant, 0, len(c.Participants))
+		found := false
+		for _, p := range c.Participants {
+			if p.ID == participantID {
+				if p.ParticipantType != "enemy" {
+					return http.StatusBadRequest, "BAD_REQUEST", "only enemies may be removed"
+				}
+				found = true
+				continue
+			}
+			next = append(next, p)
+		}
+		if !found {
+			return http.StatusNotFound, "NOT_FOUND", "enemy participant not found"
+		}
+		c.Participants = next
+		// SyncTurnState (run by mutateWithRetry) will recompute order from the
+		// remaining rolled participants; explicit cleanup here keeps state
+		// tidy if the removed enemy was current/persisted in the order.
+		order := make([]string, 0, len(c.TurnOrderParticipantIDs))
+		for _, id := range c.TurnOrderParticipantIDs {
+			if id != participantID {
+				order = append(order, id)
+			}
+		}
+		c.TurnOrderParticipantIDs = order
+		if c.CurrentTurnParticipantID == participantID {
+			c.CurrentTurnParticipantID = ""
+		}
+		return 0, "", ""
+	})
+}
