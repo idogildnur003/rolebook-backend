@@ -66,22 +66,41 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
-	// isDM=true: DM access already asserted above; fetch all PC players regardless of caller.
-	players, err := h.players.ListForCampaign(r.Context(), campaignID, m.UserID, true, model.PlayerKindPC)
+	// isDM=true: DM access already asserted above; empty kind fetches every
+	// roster character — PCs, saved NPCs, saved enemies, and the DM. We
+	// filter the DM out below and tag NPC/enemy kinds as enemy participants.
+	players, err := h.players.ListForCampaign(r.Context(), campaignID, m.UserID, true, "")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
 	participants := make([]model.InitiativeParticipant, 0, len(players))
 	for _, p := range players {
-		participants = append(participants, model.InitiativeParticipant{
-			ID:              "player:" + p.ID,
-			ParticipantType: "player",
-			PlayerID:        p.ID,
-			Name:            p.Name,
-			Initiative:      nil,
-			AvatarURI:       p.AvatarURI,
-		})
+		switch p.Kind {
+		case string(model.PlayerKindPC):
+			participants = append(participants, model.InitiativeParticipant{
+				ID:              "player:" + p.ID,
+				ParticipantType: "player",
+				PlayerID:        p.ID,
+				Name:            p.Name,
+				Initiative:      nil,
+				AvatarURI:       p.AvatarURI,
+			})
+		case string(model.PlayerKindNPC), string(model.PlayerKindEnemy):
+			// Roster NPCs/enemies are DM-rolled enemies. Deterministic id
+			// ("enemy:" + playerId) keeps identity stable across re-starts
+			// of the same campaign and avoids duplicate adds. No PlayerID —
+			// they are not human-controlled; the DM rolls for them via
+			// /initiative/enemies with the participantId.
+			participants = append(participants, model.InitiativeParticipant{
+				ID:              "enemy:" + p.ID,
+				ParticipantType: "enemy",
+				Name:            p.Name,
+				Initiative:      nil,
+				AvatarURI:       p.AvatarURI,
+			})
+		}
+		// PlayerKindDM and any unknown kind: skip.
 	}
 	now := nowMillis()
 	call := &model.InitiativeCall{
