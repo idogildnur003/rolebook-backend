@@ -54,7 +54,11 @@ func TurnOrderParticipantIDs(c *model.InitiativeCall) []string {
 	}
 	submitted := make([]model.InitiativeParticipant, 0, len(c.Participants))
 	for _, p := range c.Participants {
-		if p.Initiative != nil {
+		// Skipped participants stay in the call (their roll/identity is
+		// preserved) but drop out of the turn cycle. When SyncTurnState
+		// re-derives order after a mutation, a skipped current turn
+		// auto-advances to the next non-skipped participant.
+		if p.Initiative != nil && !p.IsSkipped {
 			submitted = append(submitted, p)
 		}
 	}

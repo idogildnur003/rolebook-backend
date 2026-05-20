@@ -171,6 +171,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Post("/submit", initiativeHandler.Submit)
 				r.Post("/enemies", initiativeHandler.Enemy)
 				r.Delete("/enemies/{participantId}", initiativeHandler.RemoveEnemy)
+				r.Post("/participants/{participantId}/skip", initiativeHandler.Skip)
 				r.Post("/end-turn", initiativeHandler.EndTurn)
 				r.Post("/resolve", initiativeHandler.Resolve)
 			})

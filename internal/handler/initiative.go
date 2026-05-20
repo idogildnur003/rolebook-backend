@@ -310,6 +310,47 @@ func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, call)
 }
 
+type skipParticipantRequest struct {
+	Skipped bool `json:"skipped"`
+}
+
+// Skip handles POST /api/campaigns/{campaignId}/initiative/participants/{participantId}/skip
+// (DM only). Toggles isSkipped on the named participant — non-destructive; the
+// participant stays in the call (name, initiative, identity intact) but is
+// excluded from the turn cycle until Resumed (skipped:false).
+// Works for both PCs and enemies; a PC who fled is a valid use case.
+func (h *InitiativeHandler) Skip(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	participantID := chi.URLParam(r, "participantId")
+	m := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if m == nil {
+		return
+	}
+	if !m.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+	var body skipParticipantRequest
+	if err := decodeJSON(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, "skipped flag required", "BAD_REQUEST")
+		return
+	}
+	h.mutateWithRetry(w, r, campaignID, func(c *model.InitiativeCall) (int, string, string) {
+		found := false
+		for i := range c.Participants {
+			if c.Participants[i].ID == participantID {
+				c.Participants[i].IsSkipped = body.Skipped
+				found = true
+				break
+			}
+		}
+		if !found {
+			return http.StatusNotFound, "NOT_FOUND", "participant not found"
+		}
+		return 0, "", ""
+	})
+}
+
 // RemoveEnemy handles DELETE /api/campaigns/{campaignId}/initiative/enemies/{participantId}
 // (DM only). Removes an enemy-type participant from the active call.
 // Refuses to remove player-type participants — those are the campaign's

@@ -379,7 +379,7 @@ func (s *CampaignStore) UpsertMemberSessionNote(ctx context.Context, campaignID,
 		bson.M{
 			"$set": bson.M{
 				"members.$.sessionNotes." + sessionID: text,
-				"updatedAt":                          now,
+				"updatedAt":                           now,
 			},
 		},
 	)

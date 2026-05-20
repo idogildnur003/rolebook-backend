@@ -3,11 +3,11 @@
 // when "the upload is failing" and you want to know which layer is at fault.
 //
 // Steps:
-//   1. GetBucketCors — what's currently set on the bucket
-//   2. PresignPut    — sign a throwaway URL the same way /uploads/url does
-//   3. Preflight     — send an OPTIONS request from a fake browser origin
-//                      and dump the CORS response headers
-//   4. PUT           — upload a tiny payload and print the status
+//  1. GetBucketCors — what's currently set on the bucket
+//  2. PresignPut    — sign a throwaway URL the same way /uploads/url does
+//  3. Preflight     — send an OPTIONS request from a fake browser origin
+//     and dump the CORS response headers
+//  4. PUT           — upload a tiny payload and print the status
 //
 // Reads the same env vars the server uses (and .env in cwd).
 //

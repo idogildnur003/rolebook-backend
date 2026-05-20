@@ -108,8 +108,8 @@ func (s *CustomEquipmentStore) Delete(ctx context.Context, campaignID, id string
 
 // CascadeDeleteResult captures the outcome of DeleteWithCascade.
 type CascadeDeleteResult struct {
-	CatalogDeleted     bool
-	PlayersAffected    int64
+	CatalogDeleted      bool
+	PlayersAffected     int64
 	InventoryCleanupErr error // non-nil if the catalog delete succeeded but the
 	//                         player inventory cleanup failed. Best-effort
 	//                         semantics — the catalog entry is already gone and

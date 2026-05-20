@@ -12,6 +12,10 @@ type InitiativeParticipant struct {
 	AvatarURI           string `bson:"avatarUri,omitempty"          json:"avatarUri,omitempty"`
 	SubmittedByPlayerID string `bson:"submittedByPlayerId,omitempty" json:"submittedByPlayerId,omitempty"`
 	SubmittedAt         *int64 `bson:"submittedAt,omitempty"        json:"submittedAt,omitempty"`
+	// IsSkipped excludes the participant from the turn cycle without removing
+	// them. Used for combatants who fled, hid, or temporarily left the fight;
+	// they can be Resumed later with their initiative and identity intact.
+	IsSkipped bool `bson:"isSkipped,omitempty" json:"isSkipped,omitempty"`
 }
 
 // InitiativeCall is the single active/last combat tracker for a campaign.

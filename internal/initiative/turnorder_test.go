@@ -98,3 +98,41 @@ func TestSyncTurnState_NilCall_ReturnsNil(t *testing.T) {
 		t.Fatal("SyncTurnState(nil) must return nil")
 	}
 }
+
+func TestTurnOrderIDs_SkippedParticipantsExcluded(t *testing.T) {
+	pSkipped := ip("b", intp(20), "Bob")
+	pSkipped.IsSkipped = true
+	c := &model.InitiativeCall{
+		Status: "open",
+		Participants: []model.InitiativeParticipant{
+			ip("a", intp(15), "Alice"),
+			pSkipped, // would otherwise be first (20)
+			ip("c", intp(10), "Cara"),
+		},
+	}
+	got := TurnOrderParticipantIDs(c)
+	want := []string{"a", "c"} // "b" excluded by IsSkipped
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+// When the current participant is skipped, SyncTurnState auto-advances.
+func TestSyncTurnState_AdvancesPastSkippedCurrent(t *testing.T) {
+	pCurrent := ip("a", intp(20), "Alice")
+	pCurrent.IsSkipped = true
+	c := &model.InitiativeCall{
+		Status:                   "open",
+		HasTurnCycleStarted:      true,
+		TurnOrderParticipantIDs:  []string{"a", "b"},
+		CurrentTurnParticipantID: "a",
+		Participants: []model.InitiativeParticipant{
+			pCurrent,
+			ip("b", intp(10), "Bob"),
+		},
+	}
+	SyncTurnState(c)
+	if c.CurrentTurnParticipantID != "b" {
+		t.Fatalf("expected auto-advance to b, got %q", c.CurrentTurnParticipantID)
+	}
+}
