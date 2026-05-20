@@ -79,7 +79,11 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		switch p.Kind {
 		case string(model.PlayerKindPC):
 			participants = append(participants, model.InitiativeParticipant{
-				ID:              "player:" + p.ID,
+				// "player-" / "enemy-" prefixes (not "player:" / "enemy:")
+				// keep participant ids URL-safe so they survive being put
+				// in a path segment (chi v5's URLParam returns the escaped
+				// segment, which made ":" round-trip-broken).
+				ID:              "player-" + p.ID,
 				ParticipantType: "player",
 				PlayerID:        p.ID,
 				Name:            p.Name,
@@ -88,12 +92,12 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 			})
 		case string(model.PlayerKindNPC), string(model.PlayerKindEnemy):
 			// Roster NPCs/enemies are DM-rolled enemies. Deterministic id
-			// ("enemy:" + playerId) keeps identity stable across re-starts
+			// ("enemy-" + playerId) keeps identity stable across re-starts
 			// of the same campaign and avoids duplicate adds. No PlayerID —
 			// they are not human-controlled; the DM rolls for them via
 			// /initiative/enemies with the participantId.
 			participants = append(participants, model.InitiativeParticipant{
-				ID:              "enemy:" + p.ID,
+				ID:              "enemy-" + p.ID,
 				ParticipantType: "enemy",
 				Name:            p.Name,
 				Initiative:      nil,
