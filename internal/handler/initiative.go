@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +13,19 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
+
+// pathParticipantID reads a participantId URL param and unescapes it.
+// chi v5 returns the raw (escaped) path segment from URLParam — so a
+// participant id containing characters like ":" arrives as "enemy%3A<uuid>"
+// and would not match the stored decoded id. Decoding here makes the
+// handler robust to any encoding the client applies.
+func pathParticipantID(r *http.Request) string {
+	raw := chi.URLParam(r, "participantId")
+	if decoded, err := url.PathUnescape(raw); err == nil {
+		return decoded
+	}
+	return raw
+}
 
 // InitiativeHandler exposes the per-campaign initiative tracker.
 //
@@ -321,7 +335,7 @@ type skipParticipantRequest struct {
 // Works for both PCs and enemies; a PC who fled is a valid use case.
 func (h *InitiativeHandler) Skip(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
-	participantID := chi.URLParam(r, "participantId")
+	participantID := pathParticipantID(r)
 	m := resolveCampaignMembership(w, r, h.campaigns, campaignID)
 	if m == nil {
 		return
@@ -357,7 +371,7 @@ func (h *InitiativeHandler) Skip(w http.ResponseWriter, r *http.Request) {
 // human players and should stay through resolve/start cycles.
 func (h *InitiativeHandler) RemoveEnemy(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
-	participantID := chi.URLParam(r, "participantId")
+	participantID := pathParticipantID(r)
 	m := resolveCampaignMembership(w, r, h.campaigns, campaignID)
 	if m == nil {
 		return
