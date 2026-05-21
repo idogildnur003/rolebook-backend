@@ -2,14 +2,17 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 
 	"github.com/elad/rolebook-backend/internal/initiative"
+	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -38,10 +41,11 @@ type InitiativeHandler struct {
 	calls     *store.InitiativeStore
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
+	hub       *initiativehub.Hub
 }
 
-func NewInitiativeHandler(calls *store.InitiativeStore, players *store.PlayerStore, campaigns *store.CampaignStore) *InitiativeHandler {
-	return &InitiativeHandler{calls: calls, players: players, campaigns: campaigns}
+func NewInitiativeHandler(calls *store.InitiativeStore, players *store.PlayerStore, campaigns *store.CampaignStore, hub *initiativehub.Hub) *InitiativeHandler {
+	return &InitiativeHandler{calls: calls, players: players, campaigns: campaigns, hub: hub}
 }
 
 func nowMillis() int64 { return time.Now().UnixMilli() }
@@ -136,6 +140,7 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	h.hub.Publish(campaignID, call)
 	writeJSON(w, http.StatusOK, call)
 }
 
@@ -171,6 +176,7 @@ func (h *InitiativeHandler) mutateWithRetry(
 			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 			return
 		}
+		h.hub.Publish(campaignID, updated)
 		writeJSON(w, http.StatusOK, updated)
 		return
 	}
@@ -321,6 +327,7 @@ func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no initiative call", "NOT_FOUND")
 		return
 	}
+	h.hub.Publish(campaignID, call)
 	writeJSON(w, http.StatusOK, call)
 }
 
@@ -412,4 +419,85 @@ func (h *InitiativeHandler) RemoveEnemy(w http.ResponseWriter, r *http.Request) 
 		}
 		return 0, "", ""
 	})
+}
+
+// sseHeartbeatInterval keeps idle connections alive through proxies and OS
+// keepalive timers. SSE comments (lines starting with ":") are ignored by
+// clients but reset the read deadline on intermediate hops.
+const sseHeartbeatInterval = 20 * time.Second
+
+// Stream handles GET /api/campaigns/{campaignId}/initiative/stream.
+// Opens a Server-Sent Events stream of *model.InitiativeCall snapshots. On
+// connect it sends the current call (or no event if there is none) and then
+// relays every Publish to the campaign's hub channel. Disconnect happens
+// when the client closes the connection (r.Context() cancels).
+func (h *InitiativeHandler) Stream(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	if resolveCampaignMembership(w, r, h.campaigns, campaignID) == nil {
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "streaming not supported", "INTERNAL_ERROR")
+		return
+	}
+
+	// Subscribe BEFORE sending the initial snapshot to avoid a race where a
+	// mutation happens between the initial Get and the Subscribe and is
+	// missed by this client.
+	events, unsub := h.hub.Subscribe(campaignID)
+	defer unsub()
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no") // disable reverse-proxy buffering (nginx)
+	w.WriteHeader(http.StatusOK)
+
+	// Initial snapshot: current call state, or nothing if no call exists. The
+	// client treats absence the same as the GET 204 path.
+	initial, err := h.calls.Get(r.Context(), campaignID)
+	if err == nil && initial != nil {
+		if !writeSSE(w, flusher, initial) {
+			return
+		}
+	}
+
+	heartbeat := time.NewTicker(sseHeartbeatInterval)
+	defer heartbeat.Stop()
+
+	ctx := r.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case call := <-events:
+			if !writeSSE(w, flusher, call) {
+				return
+			}
+		case <-heartbeat.C:
+			// SSE comment ping; spec says lines starting with ":" are ignored.
+			if _, err := fmt.Fprint(w, ": ping\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+	}
+}
+
+// writeSSE serialises a snapshot as a single "data:" event and flushes it.
+// Returns false on a write error so the caller can abort the stream.
+func writeSSE(w http.ResponseWriter, flusher http.Flusher, call *model.InitiativeCall) bool {
+	payload, err := json.Marshal(call)
+	if err != nil {
+		// Marshal failure on a known struct is a programmer error; close the
+		// stream rather than spinning forever.
+		return false
+	}
+	if _, err := fmt.Fprintf(w, "data: %s\n\n", payload); err != nil {
+		return false
+	}
+	flusher.Flush()
+	return true
 }

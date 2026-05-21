@@ -10,6 +10,7 @@ import (
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/handler"
+	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -25,6 +26,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	npcStore := store.NewNPCStore(db)
 	mapPinStore := store.NewMapPinStore(db)
 	initiativeStore := store.NewInitiativeStore(db)
+	initiativeBroadcast := initiativehub.New()
 
 	// Avatar storage (S3). Unconfigured in local dev — uploads disabled,
 	// avatarUri pass-through on Player reads.
@@ -51,7 +53,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
-	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore)
+	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore, initiativeBroadcast)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
 
 	r.Route("/api", func(r chi.Router) {
@@ -167,6 +169,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			// Per-campaign initiative tracker
 			r.Route("/campaigns/{campaignId}/initiative", func(r chi.Router) {
 				r.Get("/", initiativeHandler.Get)
+				r.Get("/stream", initiativeHandler.Stream)
 				r.Post("/", initiativeHandler.Start)
 				r.Post("/submit", initiativeHandler.Submit)
 				r.Post("/enemies", initiativeHandler.Enemy)
