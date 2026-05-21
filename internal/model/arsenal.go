@@ -37,12 +37,12 @@ type Equipment struct {
 	WeaponType string   `json:"weaponType,omitempty"`
 	Properties []string `json:"properties,omitempty"`
 
-	ArmorClass          *int  `json:"armorClass,omitempty"`
-	ArmorBonus          *int  `json:"armorBonus,omitempty"`
-	ShieldBonus         *int  `json:"shieldBonus,omitempty"`
+	ArmorClass          *int   `json:"armorClass,omitempty"`
+	ArmorBonus          *int   `json:"armorBonus,omitempty"`
+	ShieldBonus         *int   `json:"shieldBonus,omitempty"`
 	ArmorType           string `json:"armorType,omitempty"`
-	StrengthRequirement *int  `json:"strengthRequirement,omitempty"`
-	StealthDisadvantage *bool `json:"stealthDisadvantage,omitempty"`
+	StrengthRequirement *int   `json:"strengthRequirement,omitempty"`
+	StealthDisadvantage *bool  `json:"stealthDisadvantage,omitempty"`
 
 	CompatibleWith *string  `json:"compatibleWith,omitempty"`
 	EffectSummary  string   `json:"effectSummary,omitempty"`

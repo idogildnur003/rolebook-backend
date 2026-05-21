@@ -20,41 +20,41 @@ type CloneAudit struct {
 
 // Location is a journal entry stored in the campaign_locations collection.
 type Location struct {
-	ID                string     `bson:"_id"                          json:"id"`
-	CampaignID        string     `bson:"campaignId"                   json:"campaignId"`
-	OwnerPlayerID     string     `bson:"ownerPlayerId"                json:"ownerPlayerId"`
-	OwnerUserID       string     `bson:"ownerUserId"                  json:"-"`
-	Name              string     `bson:"name"                         json:"name"`
-	ShortNotes        string     `bson:"shortNotes,omitempty"         json:"shortNotes,omitempty"`
-	FullDescription   string     `bson:"fullDescription,omitempty"    json:"fullDescription,omitempty"`
-	ThumbnailURI      string     `bson:"thumbnailUri,omitempty"       json:"thumbnailUri,omitempty"`
-	SessionID         string     `bson:"sessionId,omitempty"          json:"sessionId,omitempty"`
-	ParentLocationID  string     `bson:"parentLocationId,omitempty"   json:"parentLocationId,omitempty"`
-	LinkedNpcIds      []string   `bson:"linkedNpcIds"                 json:"linkedNpcIds"`
-	Visibility        Visibility `bson:"visibility"                   json:"visibility"`
-	ShareNote         string     `bson:"shareNote,omitempty"          json:"shareNote,omitempty"`
-	Clone             *CloneAudit `bson:"clone,omitempty"             json:"clone,omitempty"`
-	CreatedAt         time.Time  `bson:"createdAt"                    json:"createdAt"`
-	UpdatedAt         time.Time  `bson:"updatedAt"                    json:"updatedAt"`
+	ID               string      `bson:"_id"                          json:"id"`
+	CampaignID       string      `bson:"campaignId"                   json:"campaignId"`
+	OwnerPlayerID    string      `bson:"ownerPlayerId"                json:"ownerPlayerId"`
+	OwnerUserID      string      `bson:"ownerUserId"                  json:"-"`
+	Name             string      `bson:"name"                         json:"name"`
+	ShortNotes       string      `bson:"shortNotes,omitempty"         json:"shortNotes,omitempty"`
+	FullDescription  string      `bson:"fullDescription,omitempty"    json:"fullDescription,omitempty"`
+	ThumbnailURI     string      `bson:"thumbnailUri,omitempty"       json:"thumbnailUri,omitempty"`
+	SessionID        string      `bson:"sessionId,omitempty"          json:"sessionId,omitempty"`
+	ParentLocationID string      `bson:"parentLocationId,omitempty"   json:"parentLocationId,omitempty"`
+	LinkedNpcIds     []string    `bson:"linkedNpcIds"                 json:"linkedNpcIds"`
+	Visibility       Visibility  `bson:"visibility"                   json:"visibility"`
+	ShareNote        string      `bson:"shareNote,omitempty"          json:"shareNote,omitempty"`
+	Clone            *CloneAudit `bson:"clone,omitempty"             json:"clone,omitempty"`
+	CreatedAt        time.Time   `bson:"createdAt"                    json:"createdAt"`
+	UpdatedAt        time.Time   `bson:"updatedAt"                    json:"updatedAt"`
 }
 
 // NPC is a journal entry stored in the campaign_npcs collection.
 type NPC struct {
-	ID                string     `bson:"_id"                          json:"id"`
-	CampaignID        string     `bson:"campaignId"                   json:"campaignId"`
-	OwnerPlayerID     string     `bson:"ownerPlayerId"                json:"ownerPlayerId"`
-	OwnerUserID       string     `bson:"ownerUserId"                  json:"-"`
-	Name              string     `bson:"name"                         json:"name"`
-	ShortNotes        string     `bson:"shortNotes,omitempty"         json:"shortNotes,omitempty"`
-	FullDescription   string     `bson:"fullDescription,omitempty"    json:"fullDescription,omitempty"`
-	AvatarURI         string     `bson:"avatarUri,omitempty"          json:"avatarUri,omitempty"`
-	SessionID         string     `bson:"sessionId,omitempty"          json:"sessionId,omitempty"`
-	LinkedLocationIds []string   `bson:"linkedLocationIds"            json:"linkedLocationIds"`
-	Visibility        Visibility `bson:"visibility"                   json:"visibility"`
-	ShareNote         string     `bson:"shareNote,omitempty"          json:"shareNote,omitempty"`
+	ID                string      `bson:"_id"                          json:"id"`
+	CampaignID        string      `bson:"campaignId"                   json:"campaignId"`
+	OwnerPlayerID     string      `bson:"ownerPlayerId"                json:"ownerPlayerId"`
+	OwnerUserID       string      `bson:"ownerUserId"                  json:"-"`
+	Name              string      `bson:"name"                         json:"name"`
+	ShortNotes        string      `bson:"shortNotes,omitempty"         json:"shortNotes,omitempty"`
+	FullDescription   string      `bson:"fullDescription,omitempty"    json:"fullDescription,omitempty"`
+	AvatarURI         string      `bson:"avatarUri,omitempty"          json:"avatarUri,omitempty"`
+	SessionID         string      `bson:"sessionId,omitempty"          json:"sessionId,omitempty"`
+	LinkedLocationIds []string    `bson:"linkedLocationIds"            json:"linkedLocationIds"`
+	Visibility        Visibility  `bson:"visibility"                   json:"visibility"`
+	ShareNote         string      `bson:"shareNote,omitempty"          json:"shareNote,omitempty"`
 	Clone             *CloneAudit `bson:"clone,omitempty"             json:"clone,omitempty"`
-	CreatedAt         time.Time  `bson:"createdAt"                    json:"createdAt"`
-	UpdatedAt         time.Time  `bson:"updatedAt"                    json:"updatedAt"`
+	CreatedAt         time.Time   `bson:"createdAt"                    json:"createdAt"`
+	UpdatedAt         time.Time   `bson:"updatedAt"                    json:"updatedAt"`
 }
 
 // MapPinType enumerates the six pin types the client supports.
@@ -86,20 +86,20 @@ func MapPinTypeReferencesEntity(t MapPinType) bool {
 
 // MapPin is a journal entry stored in the campaign_map_pins collection.
 type MapPin struct {
-	ID            string     `bson:"_id"                  json:"id"`
-	CampaignID    string     `bson:"campaignId"           json:"campaignId"`
-	OwnerPlayerID string     `bson:"ownerPlayerId"        json:"ownerPlayerId"`
-	OwnerUserID   string     `bson:"ownerUserId"          json:"-"`
-	Type          MapPinType `bson:"type"                 json:"type"`
-	EntityID      string     `bson:"entityId,omitempty"   json:"entityId,omitempty"`
-	Title         string     `bson:"title,omitempty"      json:"title,omitempty"`
-	Notes         string     `bson:"notes,omitempty"      json:"notes,omitempty"`
-	X             float64    `bson:"x"                    json:"x"`
-	Y             float64    `bson:"y"                    json:"y"`
-	SessionID     string     `bson:"sessionId,omitempty"  json:"sessionId,omitempty"`
-	Visibility    Visibility `bson:"visibility"           json:"visibility"`
-	ShareNote     string     `bson:"shareNote,omitempty"  json:"shareNote,omitempty"`
+	ID            string      `bson:"_id"                  json:"id"`
+	CampaignID    string      `bson:"campaignId"           json:"campaignId"`
+	OwnerPlayerID string      `bson:"ownerPlayerId"        json:"ownerPlayerId"`
+	OwnerUserID   string      `bson:"ownerUserId"          json:"-"`
+	Type          MapPinType  `bson:"type"                 json:"type"`
+	EntityID      string      `bson:"entityId,omitempty"   json:"entityId,omitempty"`
+	Title         string      `bson:"title,omitempty"      json:"title,omitempty"`
+	Notes         string      `bson:"notes,omitempty"      json:"notes,omitempty"`
+	X             float64     `bson:"x"                    json:"x"`
+	Y             float64     `bson:"y"                    json:"y"`
+	SessionID     string      `bson:"sessionId,omitempty"  json:"sessionId,omitempty"`
+	Visibility    Visibility  `bson:"visibility"           json:"visibility"`
+	ShareNote     string      `bson:"shareNote,omitempty"  json:"shareNote,omitempty"`
 	Clone         *CloneAudit `bson:"clone,omitempty"     json:"clone,omitempty"`
-	CreatedAt     time.Time  `bson:"createdAt"            json:"createdAt"`
-	UpdatedAt     time.Time  `bson:"updatedAt"            json:"updatedAt"`
+	CreatedAt     time.Time   `bson:"createdAt"            json:"createdAt"`
+	UpdatedAt     time.Time   `bson:"updatedAt"            json:"updatedAt"`
 }

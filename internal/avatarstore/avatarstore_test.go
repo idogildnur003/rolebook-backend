@@ -50,9 +50,9 @@ func TestLooksLikeKey(t *testing.T) {
 
 func TestIsConfigured(t *testing.T) {
 	cases := []struct {
-		name     string
-		cfg      config.Config
-		want     bool
+		name string
+		cfg  config.Config
+		want bool
 	}{
 		{"all set", cfg("us-east-1", "b", "a", "s"), true},
 		{"region missing", cfg("", "b", "a", "s"), false},
