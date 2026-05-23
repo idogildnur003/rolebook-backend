@@ -51,14 +51,21 @@ type SessionSchedule struct {
 	UpdatedAt                 time.Time             `bson:"updatedAt"                 json:"updatedAt"`
 }
 
+// MemberSessionNote is a single per-user, per-session private note.
+// Text is the note body; Direction is "ltr" or "rtl" (defaults to "ltr").
+type MemberSessionNote struct {
+	Text      string `bson:"text"      json:"text"`
+	Direction string `bson:"direction" json:"direction"`
+}
+
 // CampaignMember represents a member of a campaign — the DM or a player.
 // Every member has a backing Player record (DM's has kind: "dm").
 type CampaignMember struct {
-	UserID       string            `bson:"userId"                 json:"-"`
-	PlayerID     string            `bson:"playerId"               json:"playerId"`
-	Role         Role              `bson:"role"                   json:"role"`
-	IsActive     bool              `bson:"isActive"               json:"isActive"`
-	SessionNotes map[string]string `bson:"sessionNotes,omitempty" json:"-"`
+	UserID       string                       `bson:"userId"                 json:"-"`
+	PlayerID     string                       `bson:"playerId"               json:"playerId"`
+	Role         Role                         `bson:"role"                   json:"role"`
+	IsActive     bool                         `bson:"isActive"               json:"isActive"`
+	SessionNotes map[string]MemberSessionNote `bson:"sessionNotes,omitempty" json:"-"`
 }
 
 // Campaign is stored in the "campaigns" collection.

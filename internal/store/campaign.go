@@ -346,39 +346,39 @@ func isTxnUnsupported(err error) bool {
 // GetMemberSessionNotes returns the caller's session notes map for a campaign.
 // Returns an empty (non-nil) map if the campaign or member doesn't exist or
 // has no notes saved.
-func (s *CampaignStore) GetMemberSessionNotes(ctx context.Context, campaignID, userID string) (map[string]string, error) {
+func (s *CampaignStore) GetMemberSessionNotes(ctx context.Context, campaignID, userID string) (map[string]model.MemberSessionNote, error) {
 	campaign, err := s.GetByID(ctx, campaignID)
 	if err != nil {
 		return nil, err
 	}
 	if campaign == nil {
-		return map[string]string{}, nil
+		return map[string]model.MemberSessionNote{}, nil
 	}
 	for _, m := range campaign.Members {
 		if m.UserID == userID {
 			if m.SessionNotes == nil {
-				return map[string]string{}, nil
+				return map[string]model.MemberSessionNote{}, nil
 			}
-			out := make(map[string]string, len(m.SessionNotes))
+			out := make(map[string]model.MemberSessionNote, len(m.SessionNotes))
 			for k, v := range m.SessionNotes {
 				out[k] = v
 			}
 			return out, nil
 		}
 	}
-	return map[string]string{}, nil
+	return map[string]model.MemberSessionNote{}, nil
 }
 
-// UpsertMemberSessionNote sets a single session note for the given member.
-// Returns (false, nil) if the campaign or member is not found.
-func (s *CampaignStore) UpsertMemberSessionNote(ctx context.Context, campaignID, userID, sessionID, text string) (bool, error) {
+// UpsertMemberSessionNote sets a single session note (text + direction) for
+// the given member. Returns (false, nil) if the campaign or member is not found.
+func (s *CampaignStore) UpsertMemberSessionNote(ctx context.Context, campaignID, userID, sessionID, text, direction string) (bool, error) {
 	now := time.Now().UTC()
 	res, err := s.col.UpdateOne(
 		ctx,
 		bson.M{"_id": campaignID, "members.userId": userID},
 		bson.M{
 			"$set": bson.M{
-				"members.$.sessionNotes." + sessionID: text,
+				"members.$.sessionNotes." + sessionID: model.MemberSessionNote{Text: text, Direction: direction},
 				"updatedAt":                           now,
 			},
 		},
