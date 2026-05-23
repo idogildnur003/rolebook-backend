@@ -101,3 +101,18 @@ func TestSessionNotesPutResponse_Shape(t *testing.T) {
 		t.Errorf("missing text: %s", got)
 	}
 }
+
+func TestNormalizeSessionNoteDirection(t *testing.T) {
+	cases := map[string]string{
+		"rtl":     "rtl",
+		"ltr":     "ltr",
+		"":        "ltr",
+		"RTL":     "ltr",
+		"garbage": "ltr",
+	}
+	for in, want := range cases {
+		if got := normalizeSessionNoteDirection(in); got != want {
+			t.Errorf("normalizeSessionNoteDirection(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

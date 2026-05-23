@@ -35,6 +35,16 @@ func normalizeSessionNoteText(s string) (text string, cleared bool, err error) {
 	return trimmed, false, nil
 }
 
+// normalizeSessionNoteDirection coerces arbitrary input to a valid text
+// direction. Only the exact string "rtl" maps to RTL; everything else
+// (including "", "RTL", unknown values) defaults to "ltr".
+func normalizeSessionNoteDirection(s string) string {
+	if s == "rtl" {
+		return "rtl"
+	}
+	return "ltr"
+}
+
 // SessionNotesHandler serves per-user, per-session private notes.
 // Notes live on each CampaignMember entry and are never serialized in
 // any other endpoint's response.
