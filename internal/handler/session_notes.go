@@ -35,6 +35,16 @@ func normalizeSessionNoteText(s string) (text string, cleared bool, err error) {
 	return trimmed, false, nil
 }
 
+// normalizeSessionNoteDirection coerces arbitrary input to a valid text
+// direction. Only the exact string "rtl" maps to RTL; everything else
+// (including "", "RTL", unknown values) defaults to "ltr".
+func normalizeSessionNoteDirection(s string) string {
+	if s == "rtl" {
+		return "rtl"
+	}
+	return "ltr"
+}
+
 // SessionNotesHandler serves per-user, per-session private notes.
 // Notes live on each CampaignMember entry and are never serialized in
 // any other endpoint's response.
@@ -47,20 +57,28 @@ func NewSessionNotesHandler(campaigns *store.CampaignStore) *SessionNotesHandler
 	return &SessionNotesHandler{campaigns: campaigns}
 }
 
+// sessionNoteDTO is the wire shape for a single note (text + direction).
+type sessionNoteDTO struct {
+	Text      string `json:"text"`
+	Direction string `json:"direction"`
+}
+
 // sessionNotesGetResponse is the wire shape returned by GetMine.
 type sessionNotesGetResponse struct {
-	Notes map[string]string `json:"notes"`
+	Notes map[string]sessionNoteDTO `json:"notes"`
 }
 
 // sessionNotesPutRequest is the wire shape accepted by PutMine.
 type sessionNotesPutRequest struct {
-	Text string `json:"text"`
+	Text      string `json:"text"`
+	Direction string `json:"direction"`
 }
 
 // sessionNotesPutResponse is the wire shape returned by PutMine.
 type sessionNotesPutResponse struct {
 	SessionID string `json:"sessionId"`
 	Text      string `json:"text"`
+	Direction string `json:"direction"`
 }
 
 // GetMine handles GET /api/campaigns/:campaignId/my-session-notes.
@@ -80,7 +98,11 @@ func (h *SessionNotesHandler) GetMine(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	writeJSON(w, http.StatusOK, sessionNotesGetResponse{Notes: notes})
+	dto := make(map[string]sessionNoteDTO, len(notes))
+	for id, n := range notes {
+		dto[id] = sessionNoteDTO{Text: n.Text, Direction: normalizeSessionNoteDirection(n.Direction)}
+	}
+	writeJSON(w, http.StatusOK, sessionNotesGetResponse{Notes: dto})
 }
 
 // PutMine handles PUT /api/campaigns/:campaignId/sessions/:sessionId/my-notes.
@@ -129,6 +151,7 @@ func (h *SessionNotesHandler) PutMine(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid text", "BAD_REQUEST")
 		return
 	}
+	direction := normalizeSessionNoteDirection(req.Direction)
 
 	if cleared {
 		ok, err := h.campaigns.DeleteMemberSessionNote(r.Context(), campaignID, membership.UserID, sessionID)
@@ -140,11 +163,11 @@ func (h *SessionNotesHandler) PutMine(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 			return
 		}
-		writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: ""})
+		writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: "", Direction: direction})
 		return
 	}
 
-	ok, err := h.campaigns.UpsertMemberSessionNote(r.Context(), campaignID, membership.UserID, sessionID, text)
+	ok, err := h.campaigns.UpsertMemberSessionNote(r.Context(), campaignID, membership.UserID, sessionID, text, direction)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -153,5 +176,5 @@ func (h *SessionNotesHandler) PutMine(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
-	writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: text})
+	writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: text, Direction: direction})
 }

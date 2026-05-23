@@ -17,8 +17,8 @@ func TestCampaignMember_OmitsSessionNotesOnWire(t *testing.T) {
 		PlayerID: "p-1",
 		Role:     RolePlayer,
 		IsActive: true,
-		SessionNotes: map[string]string{
-			"s-1": "secret",
+		SessionNotes: map[string]MemberSessionNote{
+			"s-1": {Text: "secret"},
 		},
 	}
 	b, err := json.Marshal(m)
