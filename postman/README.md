@@ -450,6 +450,7 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
   "speed": 35,
   "initiativeBonus": 3,
   "proficiencyBonus": 3,
+  "expertiseBonus": 4,
   "deathSaveSuccesses": 0,
   "deathSaveFailures": 0,
   "abilityScores": { "STR": 12, "DEX": 16, "CON": 14, "INT": 10, "WIS": 14, "CHA": 8 },

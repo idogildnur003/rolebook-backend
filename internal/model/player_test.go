@@ -1,6 +1,45 @@
 package model
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
+
+// TestExpertiseBonusRoundTrips guards against the regression where expertiseBonus
+// was written to Mongo via the generic PATCH $set but silently dropped on read
+// because the Player struct had no matching field. The PATCH handler turns the
+// request body into a bson map and $sets it; reads decode bson back into Player;
+// the API then serialises Player to JSON for the frontend. All three hops must
+// preserve expertiseBonus under that exact key.
+func TestExpertiseBonusRoundTrips(t *testing.T) {
+	// PATCH path: arbitrary update map -> bson -> stored doc -> decoded Player.
+	raw, err := bson.Marshal(bson.M{"expertiseBonus": 7})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var fromMongo Player
+	if err := bson.Unmarshal(raw, &fromMongo); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if fromMongo.ExpertiseBonus != 7 {
+		t.Fatalf("ExpertiseBonus after bson round-trip = %d, want 7", fromMongo.ExpertiseBonus)
+	}
+
+	// Read path: Player -> JSON sent to the frontend, keyed "expertiseBonus".
+	out, err := json.Marshal(Player{ExpertiseBonus: 7})
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	var wire map[string]any
+	if err := json.Unmarshal(out, &wire); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if got, ok := wire["expertiseBonus"]; !ok || got.(float64) != 7 {
+		t.Fatalf("JSON expertiseBonus = %v (present=%v), want 7", got, ok)
+	}
+}
 
 func TestDefaultPlayerKindPC(t *testing.T) {
 	p := DefaultPlayer("pid", "cid", "uid", "Alice", 1, PlayerKindPC)
