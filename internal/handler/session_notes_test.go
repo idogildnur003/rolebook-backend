@@ -58,8 +58,8 @@ func TestNormalizeSessionNoteText_AcceptsAtLimit(t *testing.T) {
 
 func TestSessionNotesGetResponse_ShapeAndOmissions(t *testing.T) {
 	resp := sessionNotesGetResponse{
-		Notes: map[string]string{
-			"s-1": "hello",
+		Notes: map[string]sessionNoteDTO{
+			"s-1": {Text: "hello", Direction: "rtl"},
 		},
 	}
 	b, err := json.Marshal(resp)
@@ -70,13 +70,16 @@ func TestSessionNotesGetResponse_ShapeAndOmissions(t *testing.T) {
 	if !strings.Contains(got, `"notes"`) {
 		t.Errorf("response missing 'notes' key: %s", got)
 	}
-	if !strings.Contains(got, `"s-1":"hello"`) {
-		t.Errorf("response missing note entry: %s", got)
+	if !strings.Contains(got, `"text":"hello"`) {
+		t.Errorf("response missing note text: %s", got)
+	}
+	if !strings.Contains(got, `"direction":"rtl"`) {
+		t.Errorf("response missing note direction: %s", got)
 	}
 }
 
 func TestSessionNotesGetResponse_EmptyNotesIsEmptyObject(t *testing.T) {
-	resp := sessionNotesGetResponse{Notes: map[string]string{}}
+	resp := sessionNotesGetResponse{Notes: map[string]sessionNoteDTO{}}
 	b, err := json.Marshal(resp)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -88,7 +91,7 @@ func TestSessionNotesGetResponse_EmptyNotesIsEmptyObject(t *testing.T) {
 }
 
 func TestSessionNotesPutResponse_Shape(t *testing.T) {
-	resp := sessionNotesPutResponse{SessionID: "s-1", Text: "ok"}
+	resp := sessionNotesPutResponse{SessionID: "s-1", Text: "ok", Direction: "rtl"}
 	b, err := json.Marshal(resp)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -99,6 +102,9 @@ func TestSessionNotesPutResponse_Shape(t *testing.T) {
 	}
 	if !strings.Contains(got, `"text":"ok"`) {
 		t.Errorf("missing text: %s", got)
+	}
+	if !strings.Contains(got, `"direction":"rtl"`) {
+		t.Errorf("missing direction: %s", got)
 	}
 }
 
