@@ -76,6 +76,11 @@ type Player struct {
 	DeathSaveSuccesses int `bson:"deathSaveSuccesses" json:"deathSaveSuccesses"`
 	DeathSaveFailures  int `bson:"deathSaveFailures"  json:"deathSaveFailures"`
 
+	// Spellcasting stats
+	SpellcastingSaveDC      int `bson:"spellcastingSaveDc"      json:"spellcastingSaveDc"`
+	SpellcastingModifier    int `bson:"spellcastingModifier"    json:"spellcastingModifier"`
+	SpellcastingAttackBonus int `bson:"spellcastingAttackBonus" json:"spellcastingAttackBonus"`
+
 	// Ability scores — keys: STR, DEX, CON, INT, WIS, CHA
 	AbilityScores             map[string]int `bson:"abilityScores"             json:"abilityScores"`
 	AbilityTemporaryModifiers map[string]int `bson:"abilityTemporaryModifiers" json:"abilityTemporaryModifiers"`
@@ -118,6 +123,10 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 		AC:               10,
 		Speed:            30,
 		ProficiencyBonus: 2,
+		// Spellcasting defaults assume a fresh caster: 8 + proficiency, proficiency, +0 ability mod
+		SpellcastingSaveDC:      10,
+		SpellcastingModifier:    0,
+		SpellcastingAttackBonus: 2,
 		AbilityScores: map[string]int{
 			"STR": 10, "DEX": 10, "CON": 10,
 			"INT": 10, "WIS": 10, "CHA": 10,
