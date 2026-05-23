@@ -26,6 +26,7 @@ body:
       "speed": 35,
       "initiativeBonus": 3,
       "proficiencyBonus": 3,
+      "expertiseBonus": 4,
       "deathSaveSuccesses": 0,
       "deathSaveFailures": 0,
       "abilityScores": { "STR": 12, "DEX": 16, "CON": 14, "INT": 10, "WIS": 14, "CHA": 8 },

@@ -73,6 +73,7 @@ type Player struct {
 	Speed              int `bson:"speed"              json:"speed"`
 	InitiativeBonus    int `bson:"initiativeBonus"    json:"initiativeBonus"`
 	ProficiencyBonus   int `bson:"proficiencyBonus"   json:"proficiencyBonus"`
+	ExpertiseBonus     int `bson:"expertiseBonus"     json:"expertiseBonus"`
 	DeathSaveSuccesses int `bson:"deathSaveSuccesses" json:"deathSaveSuccesses"`
 	DeathSaveFailures  int `bson:"deathSaveFailures"  json:"deathSaveFailures"`
 
