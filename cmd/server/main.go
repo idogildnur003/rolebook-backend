@@ -8,6 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	// Embed the IANA timezone database in the binary so time.LoadLocation
+	// resolves zones like "Asia/Jerusalem" on the CGO-disabled alpine runtime,
+	// which ships no /usr/share/zoneinfo. Without this, every availability /
+	// confirmed-slot write with an X-Timezone header 400s (INVALID_TIMEZONE).
+	_ "time/tzdata"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
