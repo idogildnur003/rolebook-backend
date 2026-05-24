@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -23,17 +24,20 @@ type CustomEquipmentHandler struct {
 	customEquipment *store.CustomEquipmentStore
 	players         *store.PlayerStore
 	campaigns       *store.CampaignStore
+	avatars         *avatarstore.Store
 }
 
 func NewCustomEquipmentHandler(
 	customEquipment *store.CustomEquipmentStore,
 	players *store.PlayerStore,
 	campaigns *store.CampaignStore,
+	avatars *avatarstore.Store,
 ) *CustomEquipmentHandler {
 	return &CustomEquipmentHandler{
 		customEquipment: customEquipment,
 		players:         players,
 		campaigns:       campaigns,
+		avatars:         avatars,
 	}
 }
 
@@ -48,6 +52,9 @@ func (h *CustomEquipmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
+	}
+	for i := range items {
+		items[i].ImageURI = h.avatars.ResolveImageURI(r.Context(), items[i].ImageURI)
 	}
 	writeJSON(w, http.StatusOK, items)
 }
@@ -118,6 +125,7 @@ func (h *CustomEquipmentHandler) Create(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	body.ImageURI = h.avatars.ResolveImageURI(r.Context(), body.ImageURI)
 	writeJSON(w, http.StatusCreated, body)
 }
 
@@ -170,6 +178,7 @@ func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusNotFound, "custom equipment not found", "NOT_FOUND")
 		return
 	}
+	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
 	writeJSON(w, http.StatusOK, updated)
 }
 

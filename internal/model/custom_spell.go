@@ -27,4 +27,5 @@ type CustomSpell struct {
 	Description string   `json:"description,omitempty" bson:"description,omitempty"`
 	IsRitual    bool     `json:"isRitual,omitempty"    bson:"isRitual,omitempty"`
 	Source      string   `json:"source,omitempty"      bson:"source,omitempty"`
+	ImageURI    string   `json:"imageUri,omitempty"    bson:"imageUri,omitempty"`
 }
