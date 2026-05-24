@@ -108,6 +108,10 @@ func (h *SessionScheduleHandler) PutAvailability(w http.ResponseWriter, r *http.
 		writeError(w, http.StatusConflict, "the DM has not initialized this session's schedule yet", "SCHEDULE_NOT_INITIALIZED")
 		return
 	}
+	if errors.Is(err, store.ErrScheduleLocked) {
+		writeError(w, http.StatusConflict, "scheduling is locked; the DM must unlock it to change availability", "SCHEDULE_LOCKED")
+		return
+	}
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
