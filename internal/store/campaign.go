@@ -24,6 +24,11 @@ var ErrCannotArchiveDM = errors.New("cannot archive the campaign DM")
 // the session schedule.
 var ErrScheduleNotInitialized = errors.New("session schedule not initialized")
 
+// ErrScheduleLocked is returned by SetSessionAvailability when a confirmed
+// slot already exists for the session: scheduling is locked, so availability
+// can no longer change until the DM clears the confirmed slot (unlocks).
+var ErrScheduleLocked = errors.New("session schedule is locked")
+
 // CampaignStore handles persistence for campaigns and embedded sessions.
 type CampaignStore struct {
 	col *mongo.Collection
@@ -456,6 +461,12 @@ func (s *CampaignStore) SetSessionAvailability(
 			ConfirmedSlot:             nil,
 			UpdatedAt:                 now,
 		}
+	}
+
+	// A confirmed slot locks scheduling: nobody (player or DM) may change
+	// availability until the DM clears it via DeleteSessionConfirmedSlot.
+	if sess.Schedule.ConfirmedSlot != nil {
+		return nil, ErrScheduleLocked
 	}
 
 	entry := model.SessionAvailability{
