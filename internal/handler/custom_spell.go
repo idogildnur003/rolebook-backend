@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -23,17 +24,20 @@ type CustomSpellHandler struct {
 	customSpells *store.CustomSpellStore
 	players      *store.PlayerStore
 	campaigns    *store.CampaignStore
+	avatars      *avatarstore.Store
 }
 
 func NewCustomSpellHandler(
 	customSpells *store.CustomSpellStore,
 	players *store.PlayerStore,
 	campaigns *store.CampaignStore,
+	avatars *avatarstore.Store,
 ) *CustomSpellHandler {
 	return &CustomSpellHandler{
 		customSpells: customSpells,
 		players:      players,
 		campaigns:    campaigns,
+		avatars:      avatars,
 	}
 }
 
@@ -48,6 +52,9 @@ func (h *CustomSpellHandler) List(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
+	}
+	for i := range spells {
+		spells[i].ImageURI = h.avatars.ResolveImageURI(r.Context(), spells[i].ImageURI)
 	}
 	writeJSON(w, http.StatusOK, spells)
 }
@@ -118,6 +125,7 @@ func (h *CustomSpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	body.ImageURI = h.avatars.ResolveImageURI(r.Context(), body.ImageURI)
 	writeJSON(w, http.StatusCreated, body)
 }
 
@@ -170,6 +178,7 @@ func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "custom spell not found", "NOT_FOUND")
 		return
 	}
+	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
 	writeJSON(w, http.StatusOK, updated)
 }
 

@@ -15,6 +15,8 @@ const (
 	UploadKindMap               = "map"
 	UploadKindLocationThumbnail = "location-thumbnail"
 	UploadKindNPCAvatar         = "npc-avatar"
+	UploadKindEquipmentImage    = "equipment-image"
+	UploadKindSpellImage        = "spell-image"
 )
 
 // UploadsHandler issues short-lived presigned URLs for direct-to-S3 uploads.
@@ -47,6 +49,8 @@ type uploadURLResponse struct {
 //   - map                     → handleCampaignKind, DM only
 //   - location-thumbnail      → handleCampaignKind, any member
 //   - npc-avatar              → handleCampaignKind, any member
+//   - equipment-image         → handleCampaignKind, any member
+//   - spell-image             → handleCampaignKind, any member
 func (h *UploadsHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	if !h.avatars.IsConfigured() {
 		writeError(w, http.StatusServiceUnavailable, "upload storage not configured", "UPLOAD_NOT_CONFIGURED")
@@ -66,7 +70,7 @@ func (h *UploadsHandler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	switch req.Kind {
 	case UploadKindPlayerAvatar:
 		h.handlePlayerAvatar(w, r, &req)
-	case UploadKindMap, UploadKindLocationThumbnail, UploadKindNPCAvatar:
+	case UploadKindMap, UploadKindLocationThumbnail, UploadKindNPCAvatar, UploadKindEquipmentImage, UploadKindSpellImage:
 		h.handleCampaignKind(w, r, &req)
 	default:
 		writeError(w, http.StatusBadRequest, "unsupported upload kind", "BAD_REQUEST")
@@ -133,6 +137,10 @@ func (h *UploadsHandler) handleCampaignKind(w http.ResponseWriter, r *http.Reque
 		prefix = fmt.Sprintf("campaigns/%s/locations", req.CampaignID)
 	case UploadKindNPCAvatar:
 		prefix = fmt.Sprintf("campaigns/%s/npcs", req.CampaignID)
+	case UploadKindEquipmentImage:
+		prefix = fmt.Sprintf("campaigns/%s/equipment", req.CampaignID)
+	case UploadKindSpellImage:
+		prefix = fmt.Sprintf("campaigns/%s/spells", req.CampaignID)
 	}
 
 	presigned, err := h.avatars.PresignPutForKey(r.Context(), prefix, req.ContentType)
