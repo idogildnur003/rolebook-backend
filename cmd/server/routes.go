@@ -135,6 +135,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			// Per-campaign custom equipment (homebrew)
 			r.Route("/campaigns/{campaignId}/custom-equipment", func(r chi.Router) {
 				r.Get("/", customEquipmentHandler.List)
+				r.Get("/usage", customEquipmentHandler.Usage)
 				r.Post("/", customEquipmentHandler.Create)
 				r.Patch("/{id}", customEquipmentHandler.Update)
 				r.Delete("/{id}", customEquipmentHandler.Delete)

@@ -42,6 +42,9 @@ func TestBuildCustomEquipmentUsage(t *testing.T) {
 	}
 
 	shield := usage[1]
+	if shield.ID != "custom-shield-bbb" {
+		t.Fatalf("usage[1].ID = %q, want custom-shield-bbb", shield.ID)
+	}
 	if shield.Holders == nil || len(shield.Holders) != 0 {
 		t.Fatalf("shield holders = %+v, want empty non-nil slice", shield.Holders)
 	}
