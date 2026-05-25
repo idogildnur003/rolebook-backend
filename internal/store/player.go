@@ -285,6 +285,34 @@ func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, cam
 	return res.ModifiedCount, nil
 }
 
+// PlayerInventorySummary is a lightweight projection of a player used to
+// compute custom-equipment usage without loading full character sheets.
+type PlayerInventorySummary struct {
+	ID        string                      `bson:"_id"`
+	Name      string                      `bson:"name"`
+	Inventory []model.PlayerInventoryItem `bson:"inventory"`
+}
+
+// ListInventorySummaries returns the id, name and embedded inventory of every
+// player in a campaign. Used to compute which players hold each custom item.
+func (s *PlayerStore) ListInventorySummaries(ctx context.Context, campaignID string) ([]PlayerInventorySummary, error) {
+	cursor, err := s.col.Find(ctx,
+		bson.M{"campaignId": campaignID},
+		options.Find().SetProjection(bson.M{"name": 1, "inventory": 1}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var summaries []PlayerInventorySummary
+	if err := cursor.All(ctx, &summaries); err != nil {
+		return nil, err
+	}
+	if summaries == nil {
+		summaries = []PlayerInventorySummary{}
+	}
+	return summaries, nil
+}
+
 // RemoveSpellFromAllPlayers pulls a given spellId out of every player's
 // embedded spells array within a campaign. Returns the number of player
 // documents modified. Mirrors RemoveEquipmentFromAllInventories for the
