@@ -216,6 +216,38 @@ func (h *CustomEquipmentHandler) Delete(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// Usage handles GET /api/campaigns/:campaignId/custom-equipment/usage.
+// DM only. Returns each custom equipment entry with the list of players who
+// currently hold it in their inventory.
+func (h *CustomEquipmentHandler) Usage(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can view custom equipment usage", "FORBIDDEN")
+		return
+	}
+
+	items, err := h.customEquipment.ListByCampaign(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	summaries, err := h.players.ListInventorySummaries(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	usage := buildCustomEquipmentUsage(items, summaries)
+	for i := range usage {
+		usage[i].ImageURI = h.avatars.ResolveImageURI(r.Context(), usage[i].ImageURI)
+	}
+	writeJSON(w, http.StatusOK, usage)
+}
+
 // customEquipmentHolder is one player who currently holds a custom item.
 type customEquipmentHolder struct {
 	PlayerID   string `json:"playerId"`
