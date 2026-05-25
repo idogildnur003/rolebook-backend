@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -213,4 +214,58 @@ func (h *CustomEquipmentHandler) Delete(w http.ResponseWriter, r *http.Request) 
 			campaignID, id, result.InventoryCleanupErr)
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// customEquipmentHolder is one player who currently holds a custom item.
+type customEquipmentHolder struct {
+	PlayerID   string `json:"playerId"`
+	PlayerName string `json:"playerName"`
+	Quantity   int    `json:"quantity"`
+}
+
+// customEquipmentUsage is a custom equipment entry plus the players holding it.
+// The embedded CustomEquipment fields are promoted to the top level in JSON,
+// so the shape is the normal custom-equipment object with an extra "holders".
+type customEquipmentUsage struct {
+	model.CustomEquipment
+	Holders []customEquipmentHolder `json:"holders"`
+}
+
+// buildCustomEquipmentUsage joins custom equipment with the players who hold
+// each item. Pure over its inputs (no Mongo) so it can be unit-tested. Holders
+// are sorted by player name (then id) for deterministic output, and every item
+// gets a non-nil holders slice so the JSON is always [] rather than null.
+func buildCustomEquipmentUsage(
+	items []model.CustomEquipment,
+	players []store.PlayerInventorySummary,
+) []customEquipmentUsage {
+	holdersByEquipment := make(map[string][]customEquipmentHolder)
+	for _, p := range players {
+		for _, inv := range p.Inventory {
+			holdersByEquipment[inv.EquipmentID] = append(
+				holdersByEquipment[inv.EquipmentID],
+				customEquipmentHolder{
+					PlayerID:   p.ID,
+					PlayerName: p.Name,
+					Quantity:   inv.Quantity,
+				},
+			)
+		}
+	}
+
+	usage := make([]customEquipmentUsage, 0, len(items))
+	for _, item := range items {
+		holders := holdersByEquipment[item.ID]
+		if holders == nil {
+			holders = []customEquipmentHolder{}
+		}
+		sort.Slice(holders, func(i, j int) bool {
+			if holders[i].PlayerName != holders[j].PlayerName {
+				return holders[i].PlayerName < holders[j].PlayerName
+			}
+			return holders[i].PlayerID < holders[j].PlayerID
+		})
+		usage = append(usage, customEquipmentUsage{CustomEquipment: item, Holders: holders})
+	}
+	return usage
 }
