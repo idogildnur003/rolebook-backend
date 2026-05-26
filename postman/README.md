@@ -30,11 +30,25 @@ No Bearer token required. Test scripts auto-set `token` and `userId`.
 |---|---|---|---|
 | POST | `/auth/register` | Register a new user | 201 |
 | POST | `/auth/login` | Login and get JWT | 200 |
+| POST | `/auth/change-password` | Change password (Bearer required) | 204 |
 
-**Body:**
+**Body (register / login):**
 ```json
 { "email": "dm@example.com", "password": "secret123" }
 ```
+
+**Change password** — requires Bearer `{{token}}`. `newPassword` must be at least 8 characters. The existing token stays valid (no re-issue).
+```json
+{ "currentPassword": "secret123", "newPassword": "evenbettersecret" }
+```
+
+| Status | Code | Meaning |
+|---|---|---|
+| 204 | — | Password changed |
+| 400 | `BAD_REQUEST` | Missing fields or malformed body |
+| 400 | `WEAK_PASSWORD` | `newPassword` shorter than 8 characters |
+| 400 | `INVALID_CURRENT_PASSWORD` | `currentPassword` does not match |
+| 401 | `UNAUTHORIZED` | Missing or expired token |
 
 ---
 
