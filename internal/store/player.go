@@ -288,9 +288,10 @@ func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, cam
 // PlayerInventorySummary is a lightweight projection of a player used to
 // compute custom-equipment usage without loading full character sheets.
 type PlayerInventorySummary struct {
-	ID        string                      `bson:"_id"`
-	Name      string                      `bson:"name"`
-	Inventory []model.PlayerInventoryItem `bson:"inventory"`
+	ID           string                      `bson:"_id"`
+	Name         string                      `bson:"name"`
+	LinkedUserID string                      `bson:"linkedUserId"`
+	Inventory    []model.PlayerInventoryItem `bson:"inventory"`
 }
 
 // ListInventorySummaries returns the id, name and embedded inventory of every
@@ -298,7 +299,7 @@ type PlayerInventorySummary struct {
 func (s *PlayerStore) ListInventorySummaries(ctx context.Context, campaignID string) ([]PlayerInventorySummary, error) {
 	cursor, err := s.col.Find(ctx,
 		bson.M{"campaignId": campaignID},
-		options.Find().SetProjection(bson.M{"name": 1, "inventory": 1}),
+		options.Find().SetProjection(bson.M{"name": 1, "linkedUserId": 1, "inventory": 1}),
 	)
 	if err != nil {
 		return nil, err

@@ -257,22 +257,33 @@ type customEquipmentHolder struct {
 
 // customEquipmentUsage is a custom equipment entry plus the players holding it.
 // The embedded CustomEquipment fields are promoted to the top level in JSON,
-// so the shape is the normal custom-equipment object with an extra "holders".
+// so the shape is the normal custom-equipment object with extra "holders" and
+// "createdByName". createdByName is the resolved display name of the item's
+// creator (empty when the creator has no player record in the campaign — e.g.
+// they have since left); the client renders a fallback in that case.
 type customEquipmentUsage struct {
 	model.CustomEquipment
-	Holders []customEquipmentHolder `json:"holders"`
+	Holders       []customEquipmentHolder `json:"holders"`
+	CreatedByName string                  `json:"createdByName"`
 }
 
 // buildCustomEquipmentUsage joins custom equipment with the players who hold
-// each item. Pure over its inputs (no Mongo) so it can be unit-tested. Holders
-// are sorted by player name (then id) for deterministic output, and every item
-// gets a non-nil holders slice so the JSON is always [] rather than null.
+// each item and resolves each item's creator to a display name. Pure over its
+// inputs (no Mongo) so it can be unit-tested. Holders are sorted by player name
+// (then id) for deterministic output, and every item gets a non-nil holders
+// slice so the JSON is always [] rather than null. Creator names are resolved
+// by matching the item's CreatedBy (a user id) against players' LinkedUserID —
+// this covers the DM too, whose stub player carries their user id and name.
 func buildCustomEquipmentUsage(
 	items []model.CustomEquipment,
 	players []store.PlayerInventorySummary,
 ) []customEquipmentUsage {
 	holdersByEquipment := make(map[string][]customEquipmentHolder)
+	nameByUserID := make(map[string]string)
 	for _, p := range players {
+		if p.LinkedUserID != "" {
+			nameByUserID[p.LinkedUserID] = p.Name
+		}
 		for _, inv := range p.Inventory {
 			holdersByEquipment[inv.EquipmentID] = append(
 				holdersByEquipment[inv.EquipmentID],
@@ -297,7 +308,11 @@ func buildCustomEquipmentUsage(
 			}
 			return holders[i].PlayerID < holders[j].PlayerID
 		})
-		usage = append(usage, customEquipmentUsage{CustomEquipment: item, Holders: holders})
+		usage = append(usage, customEquipmentUsage{
+			CustomEquipment: item,
+			Holders:         holders,
+			CreatedByName:   nameByUserID[item.CreatedBy],
+		})
 	}
 	return usage
 }

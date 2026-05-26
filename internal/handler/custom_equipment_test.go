@@ -9,14 +9,15 @@ import (
 
 func TestBuildCustomEquipmentUsage(t *testing.T) {
 	items := []model.CustomEquipment{
-		{ID: "custom-sword-aaa", Name: "Sword"},
-		{ID: "custom-shield-bbb", Name: "Shield"},
+		{ID: "custom-sword-aaa", Name: "Sword", CreatedBy: "u-dm"},
+		{ID: "custom-shield-bbb", Name: "Shield", CreatedBy: "u-ghost"},
 	}
 	players := []store.PlayerInventorySummary{
-		{ID: "p-2", Name: "Bob", Inventory: []model.PlayerInventoryItem{
+		{ID: "p-dm", Name: "Gandalf", LinkedUserID: "u-dm"},
+		{ID: "p-2", Name: "Bob", LinkedUserID: "u-2", Inventory: []model.PlayerInventoryItem{
 			{EquipmentID: "custom-sword-aaa", Quantity: 1},
 		}},
-		{ID: "p-1", Name: "Alice", Inventory: []model.PlayerInventoryItem{
+		{ID: "p-1", Name: "Alice", LinkedUserID: "u-1", Inventory: []model.PlayerInventoryItem{
 			{EquipmentID: "custom-sword-aaa", Quantity: 2},
 		}},
 	}
@@ -40,6 +41,10 @@ func TestBuildCustomEquipmentUsage(t *testing.T) {
 	if sword.Holders[1].PlayerName != "Bob" {
 		t.Fatalf("second holder = %+v, want Bob", sword.Holders[1])
 	}
+	// Creator resolved from the DM stub player's LinkedUserID.
+	if sword.CreatedByName != "Gandalf" {
+		t.Fatalf("sword.CreatedByName = %q, want Gandalf", sword.CreatedByName)
+	}
 
 	shield := usage[1]
 	if shield.ID != "custom-shield-bbb" {
@@ -47,5 +52,9 @@ func TestBuildCustomEquipmentUsage(t *testing.T) {
 	}
 	if shield.Holders == nil || len(shield.Holders) != 0 {
 		t.Fatalf("shield holders = %+v, want empty non-nil slice", shield.Holders)
+	}
+	// Creator has no player record in the campaign -> empty (client falls back).
+	if shield.CreatedByName != "" {
+		t.Fatalf("shield.CreatedByName = %q, want empty", shield.CreatedByName)
 	}
 }
