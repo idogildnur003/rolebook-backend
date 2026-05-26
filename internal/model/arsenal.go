@@ -20,6 +20,7 @@ type Spell struct {
 	Damage             string   `json:"damage,omitempty"`
 	DamageType         string   `json:"damageType,omitempty"`
 	SavingThrowAbility string   `json:"savingThrowAbility,omitempty"`
+	ImageURI           string   `json:"imageUri,omitempty"`
 }
 
 // Equipment is a reference item in the arsenal catalog.
