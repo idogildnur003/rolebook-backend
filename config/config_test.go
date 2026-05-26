@@ -15,6 +15,8 @@ func TestParseCSV(t *testing.T) {
 		{"a", []string{"a"}},
 		{"a,b,c", []string{"a", "b", "c"}},
 		{" a , b ,, c ", []string{"a", "b", "c"}},
+		{",,", nil},
+		{" , , ", nil},
 	}
 	for _, tc := range cases {
 		got := parseCSV(tc.in)
