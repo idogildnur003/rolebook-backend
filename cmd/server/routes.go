@@ -65,6 +65,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticate(cfg.JWTSecret))
 
+			// Account
+			r.Post("/auth/change-password", authHandler.ChangePassword)
+
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
 			r.Post("/campaigns", campaignHandler.Create)
