@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -120,6 +119,3 @@ func (h *ArsenalHandler) GetEquipment(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, out)
 }
-
-// errSentinel keeps the errors import alive until Task 7 adds real usage (errors.Is).
-var errSentinel = errors.New
