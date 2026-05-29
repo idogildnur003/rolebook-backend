@@ -1,20 +1,34 @@
 package handler
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
+	"github.com/elad/rolebook-backend/internal/model"
 )
+
+// catalogImageRepo is the slice of CatalogImageStore the arsenal handlers use.
+type catalogImageRepo interface {
+	KeysByType(ctx context.Context, t model.CatalogImageType) (map[string]string, error)
+	ImageKey(ctx context.Context, t model.CatalogImageType, itemID string) (string, error)
+	SetImage(ctx context.Context, t model.CatalogImageType, itemID, key string) (string, error)
+	DeleteImage(ctx context.Context, t model.CatalogImageType, itemID string) (string, error)
+}
 
 type ArsenalHandler struct {
 	catalog *catalog.ArsenalCatalog
+	images  catalogImageRepo
+	avatars *avatarstore.Store
 }
 
-func NewArsenalHandler(cat *catalog.ArsenalCatalog) *ArsenalHandler {
-	return &ArsenalHandler{catalog: cat}
+func NewArsenalHandler(cat *catalog.ArsenalCatalog, images catalogImageRepo, avatars *avatarstore.Store) *ArsenalHandler {
+	return &ArsenalHandler{catalog: cat, images: images, avatars: avatars}
 }
 
 func parsePagination(r *http.Request) (page, limit int64) {
@@ -36,7 +50,19 @@ func parsePagination(r *http.Request) (page, limit int64) {
 func (h *ArsenalHandler) ListSpells(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePagination(r)
 	data, total := h.catalog.ListSpells(page, limit)
-	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
+	keys, err := h.images.KeysByType(r.Context(), model.CatalogImageSpell)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	out := make([]model.Spell, len(data))
+	for i, item := range data { // item is a copy
+		if key, ok := keys[item.ID]; ok {
+			item.ImageURI = h.avatars.ResolveImageURICached(r.Context(), key)
+		}
+		out[i] = item
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": out, "page": page, "limit": limit, "total": total})
 }
 
 func (h *ArsenalHandler) GetSpell(w http.ResponseWriter, r *http.Request) {
@@ -46,13 +72,34 @@ func (h *ArsenalHandler) GetSpell(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "spell not found", "NOT_FOUND")
 		return
 	}
-	writeJSON(w, http.StatusOK, spell)
+	out := *spell // copy; never mutate the shared catalog entry
+	key, err := h.images.ImageKey(r.Context(), model.CatalogImageSpell, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if key != "" {
+		out.ImageURI = h.avatars.ResolveImageURICached(r.Context(), key)
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (h *ArsenalHandler) ListEquipment(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePagination(r)
 	data, total := h.catalog.ListEquipment(page, limit)
-	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
+	keys, err := h.images.KeysByType(r.Context(), model.CatalogImageEquipment)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	out := make([]model.Equipment, len(data))
+	for i, item := range data {
+		if key, ok := keys[item.ID]; ok {
+			item.ImageURI = h.avatars.ResolveImageURICached(r.Context(), key)
+		}
+		out[i] = item
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": out, "page": page, "limit": limit, "total": total})
 }
 
 func (h *ArsenalHandler) GetEquipment(w http.ResponseWriter, r *http.Request) {
@@ -62,5 +109,17 @@ func (h *ArsenalHandler) GetEquipment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "equipment not found", "NOT_FOUND")
 		return
 	}
-	writeJSON(w, http.StatusOK, item)
+	out := *item
+	key, err := h.images.ImageKey(r.Context(), model.CatalogImageEquipment, id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if key != "" {
+		out.ImageURI = h.avatars.ResolveImageURICached(r.Context(), key)
+	}
+	writeJSON(w, http.StatusOK, out)
 }
+
+// errSentinel keeps the errors import alive until Task 7 adds real usage (errors.Is).
+var errSentinel = errors.New
