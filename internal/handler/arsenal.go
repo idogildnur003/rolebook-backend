@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -118,4 +119,78 @@ func (h *ArsenalHandler) GetEquipment(w http.ResponseWriter, r *http.Request) {
 		out.ImageURI = h.avatars.ResolveImageURICached(r.Context(), key)
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+type setImageRequest struct {
+	Key string `json:"key"`
+}
+
+// SetEquipmentImage handles PUT /api/admin/arsenal/equipment/{equipmentId}/image.
+func (h *ArsenalHandler) SetEquipmentImage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "equipmentId")
+	if h.catalog.GetEquipment(id) == nil {
+		writeError(w, http.StatusNotFound, "equipment not found", "NOT_FOUND")
+		return
+	}
+	h.setImage(w, r, model.CatalogImageEquipment, id)
+}
+
+// DeleteEquipmentImage handles DELETE /api/admin/arsenal/equipment/{equipmentId}/image.
+func (h *ArsenalHandler) DeleteEquipmentImage(w http.ResponseWriter, r *http.Request) {
+	h.deleteImage(w, r, model.CatalogImageEquipment, chi.URLParam(r, "equipmentId"))
+}
+
+// SetSpellImage handles PUT /api/admin/arsenal/spells/{spellId}/image.
+func (h *ArsenalHandler) SetSpellImage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "spellId")
+	if h.catalog.GetSpell(id) == nil {
+		writeError(w, http.StatusNotFound, "spell not found", "NOT_FOUND")
+		return
+	}
+	h.setImage(w, r, model.CatalogImageSpell, id)
+}
+
+// DeleteSpellImage handles DELETE /api/admin/arsenal/spells/{spellId}/image.
+func (h *ArsenalHandler) DeleteSpellImage(w http.ResponseWriter, r *http.Request) {
+	h.deleteImage(w, r, model.CatalogImageSpell, chi.URLParam(r, "spellId"))
+}
+
+func (h *ArsenalHandler) setImage(w http.ResponseWriter, r *http.Request, t model.CatalogImageType, itemID string) {
+	var req setImageRequest
+	if err := decodeJSON(r, &req); err != nil || req.Key == "" {
+		writeError(w, http.StatusBadRequest, "key is required", "BAD_REQUEST")
+		return
+	}
+	// Confirm the uploaded object exists (no-op when storage is unconfigured).
+	if err := h.avatars.Verify(r.Context(), req.Key); err != nil {
+		if errors.Is(err, avatarstore.ErrNotFound) {
+			writeError(w, http.StatusBadRequest, "uploaded image not found", "BAD_REQUEST")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	prevKey, err := h.images.SetImage(r.Context(), t, itemID, req.Key)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if prevKey != "" && prevKey != req.Key {
+		_ = h.avatars.Delete(r.Context(), prevKey) // best-effort orphan cleanup
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"imageUri": h.avatars.ResolveImageURICached(r.Context(), req.Key),
+	})
+}
+
+func (h *ArsenalHandler) deleteImage(w http.ResponseWriter, r *http.Request, t model.CatalogImageType, itemID string) {
+	deletedKey, err := h.images.DeleteImage(r.Context(), t, itemID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if deletedKey != "" {
+		_ = h.avatars.Delete(r.Context(), deletedKey) // best-effort
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

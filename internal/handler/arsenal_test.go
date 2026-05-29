@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -128,3 +129,64 @@ func TestGetSpell_OverlaysImageKey(t *testing.T) {
 		t.Fatalf("ImageURI = %q, want overlaid key", spell.ImageURI)
 	}
 }
+
+func TestSetEquipmentImage_UnknownItem404(t *testing.T) {
+	images := &fakeCatalogImages{keys: map[string]string{}}
+	h, _ := newArsenalHandlerForTest(t, images)
+
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/arsenal/equipment/nope/image",
+		stringReader(`{"key":"arsenal/equipment/nope/x.png"}`))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("equipmentId", "does-not-exist")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rr := httptest.NewRecorder()
+	h.SetEquipmentImage(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want 404", rr.Code)
+	}
+}
+
+func TestSetSpellImage_PersistsAndReturnsURL(t *testing.T) {
+	images := &fakeCatalogImages{keys: map[string]string{}}
+	h, cat := newArsenalHandlerForTest(t, images)
+	first, _ := cat.ListSpells(1, 1)
+	id := first[0].ID
+	key := "arsenal/spells/" + id + "/z.png"
+
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/arsenal/spells/"+id+"/image",
+		stringReader(`{"key":"`+key+`"}`))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("spellId", id)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rr := httptest.NewRecorder()
+	h.SetSpellImage(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200, body=%s", rr.Code, rr.Body.String())
+	}
+	if images.keys["spell:"+id] != key {
+		t.Fatalf("key not persisted: %v", images.keys)
+	}
+}
+
+func TestDeleteEquipmentImage_NoContent(t *testing.T) {
+	images := &fakeCatalogImages{keys: map[string]string{"equipment:longsword": "k.png"}}
+	h, _ := newArsenalHandlerForTest(t, images)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/admin/arsenal/equipment/longsword/image", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("equipmentId", "longsword")
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rr := httptest.NewRecorder()
+	h.DeleteEquipmentImage(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", rr.Code)
+	}
+	if _, ok := images.keys["equipment:longsword"]; ok {
+		t.Fatalf("override not deleted")
+	}
+}
+
+func stringReader(s string) *strings.Reader { return strings.NewReader(s) }
