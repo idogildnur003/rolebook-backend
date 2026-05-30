@@ -9,6 +9,7 @@ import (
 	"github.com/elad/rolebook-backend/config"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
+	"github.com/elad/rolebook-backend/internal/email"
 	"github.com/elad/rolebook-backend/internal/handler"
 	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/middleware"
@@ -39,7 +40,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	}
 
 	// Handlers
-	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret)
+	emailSender := email.New(cfg)
+	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
