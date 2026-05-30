@@ -36,8 +36,15 @@ import (
 // PutPresignTTL is the lifetime of a presigned PUT URL.
 const PutPresignTTL = 5 * time.Minute
 
-// GetPresignTTL is the lifetime of a presigned GET URL on Player reads.
-const GetPresignTTL = 1 * time.Minute
+// GetPresignTTL is the lifetime of a presigned GET URL on image reads. Kept
+// long enough that a URL stays valid across a browsing session so the client
+// image caches hit (no per-fetch churn = no flicker).
+const GetPresignTTL = 1 * time.Hour
+
+// GetCacheControl is sent as the response Cache-Control header override on
+// presigned GETs. max-age stays BELOW GetPresignTTL so the client never tries
+// to revalidate with an already-expired signature.
+const GetCacheControl = "private, max-age=3000" // 50 minutes
 
 // MaxAvatarBytes is the upper bound on a single avatar upload (10 MiB).
 // Enforced by the frontend before requesting an upload URL. The backend
@@ -190,8 +197,9 @@ func (s *Store) PresignGet(ctx context.Context, key string) (string, error) {
 		return "", err
 	}
 	req, err := client.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(key),
+		Bucket:               aws.String(s.bucket),
+		Key:                  aws.String(key),
+		ResponseCacheControl: aws.String(GetCacheControl),
 	}, func(o *s3.PresignOptions) {
 		o.Expires = GetPresignTTL
 	})
