@@ -189,4 +189,23 @@ func TestDeleteEquipmentImage_NoContent(t *testing.T) {
 	}
 }
 
+func TestSetEquipmentImage_WrongPrefix400(t *testing.T) {
+	images := &fakeCatalogImages{keys: map[string]string{}}
+	h, cat := newArsenalHandlerForTest(t, images)
+	first, _ := cat.ListEquipment(1, 1)
+	id := first[0].ID
+
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/arsenal/equipment/"+id+"/image",
+		stringReader(`{"key":"players/p1/avatar/x.png"}`))
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("equipmentId", id)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+	rr := httptest.NewRecorder()
+	h.SetEquipmentImage(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400, body=%s", rr.Code, rr.Body.String())
+	}
+}
+
 func stringReader(s string) *strings.Reader { return strings.NewReader(s) }

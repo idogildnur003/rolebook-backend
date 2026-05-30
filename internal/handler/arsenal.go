@@ -3,8 +3,10 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -159,6 +161,17 @@ func (h *ArsenalHandler) setImage(w http.ResponseWriter, r *http.Request, t mode
 	var req setImageRequest
 	if err := decodeJSON(r, &req); err != nil || req.Key == "" {
 		writeError(w, http.StatusBadRequest, "key is required", "BAD_REQUEST")
+		return
+	}
+	var expectedPrefix string
+	switch t {
+	case model.CatalogImageEquipment:
+		expectedPrefix = fmt.Sprintf("arsenal/equipment/%s/", itemID)
+	case model.CatalogImageSpell:
+		expectedPrefix = fmt.Sprintf("arsenal/spells/%s/", itemID)
+	}
+	if !strings.HasPrefix(req.Key, expectedPrefix) {
+		writeError(w, http.StatusBadRequest, "key does not match expected prefix", "BAD_REQUEST")
 		return
 	}
 	// Confirm the uploaded object exists (no-op when storage is unconfigured).
