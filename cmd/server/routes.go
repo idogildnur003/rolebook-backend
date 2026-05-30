@@ -66,6 +66,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticate(cfg.JWTSecret))
 
+			// Account
+			r.Post("/auth/change-password", authHandler.ChangePassword)
+
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
 			r.Post("/campaigns", campaignHandler.Create)
@@ -145,6 +148,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			// Per-campaign custom equipment (homebrew)
 			r.Route("/campaigns/{campaignId}/custom-equipment", func(r chi.Router) {
 				r.Get("/", customEquipmentHandler.List)
+				r.Get("/usage", customEquipmentHandler.Usage)
 				r.Post("/", customEquipmentHandler.Create)
 				r.Patch("/{id}", customEquipmentHandler.Update)
 				r.Delete("/{id}", customEquipmentHandler.Delete)

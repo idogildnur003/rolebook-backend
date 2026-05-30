@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -213,4 +214,105 @@ func (h *CustomEquipmentHandler) Delete(w http.ResponseWriter, r *http.Request) 
 			campaignID, id, result.InventoryCleanupErr)
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Usage handles GET /api/campaigns/:campaignId/custom-equipment/usage.
+// DM only. Returns each custom equipment entry with the list of players who
+// currently hold it in their inventory.
+func (h *CustomEquipmentHandler) Usage(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
+		return
+	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can view custom equipment usage", "FORBIDDEN")
+		return
+	}
+
+	items, err := h.customEquipment.ListByCampaign(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	summaries, err := h.players.ListInventorySummaries(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	usage := buildCustomEquipmentUsage(items, summaries)
+	for i := range usage {
+		usage[i].ImageURI = h.avatars.ResolveImageURI(r.Context(), usage[i].ImageURI)
+	}
+	writeJSON(w, http.StatusOK, usage)
+}
+
+// customEquipmentHolder is one player who currently holds a custom item.
+type customEquipmentHolder struct {
+	PlayerID   string `json:"playerId"`
+	PlayerName string `json:"playerName"`
+	Quantity   int    `json:"quantity"`
+}
+
+// customEquipmentUsage is a custom equipment entry plus the players holding it.
+// The embedded CustomEquipment fields are promoted to the top level in JSON,
+// so the shape is the normal custom-equipment object with extra "holders" and
+// "createdByName". createdByName is the resolved display name of the item's
+// creator (empty when the creator has no player record in the campaign — e.g.
+// they have since left); the client renders a fallback in that case.
+type customEquipmentUsage struct {
+	model.CustomEquipment
+	Holders       []customEquipmentHolder `json:"holders"`
+	CreatedByName string                  `json:"createdByName"`
+}
+
+// buildCustomEquipmentUsage joins custom equipment with the players who hold
+// each item and resolves each item's creator to a display name. Pure over its
+// inputs (no Mongo) so it can be unit-tested. Holders are sorted by player name
+// (then id) for deterministic output, and every item gets a non-nil holders
+// slice so the JSON is always [] rather than null. Creator names are resolved
+// by matching the item's CreatedBy (a user id) against players' LinkedUserID —
+// this covers the DM too, whose stub player carries their user id and name.
+func buildCustomEquipmentUsage(
+	items []model.CustomEquipment,
+	players []store.PlayerInventorySummary,
+) []customEquipmentUsage {
+	holdersByEquipment := make(map[string][]customEquipmentHolder)
+	nameByUserID := make(map[string]string)
+	for _, p := range players {
+		if p.LinkedUserID != "" {
+			nameByUserID[p.LinkedUserID] = p.Name
+		}
+		for _, inv := range p.Inventory {
+			holdersByEquipment[inv.EquipmentID] = append(
+				holdersByEquipment[inv.EquipmentID],
+				customEquipmentHolder{
+					PlayerID:   p.ID,
+					PlayerName: p.Name,
+					Quantity:   inv.Quantity,
+				},
+			)
+		}
+	}
+
+	usage := make([]customEquipmentUsage, 0, len(items))
+	for _, item := range items {
+		holders := holdersByEquipment[item.ID]
+		if holders == nil {
+			holders = []customEquipmentHolder{}
+		}
+		sort.Slice(holders, func(i, j int) bool {
+			if holders[i].PlayerName != holders[j].PlayerName {
+				return holders[i].PlayerName < holders[j].PlayerName
+			}
+			return holders[i].PlayerID < holders[j].PlayerID
+		})
+		usage = append(usage, customEquipmentUsage{
+			CustomEquipment: item,
+			Holders:         holders,
+			CreatedByName:   nameByUserID[item.CreatedBy],
+		})
+	}
+	return usage
 }
