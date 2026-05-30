@@ -209,3 +209,118 @@ func (h *AuthHandler) signToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(h.jwtSecret)
 }
+
+type verifyEmailRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+// VerifyEmail handles POST /api/auth/verify-email. On success it marks the
+// account verified and issues a JWT. Wrong/expired codes return 400 (never 401,
+// which the frontend treats as a forced logout).
+func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	var req verifyEmailRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	req.Code = strings.TrimSpace(req.Code)
+	if req.Email == "" || req.Code == "" {
+		writeError(w, http.StatusBadRequest, "email and code are required", "BAD_REQUEST")
+		return
+	}
+
+	user, err := h.users.FindByEmail(r.Context(), req.Email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	// Generic error for unknown email — avoids account enumeration.
+	if user == nil {
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+
+	// Idempotent: already-verified accounts just get a fresh token.
+	if user.EmailVerified {
+		h.issueToken(w, user)
+		return
+	}
+
+	if user.VerifyCodeHash == "" || codeExpired(user.VerifyCodeExpiresAt, time.Now()) {
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+	if user.VerifyCodeAttempts >= maxVerifyAttempts {
+		writeError(w, http.StatusTooManyRequests, "too many attempts, request a new code", "TOO_MANY_ATTEMPTS")
+		return
+	}
+	if !verificationCodeMatches(user.VerifyCodeHash, req.Code) {
+		if err := h.users.IncrementVerifyAttempts(r.Context(), user.ID); err != nil {
+			log.Printf("[auth] failed to increment verify attempts for %s: %v", user.ID, err)
+		}
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+
+	if err := h.users.MarkVerified(r.Context(), user.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	user.EmailVerified = true
+	h.issueToken(w, user)
+}
+
+// issueToken signs a JWT for the user and writes the auth response.
+func (h *AuthHandler) issueToken(w http.ResponseWriter, user *model.User) {
+	token, err := h.signToken(user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID, EmailVerified: user.EmailVerified})
+}
+
+type resendVerificationRequest struct {
+	Email string `json:"email"`
+}
+
+// ResendVerification handles POST /api/auth/resend-verification. It always
+// returns 200 with a generic body (no account enumeration), only actually
+// sending a fresh code when the account exists, is unverified, and is past the
+// resend cooldown.
+func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request) {
+	var req resendVerificationRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+	if req.Email == "" {
+		writeError(w, http.StatusBadRequest, "email is required", "BAD_REQUEST")
+		return
+	}
+
+	user, err := h.users.FindByEmail(r.Context(), req.Email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	if user != nil && !user.EmailVerified {
+		withinCooldown := !user.VerifyCodeSentAt.IsZero() && time.Since(user.VerifyCodeSentAt) < resendCooldown
+		if !withinCooldown {
+			if code, gerr := generateVerificationCode(); gerr == nil {
+				if codeHash, herr := hashVerificationCode(code); herr == nil {
+					now := time.Now()
+					if serr := h.users.SetVerificationCode(r.Context(), user.ID, codeHash, now.Add(verifyCodeTTL), now); serr == nil {
+						h.sendVerificationCode(r.Context(), user.Email, code)
+					}
+				}
+			}
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
