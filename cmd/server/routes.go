@@ -62,6 +62,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 		// Public
 		r.Post("/auth/register", authHandler.Register)
 		r.Post("/auth/login", authHandler.Login)
+		r.Post("/auth/verify-email", authHandler.VerifyEmail)
+		r.Post("/auth/resend-verification", authHandler.ResendVerification)
 
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
