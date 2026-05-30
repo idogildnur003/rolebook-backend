@@ -242,9 +242,12 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Idempotent: already-verified accounts just get a fresh token.
+	// Already-verified accounts must NOT short-circuit to a token here: this
+	// endpoint is unauthenticated, so handing out a JWT for a known email
+	// without checking the code would be an account-takeover vector. Tell the
+	// caller to log in via /auth/login instead.
 	if user.EmailVerified {
-		h.issueToken(w, user)
+		writeError(w, http.StatusBadRequest, "email already verified", "ALREADY_VERIFIED")
 		return
 	}
 
@@ -311,10 +314,21 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 	if user != nil && !user.EmailVerified {
 		withinCooldown := !user.VerifyCodeSentAt.IsZero() && time.Since(user.VerifyCodeSentAt) < resendCooldown
 		if !withinCooldown {
-			if code, gerr := generateVerificationCode(); gerr == nil {
-				if codeHash, herr := hashVerificationCode(code); herr == nil {
+			// We always return 200 to the caller (no account enumeration), but
+			// inner failures must still be logged so a broken DB / RNG / sender
+			// is visible to operators instead of looking like a successful send.
+			code, gerr := generateVerificationCode()
+			if gerr != nil {
+				log.Printf("[auth] resend: generate code failed for %s: %v", user.ID, gerr)
+			} else {
+				codeHash, herr := hashVerificationCode(code)
+				if herr != nil {
+					log.Printf("[auth] resend: hash code failed for %s: %v", user.ID, herr)
+				} else {
 					now := time.Now()
-					if serr := h.users.SetVerificationCode(r.Context(), user.ID, codeHash, now.Add(verifyCodeTTL), now); serr == nil {
+					if serr := h.users.SetVerificationCode(r.Context(), user.ID, codeHash, now.Add(verifyCodeTTL), now); serr != nil {
+						log.Printf("[auth] resend: persist code failed for %s: %v", user.ID, serr)
+					} else {
 						h.sendVerificationCode(r.Context(), user.Email, code)
 					}
 				}
