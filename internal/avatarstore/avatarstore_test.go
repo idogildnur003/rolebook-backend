@@ -161,9 +161,9 @@ type stubPresign struct {
 	putURL string
 	getURL string
 
-	lastPutBucket      string
-	lastPutContentType string
-	lastGetKey         string
+	lastPutBucket       string
+	lastPutContentType  string
+	lastGetKey          string
 	lastGetCacheControl string
 
 	headKey string
