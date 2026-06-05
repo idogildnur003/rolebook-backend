@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -37,8 +38,11 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	portFlag := flag.String("port", "", "HTTP port to listen on; overrides the PORT env var (default 3000)")
+	flag.Parse()
+
 	_ = godotenv.Load()
-	cfg := config.Load()
+	cfg := config.Load(*portFlag)
 
 	db, err := store.NewDB(cfg.MongoURI)
 	if err != nil {
