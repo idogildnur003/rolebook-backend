@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/verify-email"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{verifyEmail}}",
+      "code": "000000"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Replace "code" above with the 6-digit code from the verification email
+      // (printed to the server log when RESEND_API_KEY is unset). On success the
+      // server returns a JWT and logs the user in.
+      pm.test("Status 2xx", () => pm.response.to.be.success);
+      const json = pm.response.json();
+      if (json.token) {
+        pm.environment.set("token", json.token);
+        pm.environment.set("userId", json.userId);
+      }
+    language: text/javascript
+order: 1500

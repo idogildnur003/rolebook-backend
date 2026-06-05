@@ -24,17 +24,33 @@ The API uses two kinds of authorization:
 
 ## Auth
 
-No Bearer token required. Test scripts auto-set `token` and `userId`.
+No Bearer token required. Test scripts auto-set `token`, `userId`, and `verifyEmail`.
 
 | Method | Path | Description | Status |
 |---|---|---|---|
 | POST | `/auth/register` | Register a new user | 201 |
 | POST | `/auth/login` | Login and get JWT | 200 |
+| POST | `/auth/verify-email` | Confirm the emailed OTP, get JWT | 200 |
+| POST | `/auth/resend-verification` | Re-send the OTP (always 200) | 200 |
 
-**Body:**
+**Register / Login body:**
 ```json
 { "email": "dm@example.com", "password": "secret123" }
 ```
+
+### Email verification
+
+Verification is **on** when the server has `RESEND_API_KEY` set (or `EMAIL_VERIFICATION_ENABLED=true`), and **off** otherwise — so local dev with no key skips it entirely.
+
+**Verification off:** `register` returns `{ token, userId, emailVerified: true }` immediately, same as before.
+
+**Verification on:** `register` returns `{ "status": "verification_required", "email": "..." }` and sends a 6-digit code (printed to the server log when no real email provider is configured). The account gets **no token** until the code is confirmed:
+
+- `POST /auth/verify-email` with `{ "email", "code" }` → on success returns `{ token, userId, emailVerified: true }`. Wrong/expired code → `400 INVALID_CODE`; too many attempts → `429 TOO_MANY_ATTEMPTS`; already verified → `400 ALREADY_VERIFIED`.
+- `POST /auth/resend-verification` with `{ "email" }` → always `200 { "status": "ok" }` (no account enumeration); a fresh code is sent only when the account is unverified and past the 60s cooldown.
+- `login` for an unverified new account → `403 EMAIL_NOT_VERIFIED` (grandfathered accounts can still log in and are prompted to verify). Successful login responses now also include `emailVerified`.
+
+In Postman, run **Register** first (it stashes `verifyEmail`), read the code from the server log, paste it into **Verify Email**'s `code`, and send.
 
 ---
 
