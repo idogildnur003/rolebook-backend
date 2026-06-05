@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -27,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/joho/godotenv"
 )
 
@@ -83,6 +85,14 @@ func main() {
 		},
 	})
 	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotImplemented" {
+			log.Fatalf("This S3 endpoint does not implement the bucket CORS API (got NotImplemented).\n"+
+				"MinIO and some S3-compatible stores manage CORS at the server level, not per-bucket.\n"+
+				"For MinIO, set CORS on the server instead and restart it, e.g.:\n"+
+				"  MINIO_API_CORS_ALLOW_ORIGIN=\"%s\"   (or \"*\" for local dev)",
+				strings.Join(origins, ","))
+		}
 		log.Fatalf("PutBucketCors: %v", err)
 	}
 
