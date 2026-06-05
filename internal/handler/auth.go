@@ -18,13 +18,15 @@ import (
 type AuthHandler struct {
 	users     *store.UserStore
 	jwtSecret []byte
+	adminIDs  []string
 }
 
 // NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(users *store.UserStore, jwtSecret string) *AuthHandler {
+func NewAuthHandler(users *store.UserStore, jwtSecret string, adminIDs []string) *AuthHandler {
 	return &AuthHandler{
 		users:     users,
 		jwtSecret: []byte(jwtSecret),
+		adminIDs:  adminIDs,
 	}
 }
 
@@ -34,8 +36,9 @@ type authRequest struct {
 }
 
 type authResponse struct {
-	Token  string `json:"token"`
-	UserID string `json:"userId"`
+	Token   string `json:"token"`
+	UserID  string `json:"userId"`
+	IsAdmin bool   `json:"isAdmin"`
 }
 
 type changePasswordRequest struct {
@@ -99,7 +102,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, authResponse{Token: token, UserID: user.ID})
+	writeJSON(w, http.StatusCreated, authResponse{Token: token, UserID: user.ID, IsAdmin: middleware.IsAdmin(h.adminIDs, user.ID)})
 }
 
 // Login handles POST /api/auth/login.
@@ -136,7 +139,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID})
+	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID, IsAdmin: middleware.IsAdmin(h.adminIDs, user.ID)})
 }
 
 // ChangePassword handles POST /api/auth/change-password (authenticated).

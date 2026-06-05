@@ -14,7 +14,7 @@ import (
 // must return early without touching the player store.
 func TestUploadsCreateURL_ServiceUnavailableWhenUnconfigured(t *testing.T) {
 	avatars := avatarstore.New(config.Config{})
-	h := NewUploadsHandler(avatars, nil, nil)
+	h := NewUploadsHandler(avatars, nil, nil, nil, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/uploads/url",
 		strings.NewReader(`{"kind":"player-avatar","playerId":"p1","contentType":"image/png"}`))
@@ -39,7 +39,7 @@ func newConfiguredUploadsHandler() *UploadsHandler {
 		AWSRegion:          "r",
 		AWSS3Bucket:        "b",
 	})
-	return NewUploadsHandler(avatars, nil, nil)
+	return NewUploadsHandler(avatars, nil, nil, nil, nil)
 }
 
 func TestUploadsCreateURL_UnsupportedKind(t *testing.T) {
@@ -84,5 +84,18 @@ func TestUploadsCreateURL_RejectsBadContentType(t *testing.T) {
 	}
 	if !strings.Contains(rr.Body.String(), "contentType must be") {
 		t.Fatalf("body missing contentType error: %q", rr.Body.String())
+	}
+}
+
+func TestUploadsCreateURL_ArsenalKindForbiddenForNonAdmin(t *testing.T) {
+	h := newConfiguredUploadsHandler() // adminIDs = nil → nobody is admin
+	req := httptest.NewRequest(http.MethodPost, "/api/uploads/url",
+		strings.NewReader(`{"kind":"arsenal-equipment","itemId":"longsword","contentType":"image/png"}`))
+	// no userID in context → not admin
+	rr := httptest.NewRecorder()
+	h.CreateURL(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", rr.Code)
 	}
 }
