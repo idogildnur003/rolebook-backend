@@ -16,14 +16,11 @@ type Config struct {
 }
 
 // Load reads configuration from environment variables.
+// portFlag, when non-empty, overrides the PORT env var (e.g. from a -port CLI flag).
 // Panics if MONGO_URI or JWT_SECRET are missing.
-func Load() Config {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000"
-	}
+func Load(portFlag string) Config {
 	return Config{
-		Port:               port,
+		Port:               resolvePort(portFlag, os.Getenv("PORT")),
 		MongoURI:           mustEnv("MONGO_URI"),
 		JWTSecret:          mustEnv("JWT_SECRET"),
 		AWSS3Endpoint:      os.Getenv("AWS_ENDPOINT_URL"),
@@ -32,6 +29,17 @@ func Load() Config {
 		AWSAccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
 		AWSSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
 	}
+}
+
+// resolvePort selects the HTTP listen port with precedence: flag > PORT env > "3000".
+func resolvePort(flagVal, envVal string) string {
+	if flagVal != "" {
+		return flagVal
+	}
+	if envVal != "" {
+		return envVal
+	}
+	return "3000"
 }
 
 func mustEnv(key string) string {
