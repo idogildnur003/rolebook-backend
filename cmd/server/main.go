@@ -28,6 +28,13 @@ func corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Authorization, Content-Type, X-Timezone")
+		// Let the browser cache the preflight result so it doesn't send an
+		// OPTIONS before every authenticated request. Without this, each
+		// cross-origin call costs two requests (preflight + actual), which over
+		// HTTP/1.1 (dev) exhausts the ~6-connections-per-origin pool and makes
+		// requests stall. Chrome caps this at 7200s (2h); larger values are
+		// clamped, not rejected.
+		w.Header().Set("Access-Control-Max-Age", "7200")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
