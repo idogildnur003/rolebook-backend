@@ -57,3 +57,9 @@ func (s *UserStore) GetByID(ctx context.Context, id string) (*model.User, error)
 	}
 	return &u, nil
 }
+
+// UpdatePasswordHash sets a new bcrypt password hash for the user with the given ID.
+func (s *UserStore) UpdatePasswordHash(ctx context.Context, id, hash string) error {
+	_, err := s.col.UpdateByID(ctx, id, bson.M{"$set": bson.M{"passwordHash": hash}})
+	return err
+}

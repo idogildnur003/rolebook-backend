@@ -38,6 +38,22 @@ type authResponse struct {
 	UserID string `json:"userId"`
 }
 
+type changePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
+const minPasswordLength = 8
+
+// validateNewPassword returns a human-readable error message if pw is not an
+// acceptable new password, or "" if it is valid.
+func validateNewPassword(pw string) string {
+	if len(pw) < minPasswordLength {
+		return "new password must be at least 8 characters"
+	}
+	return ""
+}
+
 // Register handles POST /api/auth/register.
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req authRequest
@@ -121,6 +137,62 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID})
+}
+
+// ChangePassword handles POST /api/auth/change-password (authenticated).
+// Verifies the caller's current password and stores a new bcrypt hash.
+// The existing JWT remains valid — no token is re-issued.
+func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.UserIDFromContext(r.Context())
+	if userID == "" {
+		writeError(w, http.StatusUnauthorized, "missing or invalid token", "UNAUTHORIZED")
+		return
+	}
+
+	var req changePasswordRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		writeError(w, http.StatusBadRequest, "current and new password are required", "BAD_REQUEST")
+		return
+	}
+	if msg := validateNewPassword(req.NewPassword); msg != "" {
+		writeError(w, http.StatusBadRequest, msg, "WEAK_PASSWORD")
+		return
+	}
+
+	user, err := h.users.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if user == nil {
+		writeError(w, http.StatusUnauthorized, "invalid credentials", "UNAUTHORIZED")
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+		// 400 (not 401) on purpose: the token is valid; only the supplied
+		// current password is wrong. A 401 would trip the frontend's global
+		// logout interceptor.
+		writeError(w, http.StatusBadRequest, "current password is incorrect", "INVALID_CURRENT_PASSWORD")
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 12)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	if err := h.users.UpdatePasswordHash(r.Context(), userID, string(hash)); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *AuthHandler) signToken(userID string) (string, error) {

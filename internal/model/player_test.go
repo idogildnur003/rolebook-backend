@@ -41,6 +41,56 @@ func TestExpertiseBonusRoundTrips(t *testing.T) {
 	}
 }
 
+// TestEquipmentAssignmentsRoundTrips mirrors the expertiseBonus guard for the
+// nested equipmentAssignments field: a PATCH body must survive bson storage and
+// decode back, and the read path must serialise it under the exact JSON keys
+// the frontend equipment sections use.
+func TestEquipmentAssignmentsRoundTrips(t *testing.T) {
+	raw, err := bson.Marshal(bson.M{
+		"equipmentAssignments": bson.M{
+			"armor":                   []string{"leather-armor"},
+			"weaponsArrowsThrowables": []string{"dagger"},
+			"accessoriesConsumables":  []string{},
+			"preparedSpells":          []string{},
+		},
+	})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var fromMongo Player
+	if err := bson.Unmarshal(raw, &fromMongo); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if len(fromMongo.EquipmentAssignments.Armor) != 1 || fromMongo.EquipmentAssignments.Armor[0] != "leather-armor" {
+		t.Fatalf("Armor after bson round-trip = %v, want [leather-armor]", fromMongo.EquipmentAssignments.Armor)
+	}
+	if len(fromMongo.EquipmentAssignments.WeaponsArrowsThrowables) != 1 {
+		t.Fatalf("WeaponsArrowsThrowables = %v, want [dagger]", fromMongo.EquipmentAssignments.WeaponsArrowsThrowables)
+	}
+
+	out, err := json.Marshal(DefaultPlayer("p", "c", "u", "A", 1, PlayerKindPC))
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	var wire map[string]any
+	if err := json.Unmarshal(out, &wire); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	ea, ok := wire["equipmentAssignments"].(map[string]any)
+	if !ok {
+		t.Fatalf("equipmentAssignments missing or wrong type in JSON: %v", wire["equipmentAssignments"])
+	}
+	for _, key := range []string{"armor", "weaponsArrowsThrowables", "accessoriesConsumables", "preparedSpells"} {
+		arr, ok := ea[key].([]any)
+		if !ok {
+			t.Fatalf("equipmentAssignments.%s = %v, want [] (non-nil array)", key, ea[key])
+		}
+		if len(arr) != 0 {
+			t.Fatalf("equipmentAssignments.%s should default empty, got %v", key, arr)
+		}
+	}
+}
+
 func TestDefaultPlayerKindPC(t *testing.T) {
 	p := DefaultPlayer("pid", "cid", "uid", "Alice", 1, PlayerKindPC)
 	if p.Kind != string(PlayerKindPC) {
