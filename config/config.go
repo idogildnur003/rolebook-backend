@@ -16,6 +16,7 @@ type Config struct {
 	AWSS3Bucket        string
 	AWSAccessKeyID     string
 	AWSSecretAccessKey string
+	AWSS3UsePathStyle  bool
 
 	AdminUserIDs []string
 }
@@ -36,6 +37,7 @@ func Load() Config {
 		AWSS3Bucket:        os.Getenv("AWS_S3_BUCKET"),
 		AWSAccessKeyID:     os.Getenv("AWS_ACCESS_KEY_ID"),
 		AWSSecretAccessKey: os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		AWSS3UsePathStyle:  envBool(os.Getenv("AWS_S3_FORCE_PATH_STYLE")),
 		AdminUserIDs:       parseCSV(os.Getenv("ADMIN_USER_IDS")),
 	}
 }
@@ -57,6 +59,17 @@ func parseCSV(s string) []string {
 		return nil
 	}
 	return out
+}
+
+// envBool parses a boolean-ish env value. True for "true", "1", "yes", "on"
+// (case-insensitive); false otherwise (including empty).
+func envBool(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "true", "1", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 func mustEnv(key string) string {

@@ -25,3 +25,25 @@ func TestParseCSV(t *testing.T) {
 		}
 	}
 }
+
+func TestEnvBool(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{"", false},
+		{"false", false},
+		{"0", false},
+		{"true", true},
+		{"TRUE", true},
+		{" True ", true},
+		{"1", true},
+		{"yes", true},
+		{"on", true},
+	}
+	for _, tc := range cases {
+		if got := envBool(tc.in); got != tc.want {
+			t.Errorf("envBool(%q) = %v, want %v", tc.in, got, tc.want)
+		}
+	}
+}

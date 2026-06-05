@@ -98,11 +98,12 @@ type presignedRequest struct {
 
 // Store generates presigned URLs for player avatar objects.
 type Store struct {
-	baseUrl   string
-	region    string
-	bucket    string
-	accessKey string
-	secretKey string
+	baseUrl      string
+	region       string
+	bucket       string
+	accessKey    string
+	secretKey    string
+	usePathStyle bool
 
 	once   sync.Once
 	client presignClient
@@ -116,11 +117,12 @@ type Store struct {
 // store will report IsConfigured() == false and refuse presign calls.
 func New(cfg config.Config) *Store {
 	return &Store{
-		baseUrl:   cfg.AWSS3Endpoint,
-		region:    cfg.AWSRegion,
-		bucket:    cfg.AWSS3Bucket,
-		accessKey: cfg.AWSAccessKeyID,
-		secretKey: cfg.AWSSecretAccessKey,
+		baseUrl:      cfg.AWSS3Endpoint,
+		region:       cfg.AWSRegion,
+		bucket:       cfg.AWSS3Bucket,
+		accessKey:    cfg.AWSAccessKeyID,
+		secretKey:    cfg.AWSSecretAccessKey,
+		usePathStyle: cfg.AWSS3UsePathStyle,
 	}
 }
 
@@ -151,7 +153,14 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 			s.initEr = fmt.Errorf("avatarstore: aws config: %w", err)
 			return
 		}
-		s3client := s3.NewFromConfig(cfg)
+		s3client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			// Path-style ("<endpoint>/<bucket>/<key>") is required by
+			// S3-compatible stores like MinIO. Real AWS uses virtual-hosted
+			// style ("<bucket>.<endpoint>") via DNS, so this stays opt-in.
+			if s.usePathStyle {
+				o.UsePathStyle = true
+			}
+		})
 		s.client = realPresign{ps: s3.NewPresignClient(s3client), client: s3client}
 	})
 	if s.initEr != nil {

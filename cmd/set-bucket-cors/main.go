@@ -37,7 +37,11 @@ func main() {
 
 	_ = godotenv.Load()
 
-	endpoint := os.Getenv("AWS_S3_ENDPOINT")
+	endpoint := os.Getenv("AWS_ENDPOINT_URL")
+	if endpoint == "" {
+		endpoint = os.Getenv("AWS_S3_ENDPOINT") // legacy fallback
+	}
+	pathStyle := isTrue(os.Getenv("AWS_S3_FORCE_PATH_STYLE"))
 	region := mustEnv("AWS_REGION")
 	bucket := mustEnv("AWS_S3_BUCKET")
 	accessKey := mustEnv("AWS_ACCESS_KEY_ID")
@@ -60,6 +64,9 @@ func main() {
 	clientOpts := []func(*s3.Options){}
 	if endpoint != "" {
 		clientOpts = append(clientOpts, func(o *s3.Options) { o.BaseEndpoint = aws.String(endpoint) })
+	}
+	if pathStyle {
+		clientOpts = append(clientOpts, func(o *s3.Options) { o.UsePathStyle = true })
 	}
 	client := s3.NewFromConfig(cfg, clientOpts...)
 
@@ -99,4 +106,13 @@ func splitCSV(s string) []string {
 		}
 	}
 	return out
+}
+
+func isTrue(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "true", "1", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
