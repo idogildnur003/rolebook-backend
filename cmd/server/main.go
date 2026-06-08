@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -36,8 +38,11 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	portFlag := flag.String("port", "", "HTTP port to listen on; overrides the PORT env var (default 3000)")
+	flag.Parse()
+
 	_ = godotenv.Load()
-	cfg := config.Load()
+	cfg := config.Load(*portFlag)
 
 	db, err := store.NewDB(cfg.MongoURI)
 	if err != nil {
@@ -57,9 +62,17 @@ func main() {
 	// Routes registered in subsequent tasks via registerRoutes
 	registerRoutes(r, cfg, db)
 
+	// baseCtx is the parent of every request's context. Cancelling it on
+	// shutdown trips r.Context().Done() in all in-flight handlers — notably the
+	// long-lived initiative SSE stream — so they return promptly instead of
+	// holding the connection "active" until srv.Shutdown hits its deadline.
+	baseCtx, cancelBase := context.WithCancel(context.Background())
+	defer cancelBase()
+
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
+		Addr:        ":" + cfg.Port,
+		Handler:     r,
+		BaseContext: func(net.Listener) context.Context { return baseCtx },
 	}
 
 	go func() {
@@ -72,6 +85,10 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
+	// Cancel in-flight request contexts first so streaming handlers exit and
+	// their connections go idle, letting Shutdown drain in milliseconds.
+	cancelBase()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

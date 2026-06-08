@@ -24,6 +24,17 @@ type PlayerInventoryItem struct {
 	Quantity    int    `bson:"quantity"    json:"quantity"`
 }
 
+// EquipmentAssignments records which inventory items the player has equipped in
+// each equipment-screen section. Each slice holds equipmentId references (the
+// same ids used in Inventory). Stored on the player so the DM — and the player
+// across devices — sees the equipped layout, not just the bag contents.
+type EquipmentAssignments struct {
+	Armor                   []string `bson:"armor"                   json:"armor"`
+	WeaponsArrowsThrowables []string `bson:"weaponsArrowsThrowables" json:"weaponsArrowsThrowables"`
+	AccessoriesConsumables  []string `bson:"accessoriesConsumables"  json:"accessoriesConsumables"`
+	PreparedSpells          []string `bson:"preparedSpells"          json:"preparedSpells"`
+}
+
 // PlayerKind classifies a Player record.
 // "pc" — a real player character.
 // "dm" — a DM stub Player (one per campaign), the anchor for per-member features.
@@ -105,6 +116,9 @@ type Player struct {
 	// Inventory — embedded references to arsenal equipment
 	Inventory []PlayerInventoryItem `bson:"inventory" json:"inventory"`
 
+	// EquipmentAssignments — which inventory items are equipped in each section
+	EquipmentAssignments EquipmentAssignments `bson:"equipmentAssignments" json:"equipmentAssignments"`
+
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
@@ -146,7 +160,14 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 		Conditions: make(map[string]bool),
 		Spells:     []PlayerSpell{},
 		Inventory:  []PlayerInventoryItem{},
-		UpdatedAt:  time.Now().UTC(),
+		// Initialized (never nil) so the client always receives clean arrays.
+		EquipmentAssignments: EquipmentAssignments{
+			Armor:                   []string{},
+			WeaponsArrowsThrowables: []string{},
+			AccessoriesConsumables:  []string{},
+			PreparedSpells:          []string{},
+		},
+		UpdatedAt: time.Now().UTC(),
 	}
 	p.Kind = string(kind)
 	return p

@@ -90,3 +90,9 @@ func (s *UserStore) MarkVerified(ctx context.Context, userID string) error {
 	})
 	return err
 }
+
+// UpdatePasswordHash sets a new bcrypt password hash for the user with the given ID.
+func (s *UserStore) UpdatePasswordHash(ctx context.Context, id, hash string) error {
+	_, err := s.col.UpdateByID(ctx, id, bson.M{"$set": bson.M{"passwordHash": hash}})
+	return err
+}

@@ -23,6 +23,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	playerStore := store.NewPlayerStore(db)
 	customEquipmentStore := store.NewCustomEquipmentStore(db)
 	customSpellStore := store.NewCustomSpellStore(db)
+	catalogImageStore := store.NewCatalogImageStore(db)
 	locationStore := store.NewLocationStore(db)
 	npcStore := store.NewNPCStore(db)
 	mapPinStore := store.NewMapPinStore(db)
@@ -41,7 +42,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 	// Handlers
 	emailSender := email.New(cfg)
-	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled)
+	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled, cfg.AdminUserIDs)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
@@ -49,14 +50,14 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog, customEquipmentStore)
-	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog)
+	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog, catalogImageStore, avatars)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore, avatars)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore, avatars)
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
 	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore, initiativeBroadcast)
-	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore)
+	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore, arsenalCatalog, cfg.AdminUserIDs)
 
 	r.Route("/api", func(r chi.Router) {
 		// Public
@@ -68,6 +69,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticate(cfg.JWTSecret))
+
+			// Account
+			r.Post("/auth/change-password", authHandler.ChangePassword)
 
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
@@ -134,6 +138,15 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			r.Route("/arsenal/equipment", func(r chi.Router) {
 				r.Get("/", arsenalHandler.ListEquipment)
 				r.Get("/{equipmentId}", arsenalHandler.GetEquipment)
+			})
+
+			// Admin-only: arsenal catalog images (env allowlist)
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireAdmin(cfg.AdminUserIDs))
+				r.Put("/admin/arsenal/equipment/{equipmentId}/image", arsenalHandler.SetEquipmentImage)
+				r.Delete("/admin/arsenal/equipment/{equipmentId}/image", arsenalHandler.DeleteEquipmentImage)
+				r.Put("/admin/arsenal/spells/{spellId}/image", arsenalHandler.SetSpellImage)
+				r.Delete("/admin/arsenal/spells/{spellId}/image", arsenalHandler.DeleteSpellImage)
 			})
 
 			// Per-campaign custom equipment (homebrew)

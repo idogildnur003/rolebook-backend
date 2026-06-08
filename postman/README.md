@@ -32,6 +32,7 @@ No Bearer token required. Test scripts auto-set `token`, `userId`, and `verifyEm
 | POST | `/auth/login` | Login and get JWT | 200 |
 | POST | `/auth/verify-email` | Confirm the emailed OTP, get JWT | 200 |
 | POST | `/auth/resend-verification` | Re-send the OTP (always 200) | 200 |
+| POST | `/auth/change-password` | Change password (Bearer required) | 204 |
 
 **Register / Login body:**
 ```json
@@ -51,6 +52,21 @@ Verification is **on** when the server has `RESEND_API_KEY` set (or `EMAIL_VERIF
 - `login` for an unverified new account → `403 EMAIL_NOT_VERIFIED` (grandfathered accounts can still log in and are prompted to verify). Successful login responses now also include `emailVerified`.
 
 In Postman, run **Register** first (it stashes `verifyEmail`), read the code from the server log, paste it into **Verify Email**'s `code`, and send.
+
+### Change password
+
+**Change password** — requires Bearer `{{token}}`. `newPassword` must be at least 8 characters. The existing token stays valid (no re-issue).
+```json
+{ "currentPassword": "secret123", "newPassword": "evenbettersecret" }
+```
+
+| Status | Code | Meaning |
+|---|---|---|
+| 204 | — | Password changed |
+| 400 | `BAD_REQUEST` | Missing fields or malformed body |
+| 400 | `WEAK_PASSWORD` | `newPassword` shorter than 8 characters |
+| 400 | `INVALID_CURRENT_PASSWORD` | `currentPassword` does not match |
+| 401 | `UNAUTHORIZED` | Missing or expired token |
 
 ---
 

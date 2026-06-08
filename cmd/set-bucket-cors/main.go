@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -27,6 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 	"github.com/joho/godotenv"
 )
 
@@ -37,7 +39,11 @@ func main() {
 
 	_ = godotenv.Load()
 
-	endpoint := os.Getenv("AWS_S3_ENDPOINT")
+	endpoint := os.Getenv("AWS_ENDPOINT_URL")
+	if endpoint == "" {
+		endpoint = os.Getenv("AWS_S3_ENDPOINT") // legacy fallback
+	}
+	pathStyle := isTrue(os.Getenv("AWS_S3_FORCE_PATH_STYLE"))
 	region := mustEnv("AWS_REGION")
 	bucket := mustEnv("AWS_S3_BUCKET")
 	accessKey := mustEnv("AWS_ACCESS_KEY_ID")
@@ -61,6 +67,9 @@ func main() {
 	if endpoint != "" {
 		clientOpts = append(clientOpts, func(o *s3.Options) { o.BaseEndpoint = aws.String(endpoint) })
 	}
+	if pathStyle {
+		clientOpts = append(clientOpts, func(o *s3.Options) { o.UsePathStyle = true })
+	}
 	client := s3.NewFromConfig(cfg, clientOpts...)
 
 	_, err = client.PutBucketCors(ctx, &s3.PutBucketCorsInput{
@@ -76,6 +85,14 @@ func main() {
 		},
 	})
 	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotImplemented" {
+			log.Fatalf("This S3 endpoint does not implement the bucket CORS API (got NotImplemented).\n"+
+				"MinIO and some S3-compatible stores manage CORS at the server level, not per-bucket.\n"+
+				"For MinIO, set CORS on the server instead and restart it, e.g.:\n"+
+				"  MINIO_API_CORS_ALLOW_ORIGIN=\"%s\"   (or \"*\" for local dev)",
+				strings.Join(origins, ","))
+		}
 		log.Fatalf("PutBucketCors: %v", err)
 	}
 
@@ -99,4 +116,13 @@ func splitCSV(s string) []string {
 		}
 	}
 	return out
+}
+
+func isTrue(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "true", "1", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
