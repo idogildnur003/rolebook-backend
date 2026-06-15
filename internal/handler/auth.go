@@ -134,14 +134,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	now := time.Now()
 	user := &model.User{
-		ID:                   uuid.NewString(),
-		Email:                req.Email,
-		PasswordHash:         string(hash),
-		EmailVerified:        false,
-		VerificationRequired: true,
-		VerifyCodeHash:       codeHash,
-		VerifyCodeExpiresAt:  now.Add(verifyCodeTTL),
-		VerifyCodeSentAt:     now,
+		ID:                  uuid.NewString(),
+		Email:               req.Email,
+		PasswordHash:        string(hash),
+		EmailVerified:       false,
+		VerifyCodeHash:      codeHash,
+		VerifyCodeExpiresAt: now.Add(verifyCodeTTL),
+		VerifyCodeSentAt:    now,
 	}
 	if err := h.users.Create(r.Context(), user); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")

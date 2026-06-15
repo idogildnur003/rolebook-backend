@@ -53,10 +53,10 @@ func TestEmailVerificationBlocksLogin(t *testing.T) {
 		user model.User
 		want bool
 	}{
-		{"verified required", model.User{EmailVerified: true, VerificationRequired: true}, false},
-		{"verified not required", model.User{EmailVerified: true}, false},
-		{"unverified required (new signup)", model.User{VerificationRequired: true}, true},
-		{"unverified not required (grandfathered)", model.User{}, false},
+		{"verified new account", model.User{EmailVerified: true}, false},
+		{"verified legacy account", model.User{EmailVerified: true, LegacyUnverified: true}, false},
+		{"unverified new signup (gated)", model.User{}, true},
+		{"unverified legacy account (exempt)", model.User{LegacyUnverified: true}, false},
 	}
 	for _, c := range cases {
 		if got := emailVerificationBlocksLogin(&c.user); got != c.want {

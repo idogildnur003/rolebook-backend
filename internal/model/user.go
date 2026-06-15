@@ -13,9 +13,10 @@ type User struct {
 
 	// EmailVerified is true once the address has been confirmed via OTP.
 	EmailVerified bool `bson:"emailVerified" json:"emailVerified"`
-	// VerificationRequired is true for accounts created after verification
-	// shipped (hard gate). Grandfathered accounts have it false (soft prompt).
-	VerificationRequired bool `bson:"verificationRequired" json:"-"`
+	// LegacyUnverified marks the small, fixed set of accounts that predate email
+	// verification (set once by the backfill migration). They are exempt from the
+	// hard gate (soft prompt instead). New signups leave it false and must verify.
+	LegacyUnverified bool `bson:"legacyUnverified,omitempty" json:"-"`
 
 	VerifyCodeHash      string    `bson:"verifyCodeHash,omitempty"      json:"-"`
 	VerifyCodeExpiresAt time.Time `bson:"verifyCodeExpiresAt,omitempty" json:"-"`
