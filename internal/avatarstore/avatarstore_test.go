@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -160,9 +161,10 @@ type stubPresign struct {
 	putURL string
 	getURL string
 
-	lastPutBucket      string
-	lastPutContentType string
-	lastGetKey         string
+	lastPutBucket       string
+	lastPutContentType  string
+	lastGetKey          string
+	lastGetCacheControl string
 
 	headKey string
 	headErr error
@@ -200,6 +202,9 @@ func (s *stubPresign) PresignPutObject(_ context.Context, in *s3.PutObjectInput,
 func (s *stubPresign) PresignGetObject(_ context.Context, in *s3.GetObjectInput, _ ...func(*s3.PresignOptions)) (*presignedRequest, error) {
 	if in.Key != nil {
 		s.lastGetKey = *in.Key
+	}
+	if in.ResponseCacheControl != nil {
+		s.lastGetCacheControl = *in.ResponseCacheControl
 	}
 	return &presignedRequest{URL: s.getURL}, nil
 }
@@ -335,6 +340,22 @@ func TestResolveImageURI_DelegatesToResolveAvatarURI(t *testing.T) {
 	}
 	if got := s.ResolveImageURI(context.Background(), "https://cdn.example/x.png"); got != "https://cdn.example/x.png" {
 		t.Errorf("got %q, want passthrough", got)
+	}
+}
+
+func TestPresignGet_SetsCacheControl(t *testing.T) {
+	stub := &stubPresign{getURL: "https://signed.example/GET"}
+	s := New(cfg("us-east-1", "bucket", "a", "s"))
+	s.SetClient(stub)
+
+	if _, err := s.PresignGet(context.Background(), "players/abc/avatar/x.png"); err != nil {
+		t.Fatalf("PresignGet: %v", err)
+	}
+	if stub.lastGetCacheControl != GetCacheControl {
+		t.Errorf("ResponseCacheControl = %q, want %q", stub.lastGetCacheControl, GetCacheControl)
+	}
+	if GetPresignTTL < 30*time.Minute {
+		t.Errorf("GetPresignTTL = %v, want >= 30m so client caches survive a session", GetPresignTTL)
 	}
 }
 
