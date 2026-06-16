@@ -53,6 +53,34 @@ func emailVerificationBlocksLogin(u *model.User) bool {
 	return !u.EmailVerified && !u.LegacyUnverified
 }
 
+// changeEmailCodeBody returns the (subject, html, text) for the OTP sent to a
+// user's NEW address when they request an email change.
+func changeEmailCodeBody(code string) (subject, html, text string) {
+	subject = "Confirm your new Rolebook email"
+	html = fmt.Sprintf(
+		"<p>Use this code to confirm your new Rolebook email address:</p>"+
+			"<p style=\"font-size:28px;font-weight:bold;letter-spacing:4px\">%s</p>"+
+			"<p>It expires in 10 minutes. If you didn't request this, ignore this email.</p>",
+		code,
+	)
+	text = fmt.Sprintf("Your Rolebook email-change confirmation code is %s. It expires in 10 minutes.", code)
+	return subject, html, text
+}
+
+// emailChangedNotificationBody returns the (subject, html, text) for the alert
+// sent to a user's OLD address after their email is changed. It is a security
+// heads-up with a recovery hint and never contains the OTP.
+func emailChangedNotificationBody(newEmail string) (subject, html, text string) {
+	subject = "Your Rolebook email was changed"
+	html = fmt.Sprintf(
+		"<p>The email address on your Rolebook account was just changed to <strong>%s</strong>.</p>"+
+			"<p>If this was you, no action is needed. If it wasn't, reset your password immediately or contact support.</p>",
+		newEmail,
+	)
+	text = fmt.Sprintf("Your Rolebook account email was changed to %s. If this wasn't you, reset your password immediately or contact support.", newEmail)
+	return subject, html, text
+}
+
 // verificationEmailBody returns the (subject, htmlBody, textBody) for an OTP.
 func verificationEmailBody(code string) (subject, html, text string) {
 	subject = "Your Rolebook verification code"

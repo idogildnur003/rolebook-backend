@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -44,6 +45,30 @@ func TestCodeExpired(t *testing.T) {
 	}
 	if !codeExpired(now.Add(-time.Minute), now) {
 		t.Error("past expiry reported as not expired")
+	}
+}
+
+func TestChangeEmailCodeBody_ContainsCode(t *testing.T) {
+	subject, html, text := changeEmailCodeBody("123456")
+	if subject == "" {
+		t.Error("empty subject")
+	}
+	if !strings.Contains(html, "123456") || !strings.Contains(text, "123456") {
+		t.Errorf("code missing from change-email body: html=%q text=%q", html, text)
+	}
+}
+
+func TestEmailChangedNotificationBody_HasNewEmailNoCode(t *testing.T) {
+	subject, html, text := emailChangedNotificationBody("new@example.com")
+	if subject == "" {
+		t.Error("empty subject")
+	}
+	if !strings.Contains(html, "new@example.com") || !strings.Contains(text, "new@example.com") {
+		t.Errorf("new email missing from notification: html=%q text=%q", html, text)
+	}
+	// The alert is sent to the OLD address — it must never carry the code.
+	if strings.Contains(text, "123456") {
+		t.Error("notification text unexpectedly contains a code")
 	}
 }
 
