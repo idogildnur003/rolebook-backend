@@ -100,7 +100,9 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 			return
 		}
-		if custom == nil {
+		// The entry must exist AND be visible to the player whose bag this is.
+		// access.Player.ID is the inventory owner; access.IsDM lets the DM add anywhere.
+		if custom == nil || !model.CanPlayerSeeEntry(custom.VisibilityMode, custom.VisiblePlayerIDs, access.Player.ID, access.IsDM) {
 			writeError(w, http.StatusNotFound, "equipment not found in arsenal", "NOT_FOUND")
 			return
 		}

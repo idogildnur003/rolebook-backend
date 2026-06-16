@@ -22,6 +22,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	playerStore := store.NewPlayerStore(db)
 	customEquipmentStore := store.NewCustomEquipmentStore(db)
 	customSpellStore := store.NewCustomSpellStore(db)
+	contentRequestStore := store.NewContentRequestStore(db)
 	catalogImageStore := store.NewCatalogImageStore(db)
 	locationStore := store.NewLocationStore(db)
 	npcStore := store.NewNPCStore(db)
@@ -51,6 +52,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog, catalogImageStore, avatars)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore, avatars)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore, avatars)
+	contentRequestHandler := handler.NewContentRequestHandler(contentRequestStore, customEquipmentStore, customSpellStore, playerStore, campaignStore, avatars)
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
@@ -157,9 +159,22 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 			// Per-campaign custom spells (homebrew)
 			r.Route("/campaigns/{campaignId}/custom-spells", func(r chi.Router) {
 				r.Get("/", customSpellHandler.List)
+				r.Get("/usage", customSpellHandler.Usage)
 				r.Post("/", customSpellHandler.Create)
 				r.Patch("/{id}", customSpellHandler.Update)
 				r.Delete("/{id}", customSpellHandler.Delete)
+			})
+
+			// Per-campaign DM-moderated content requests (proposals + history)
+			r.Route("/campaigns/{campaignId}/content-requests", func(r chi.Router) {
+				r.Get("/mine", contentRequestHandler.Mine)
+				r.Get("/pending", contentRequestHandler.Pending)
+				r.Get("/pending-count", contentRequestHandler.PendingCount)
+				r.Post("/", contentRequestHandler.Create)
+				r.Delete("/{id}", contentRequestHandler.Withdraw)
+				r.Patch("/{id}", contentRequestHandler.EditPending)
+				r.Post("/{id}/approve", contentRequestHandler.Approve)
+				r.Post("/{id}/deny", contentRequestHandler.Deny)
 			})
 
 			// Per-campaign locations

@@ -18,8 +18,9 @@ import (
 // CustomEquipmentHandler exposes per-campaign homebrew equipment CRUD.
 //
 // Permissions:
-//   - List / Create: any campaign member (DM or active player)
-//   - Update: creator OR campaign DM
+//   - List: any campaign member (results filtered by visibility)
+//   - Create: campaign DM only (players submit a content-request to propose)
+//   - Update: campaign DM only (visibility changes cascade to inventories)
 //   - Delete: campaign DM only — cascades to every player's inventory
 type CustomEquipmentHandler struct {
 	customEquipment *store.CustomEquipmentStore
@@ -45,11 +46,12 @@ func NewCustomEquipmentHandler(
 // List handles GET /api/campaigns/:campaignId/custom-equipment.
 func (h *CustomEquipmentHandler) List(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
-	if resolveCampaignMembership(w, r, h.campaigns, campaignID) == nil {
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
 
-	items, err := h.customEquipment.ListByCampaign(r.Context(), campaignID)
+	items, err := h.customEquipment.ListVisibleToPlayer(r.Context(), campaignID, membership.PlayerID, membership.IsDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -69,6 +71,10 @@ func (h *CustomEquipmentHandler) Create(w http.ResponseWriter, r *http.Request) 
 	if membership == nil {
 		return
 	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can create custom equipment directly; players submit a request", "FORBIDDEN")
+		return
+	}
 
 	var body model.CustomEquipment
 	if err := decodeJSON(r, &body); err != nil {
@@ -82,6 +88,14 @@ func (h *CustomEquipmentHandler) Create(w http.ResponseWriter, r *http.Request) 
 	if body.Category == "" {
 		writeError(w, http.StatusBadRequest, "category is required", "BAD_REQUEST")
 		return
+	}
+	body.VisibilityMode = model.NormalizeVisibilityMode(body.VisibilityMode)
+	if !model.IsValidVisibilityMode(body.VisibilityMode) {
+		writeError(w, http.StatusBadRequest, "visibilityMode must be 'campaign' or 'players'", "BAD_REQUEST")
+		return
+	}
+	if body.VisibilityMode != model.VisibilityPlayers {
+		body.VisiblePlayerIDs = nil
 	}
 
 	// Generate a unique id; retry up to 3x on slug collisions.
@@ -131,7 +145,8 @@ func (h *CustomEquipmentHandler) Create(w http.ResponseWriter, r *http.Request) 
 }
 
 // Update handles PATCH /api/campaigns/:campaignId/custom-equipment/:id.
-// Permitted for the creator or the campaign DM.
+// DM only. When the visibility narrows, the change cascades to remove the item
+// from the inventories of players who can no longer see it.
 func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	id := chi.URLParam(r, "id")
@@ -150,9 +165,9 @@ func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Creator or DM only.
-	if !membership.IsDM && existing.CreatedBy != membership.UserID {
-		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+	// DM only.
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can edit custom equipment", "FORBIDDEN")
 		return
 	}
 
@@ -170,6 +185,23 @@ func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if raw, ok := patch["visibilityMode"]; ok {
+		mode, isString := raw.(string)
+		if !isString {
+			writeError(w, http.StatusBadRequest, "visibilityMode must be a string", "BAD_REQUEST")
+			return
+		}
+		mode = model.NormalizeVisibilityMode(mode)
+		if !model.IsValidVisibilityMode(mode) {
+			writeError(w, http.StatusBadRequest, "visibilityMode must be 'campaign' or 'players'", "BAD_REQUEST")
+			return
+		}
+		patch["visibilityMode"] = mode
+		if mode != model.VisibilityPlayers {
+			patch["visiblePlayerIds"] = []string{}
+		}
+	}
+
 	updated, err := h.customEquipment.Update(r.Context(), campaignID, id, bson.M(patch))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -179,6 +211,22 @@ func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusNotFound, "custom equipment not found", "NOT_FOUND")
 		return
 	}
+
+	// Cascade when EITHER the mode OR the player list changed — narrowing the
+	// players list alone (mode unchanged) must still pull the item from players
+	// who lost access. AllowedPlayerIDsForCascade no-ops for campaign mode.
+	_, modeTouched := patch["visibilityMode"]
+	_, idsTouched := patch["visiblePlayerIds"]
+	if modeTouched || idsTouched {
+		allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs)
+		if runCascade {
+			if _, err := h.customEquipment.RemoveExceptForPlayers(r.Context(), campaignID, id, allowed, h.players); err != nil {
+				// Best-effort: the visibility change persisted; log and continue.
+				log.Printf("[custom-equipment] visibility cascade failed for %s/%s: %v", campaignID, id, err)
+			}
+		}
+	}
+
 	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
 	writeJSON(w, http.StatusOK, updated)
 }

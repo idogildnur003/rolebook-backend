@@ -28,4 +28,9 @@ type CustomSpell struct {
 	IsRitual    bool     `json:"isRitual,omitempty"    bson:"isRitual,omitempty"`
 	Source      string   `json:"source,omitempty"      bson:"source,omitempty"`
 	ImageURI    string   `json:"imageUri,omitempty"    bson:"imageUri,omitempty"`
+
+	// VisibilityMode — "campaign" (all members) or "players" (VisiblePlayerIDs only).
+	// Empty/missing is treated as "campaign" for pre-feature documents.
+	VisibilityMode   string   `json:"visibilityMode,omitempty"   bson:"visibilityMode,omitempty"`
+	VisiblePlayerIDs []string `json:"visiblePlayerIds,omitempty" bson:"visiblePlayerIds,omitempty"`
 }

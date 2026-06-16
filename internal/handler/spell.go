@@ -100,7 +100,9 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 			return
 		}
-		if custom == nil {
+		// The entry must exist AND be visible to the player whose spell list this
+		// is. access.Player.ID is the owner; access.IsDM lets the DM add anywhere.
+		if custom == nil || !model.CanPlayerSeeEntry(custom.VisibilityMode, custom.VisiblePlayerIDs, access.Player.ID, access.IsDM) {
 			writeError(w, http.StatusNotFound, "spell not found in arsenal", "NOT_FOUND")
 			return
 		}

@@ -73,6 +73,39 @@ func (s *CustomEquipmentStore) ListByCampaign(ctx context.Context, campaignID st
 	return items, nil
 }
 
+// ListVisibleToPlayer returns the campaign's custom equipment that the caller
+// may see: campaign-wide entries (mode "campaign" or legacy/empty) plus, for a
+// non-DM, the players-mode entries that list the caller's playerId. A DM sees all.
+func (s *CustomEquipmentStore) ListVisibleToPlayer(ctx context.Context, campaignID, callerPlayerID string, isDM bool) ([]model.CustomEquipment, error) {
+	filter := bson.M{"campaignId": campaignID}
+	if !isDM {
+		filter["$or"] = []bson.M{
+			{"visibilityMode": bson.M{"$ne": model.VisibilityPlayers}},
+			{"visiblePlayerIds": callerPlayerID},
+		}
+	}
+	cursor, err := s.col.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	var items []model.CustomEquipment
+	if err := cursor.All(ctx, &items); err != nil {
+		return nil, err
+	}
+	if items == nil {
+		items = []model.CustomEquipment{}
+	}
+	return items, nil
+}
+
+// RemoveExceptForPlayers pulls equipmentID from the inventory of every player in
+// the campaign whose _id is NOT in allowedPlayerIDs. Used when an entry's
+// visibility is narrowed (or set to specific players) so players who lost access
+// no longer carry it. Returns the number of player documents modified.
+func (s *CustomEquipmentStore) RemoveExceptForPlayers(ctx context.Context, campaignID, equipmentID string, allowedPlayerIDs []string, players *PlayerStore) (int64, error) {
+	return players.RemoveEquipmentFromPlayersExcept(ctx, campaignID, equipmentID, allowedPlayerIDs)
+}
+
 // Update applies a partial update scoped by (campaignId, id) and bumps updatedAt.
 // The caller is responsible for stripping immutable fields (_id, campaignId,
 // createdBy, createdAt) from the patch before calling.

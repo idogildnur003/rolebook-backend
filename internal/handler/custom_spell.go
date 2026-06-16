@@ -17,8 +17,9 @@ import (
 // CustomSpellHandler exposes per-campaign homebrew spell CRUD.
 //
 // Permissions:
-//   - List / Create: any campaign member (DM or active player)
-//   - Update: creator OR campaign DM
+//   - List: any campaign member (results filtered by visibility)
+//   - Create: campaign DM only (players submit a content-request to propose)
+//   - Update: campaign DM only (visibility changes cascade to spell lists)
 //   - Delete: campaign DM only — cascades to every player's spell list
 type CustomSpellHandler struct {
 	customSpells *store.CustomSpellStore
@@ -44,11 +45,12 @@ func NewCustomSpellHandler(
 // List handles GET /api/campaigns/:campaignId/custom-spells.
 func (h *CustomSpellHandler) List(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
-	if resolveCampaignMembership(w, r, h.campaigns, campaignID) == nil {
+	membership := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if membership == nil {
 		return
 	}
 
-	spells, err := h.customSpells.ListByCampaign(r.Context(), campaignID)
+	spells, err := h.customSpells.ListVisibleToPlayer(r.Context(), campaignID, membership.PlayerID, membership.IsDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -68,6 +70,10 @@ func (h *CustomSpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if membership == nil {
 		return
 	}
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can create custom spells directly; players submit a request", "FORBIDDEN")
+		return
+	}
 
 	var body model.CustomSpell
 	if err := decodeJSON(r, &body); err != nil {
@@ -81,6 +87,14 @@ func (h *CustomSpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if body.Level < 0 || body.Level > 9 {
 		writeError(w, http.StatusBadRequest, "level must be between 0 and 9", "BAD_REQUEST")
 		return
+	}
+	body.VisibilityMode = model.NormalizeVisibilityMode(body.VisibilityMode)
+	if !model.IsValidVisibilityMode(body.VisibilityMode) {
+		writeError(w, http.StatusBadRequest, "visibilityMode must be 'campaign' or 'players'", "BAD_REQUEST")
+		return
+	}
+	if body.VisibilityMode != model.VisibilityPlayers {
+		body.VisiblePlayerIDs = nil
 	}
 
 	// Generate a unique id; retry up to 3x on slug collisions.
@@ -130,7 +144,8 @@ func (h *CustomSpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // Update handles PATCH /api/campaigns/:campaignId/custom-spells/:id.
-// Permitted for the creator or the campaign DM.
+// DM only. When the visibility narrows, the change cascades to remove the spell
+// from the spell lists of players who can no longer see it.
 func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 	id := chi.URLParam(r, "id")
@@ -149,9 +164,9 @@ func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Creator or DM only.
-	if !membership.IsDM && existing.CreatedBy != membership.UserID {
-		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+	// DM only.
+	if !membership.IsDM {
+		writeError(w, http.StatusForbidden, "only the DM can edit custom spells", "FORBIDDEN")
 		return
 	}
 
@@ -169,6 +184,23 @@ func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if raw, ok := patch["visibilityMode"]; ok {
+		mode, isString := raw.(string)
+		if !isString {
+			writeError(w, http.StatusBadRequest, "visibilityMode must be a string", "BAD_REQUEST")
+			return
+		}
+		mode = model.NormalizeVisibilityMode(mode)
+		if !model.IsValidVisibilityMode(mode) {
+			writeError(w, http.StatusBadRequest, "visibilityMode must be 'campaign' or 'players'", "BAD_REQUEST")
+			return
+		}
+		patch["visibilityMode"] = mode
+		if mode != model.VisibilityPlayers {
+			patch["visiblePlayerIds"] = []string{}
+		}
+	}
+
 	updated, err := h.customSpells.Update(r.Context(), campaignID, id, bson.M(patch))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -178,6 +210,22 @@ func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "custom spell not found", "NOT_FOUND")
 		return
 	}
+
+	// Cascade when EITHER the mode OR the player list changed — narrowing the
+	// players list alone (mode unchanged) must still pull the spell from players
+	// who lost access. AllowedPlayerIDsForCascade no-ops for campaign mode.
+	_, modeTouched := patch["visibilityMode"]
+	_, idsTouched := patch["visiblePlayerIds"]
+	if modeTouched || idsTouched {
+		allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs)
+		if runCascade {
+			if _, err := h.customSpells.RemoveExceptForPlayers(r.Context(), campaignID, id, allowed, h.players); err != nil {
+				// Best-effort: the visibility change persisted; log and continue.
+				log.Printf("[custom-spell] visibility cascade failed for %s/%s: %v", campaignID, id, err)
+			}
+		}
+	}
+
 	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
 	writeJSON(w, http.StatusOK, updated)
 }
