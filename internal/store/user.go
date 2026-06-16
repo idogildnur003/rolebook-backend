@@ -110,11 +110,12 @@ func (s *UserStore) SetPendingEmailCode(ctx context.Context, userID, pendingEmai
 	return err
 }
 
-// CommitEmailChange swaps the account email to newEmail and clears the pending
+// CommitEmailChange swaps the account email to newEmail, marks the account
+// verified (the new address was just confirmed via OTP), and clears the pending
 // change plus all transient code state.
 func (s *UserStore) CommitEmailChange(ctx context.Context, userID, newEmail string) error {
 	_, err := s.col.UpdateByID(ctx, userID, bson.M{
-		"$set": bson.M{"email": newEmail},
+		"$set": bson.M{"email": newEmail, "emailVerified": true},
 		"$unset": bson.M{
 			"pendingEmail":        "",
 			"verifyCodeHash":      "",

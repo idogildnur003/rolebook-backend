@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -56,7 +57,11 @@ func (s *ResendSender) Send(ctx context.Context, to, subject, htmlBody, textBody
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("resend: unexpected status %d", resp.StatusCode)
+		// Surface Resend's response body and the from address — these carry the
+		// actual reason (unverified domain, invalid from, testing-mode recipient
+		// restriction, etc.) that a bare status code hides.
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return fmt.Errorf("resend: status %d (from %q): %s", resp.StatusCode, s.from, bytes.TrimSpace(respBody))
 	}
 	return nil
 }
