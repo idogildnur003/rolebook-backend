@@ -18,6 +18,11 @@ type User struct {
 	// hard gate (soft prompt instead). New signups leave it false and must verify.
 	LegacyUnverified bool `bson:"legacyUnverified,omitempty" json:"-"`
 
+	// PendingEmail holds a not-yet-confirmed new email during a change-email
+	// flow. The OTP for it reuses the VerifyCode* fields below. Empty when no
+	// change is in flight. The swap to Email happens only on a confirmed code.
+	PendingEmail string `bson:"pendingEmail,omitempty" json:"-"`
+
 	VerifyCodeHash      string    `bson:"verifyCodeHash,omitempty"      json:"-"`
 	VerifyCodeExpiresAt time.Time `bson:"verifyCodeExpiresAt,omitempty" json:"-"`
 	VerifyCodeAttempts  int       `bson:"verifyCodeAttempts,omitempty"  json:"-"`
