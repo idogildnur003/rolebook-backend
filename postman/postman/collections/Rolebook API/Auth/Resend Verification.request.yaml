@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/resend-verification"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{verifyEmail}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Always returns 200 {"status":"ok"} regardless of whether the account
+      // exists or is already verified (no account enumeration). A fresh code is
+      // sent only when the account is unverified and past the resend cooldown.
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 1750

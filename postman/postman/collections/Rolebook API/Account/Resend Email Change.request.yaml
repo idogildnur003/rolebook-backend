@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/resend-email-change"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {}
+scripts:
+  - type: afterResponse
+    code: |-
+      // Re-sends the code to the pending address (60s cooldown). 200 {status:"ok"}
+      // when a change is pending; 400 NO_PENDING_CHANGE otherwise.
+      pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 2750

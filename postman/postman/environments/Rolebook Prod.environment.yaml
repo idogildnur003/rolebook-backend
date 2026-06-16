@@ -9,6 +9,9 @@ values:
   - key: userId
     value: ''
     enabled: true
+  - key: verifyEmail
+    value: ''
+    enabled: true
   - key: campaignId
     value: ''
     enabled: true

@@ -15,7 +15,15 @@ scripts:
     code: |-
       pm.test("Status 2xx", () => pm.response.to.be.success);
       const json = pm.response.json();
-      pm.environment.set("token", json.token);
-      pm.environment.set("userId", json.userId);
+      // Verification disabled (no RESEND_API_KEY): a JWT is issued directly.
+      if (json.token) {
+        pm.environment.set("token", json.token);
+        pm.environment.set("userId", json.userId);
+      }
+      // Verification enabled: response is {status:"verification_required", email}.
+      // Stash the email so the Verify Email / Resend requests can reuse it.
+      if (json.email) {
+        pm.environment.set("verifyEmail", json.email);
+      }
     language: text/javascript
 order: 1000

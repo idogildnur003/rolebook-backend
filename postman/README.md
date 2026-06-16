@@ -24,18 +24,36 @@ The API uses two kinds of authorization:
 
 ## Auth
 
-No Bearer token required. Test scripts auto-set `token` and `userId`.
+No Bearer token required. Test scripts auto-set `token`, `userId`, and `verifyEmail`.
 
 | Method | Path | Description | Status |
 |---|---|---|---|
 | POST | `/auth/register` | Register a new user | 201 |
 | POST | `/auth/login` | Login and get JWT | 200 |
+| POST | `/auth/verify-email` | Confirm the emailed OTP, get JWT | 200 |
+| POST | `/auth/resend-verification` | Re-send the OTP (always 200) | 200 |
 | POST | `/auth/change-password` | Change password (Bearer required) | 204 |
 
-**Body (register / login):**
+**Register / Login body:**
 ```json
 { "email": "dm@example.com", "password": "secret123" }
 ```
+
+### Email verification
+
+Verification is **on** when the server has `RESEND_API_KEY` set (or `EMAIL_VERIFICATION_ENABLED=true`), and **off** otherwise — so local dev with no key skips it entirely.
+
+**Verification off:** `register` returns `{ token, userId, emailVerified: true }` immediately, same as before.
+
+**Verification on:** `register` returns `{ "status": "verification_required", "email": "..." }` and sends a 6-digit code (printed to the server log when no real email provider is configured). The account gets **no token** until the code is confirmed:
+
+- `POST /auth/verify-email` with `{ "email", "code" }` → on success returns `{ token, userId, emailVerified: true }`. Wrong/expired code → `400 INVALID_CODE`; too many attempts → `429 TOO_MANY_ATTEMPTS`; already verified → `400 ALREADY_VERIFIED`.
+- `POST /auth/resend-verification` with `{ "email" }` → always `200 { "status": "ok" }` (no account enumeration); a fresh code is sent only when the account is unverified and past the 60s cooldown.
+- `login` for an unverified new account → `403 EMAIL_NOT_VERIFIED` (grandfathered accounts can still log in and are prompted to verify). Successful login responses now also include `emailVerified`.
+
+In Postman, run **Register** first (it stashes `verifyEmail`), read the code from the server log, paste it into **Verify Email**'s `code`, and send.
+
+### Change password
 
 **Change password** — requires Bearer `{{token}}`. `newPassword` must be at least 8 characters. The existing token stays valid (no re-issue).
 ```json
@@ -49,6 +67,20 @@ No Bearer token required. Test scripts auto-set `token` and `userId`.
 | 400 | `WEAK_PASSWORD` | `newPassword` shorter than 8 characters |
 | 400 | `INVALID_CURRENT_PASSWORD` | `currentPassword` does not match |
 | 401 | `UNAUTHORIZED` | Missing or expired token |
+
+### Change email
+
+All three require Bearer `{{token}}`. Email changes use a **pending swap**: the new address is verified by a 6-digit code before the account email changes, and the old address keeps working until then.
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| POST | `/auth/change-email` | Re-auth + start change; code sent to new email | 200 |
+| POST | `/auth/verify-email-change` | Confirm the code; swap the email | 200 |
+| POST | `/auth/resend-email-change` | Re-send the code to the pending address | 200 |
+
+- `change-email` `{newEmail, currentPassword}` → `200 {status:"verification_required", email}`. Wrong password → `400 INVALID_CURRENT_PASSWORD`; same as current → `400 SAME_EMAIL`; already taken → `409 EMAIL_TAKEN`.
+- `verify-email-change` `{code}` → `200 {email}`. Wrong/expired → `400 INVALID_CODE`; too many → `429 TOO_MANY_ATTEMPTS`; none pending → `400 NO_PENDING_CHANGE`. On success the **old** address receives a security notification.
+- `resend-email-change` → always `200 {status:"ok"}` when a change is pending (60s cooldown).
 
 ---
 

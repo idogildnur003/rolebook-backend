@@ -9,6 +9,7 @@ import (
 	"github.com/elad/rolebook-backend/config"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
+	"github.com/elad/rolebook-backend/internal/email"
 	"github.com/elad/rolebook-backend/internal/handler"
 	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/middleware"
@@ -40,7 +41,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	}
 
 	// Handlers
-	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, cfg.AdminUserIDs)
+	emailSender := email.New(cfg)
+	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled, cfg.AdminUserIDs)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
@@ -61,6 +63,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 		// Public
 		r.Post("/auth/register", authHandler.Register)
 		r.Post("/auth/login", authHandler.Login)
+		r.Post("/auth/verify-email", authHandler.VerifyEmail)
+		r.Post("/auth/resend-verification", authHandler.ResendVerification)
 
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
@@ -68,6 +72,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 			// Account
 			r.Post("/auth/change-password", authHandler.ChangePassword)
+			r.Post("/auth/change-email", authHandler.ChangeEmail)
+			r.Post("/auth/verify-email-change", authHandler.VerifyEmailChange)
+			r.Post("/auth/resend-email-change", authHandler.ResendEmailChange)
 
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)

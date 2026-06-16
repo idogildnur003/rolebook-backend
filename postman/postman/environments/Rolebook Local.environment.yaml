@@ -6,6 +6,8 @@ values:
     value: ''
   - key: userId
     value: ''
+  - key: verifyEmail
+    value: ''
   - key: campaignId
     value: ''
   - key: sessionId

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -58,8 +59,69 @@ func (s *UserStore) GetByID(ctx context.Context, id string) (*model.User, error)
 	return &u, nil
 }
 
+// SetVerificationCode stores a freshly issued code hash and its expiry, stamps
+// the send time, and resets the attempt counter.
+func (s *UserStore) SetVerificationCode(ctx context.Context, userID, codeHash string, expiresAt, sentAt time.Time) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{"$set": bson.M{
+		"verifyCodeHash":      codeHash,
+		"verifyCodeExpiresAt": expiresAt,
+		"verifyCodeSentAt":    sentAt,
+		"verifyCodeAttempts":  0,
+	}})
+	return err
+}
+
+// IncrementVerifyAttempts bumps the failed-attempt counter by one.
+func (s *UserStore) IncrementVerifyAttempts(ctx context.Context, userID string) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{"$inc": bson.M{"verifyCodeAttempts": 1}})
+	return err
+}
+
+// MarkVerified flags the account verified and clears all transient code state.
+func (s *UserStore) MarkVerified(ctx context.Context, userID string) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{
+		"$set": bson.M{"emailVerified": true},
+		"$unset": bson.M{
+			"verifyCodeHash":      "",
+			"verifyCodeExpiresAt": "",
+			"verifyCodeAttempts":  "",
+			"verifyCodeSentAt":    "",
+		},
+	})
+	return err
+}
+
 // UpdatePasswordHash sets a new bcrypt password hash for the user with the given ID.
 func (s *UserStore) UpdatePasswordHash(ctx context.Context, id, hash string) error {
 	_, err := s.col.UpdateByID(ctx, id, bson.M{"$set": bson.M{"passwordHash": hash}})
+	return err
+}
+
+// SetPendingEmailCode stores a pending email change plus its OTP (reusing the
+// VerifyCode* fields), stamps the send time, and resets the attempt counter.
+func (s *UserStore) SetPendingEmailCode(ctx context.Context, userID, pendingEmail, codeHash string, expiresAt, sentAt time.Time) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{"$set": bson.M{
+		"pendingEmail":        pendingEmail,
+		"verifyCodeHash":      codeHash,
+		"verifyCodeExpiresAt": expiresAt,
+		"verifyCodeSentAt":    sentAt,
+		"verifyCodeAttempts":  0,
+	}})
+	return err
+}
+
+// CommitEmailChange swaps the account email to newEmail and clears the pending
+// change plus all transient code state.
+func (s *UserStore) CommitEmailChange(ctx context.Context, userID, newEmail string) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{
+		"$set": bson.M{"email": newEmail},
+		"$unset": bson.M{
+			"pendingEmail":        "",
+			"verifyCodeHash":      "",
+			"verifyCodeExpiresAt": "",
+			"verifyCodeAttempts":  "",
+			"verifyCodeSentAt":    "",
+		},
+	})
 	return err
 }

@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/verify-email-change"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "000000"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Paste the code from the new-email message. On success the account email
+      // swaps to the pending address and the OLD address gets a security notice.
+      pm.test("Status 2xx", () => pm.response.to.be.success);
+    language: text/javascript
+order: 2500
