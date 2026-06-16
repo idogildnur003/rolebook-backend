@@ -68,6 +68,20 @@ In Postman, run **Register** first (it stashes `verifyEmail`), read the code fro
 | 400 | `INVALID_CURRENT_PASSWORD` | `currentPassword` does not match |
 | 401 | `UNAUTHORIZED` | Missing or expired token |
 
+### Change email
+
+All three require Bearer `{{token}}`. Email changes use a **pending swap**: the new address is verified by a 6-digit code before the account email changes, and the old address keeps working until then.
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| POST | `/auth/change-email` | Re-auth + start change; code sent to new email | 200 |
+| POST | `/auth/verify-email-change` | Confirm the code; swap the email | 200 |
+| POST | `/auth/resend-email-change` | Re-send the code to the pending address | 200 |
+
+- `change-email` `{newEmail, currentPassword}` → `200 {status:"verification_required", email}`. Wrong password → `400 INVALID_CURRENT_PASSWORD`; same as current → `400 SAME_EMAIL`; already taken → `409 EMAIL_TAKEN`.
+- `verify-email-change` `{code}` → `200 {email}`. Wrong/expired → `400 INVALID_CODE`; too many → `429 TOO_MANY_ATTEMPTS`; none pending → `400 NO_PENDING_CHANGE`. On success the **old** address receives a security notification.
+- `resend-email-change` → always `200 {status:"ok"}` when a change is pending (60s cooldown).
+
 ---
 
 ## Campaigns

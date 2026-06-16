@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/auth/change-email"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "newEmail": "new@example.com",
+      "currentPassword": "secret123"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      // Requires Bearer {{token}}. Sends a 6-digit code to the NEW email (server
+      // log when no provider is configured). The account email is NOT changed
+      // until Verify Email Change confirms the code.
+      pm.test("Status 2xx", () => pm.response.to.be.success);
+    language: text/javascript
+order: 2000
