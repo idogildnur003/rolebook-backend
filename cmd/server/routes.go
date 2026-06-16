@@ -72,6 +72,9 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 
 			// Account
 			r.Post("/auth/change-password", authHandler.ChangePassword)
+			r.Post("/auth/change-email", authHandler.ChangeEmail)
+			r.Post("/auth/verify-email-change", authHandler.VerifyEmailChange)
+			r.Post("/auth/resend-email-change", authHandler.ResendEmailChange)
 
 			// Campaigns
 			r.Get("/campaigns", campaignHandler.List)
