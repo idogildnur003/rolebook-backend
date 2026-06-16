@@ -81,6 +81,17 @@ func emailChangedNotificationBody(newEmail string) (subject, html, text string) 
 	return subject, html, text
 }
 
+// passwordChangedNotificationBody returns the (subject, html, text) for the
+// security heads-up sent to a user's address after their password is changed.
+// It carries no password or code material.
+func passwordChangedNotificationBody() (subject, html, text string) {
+	subject = "Your Rolebook password was changed"
+	html = "<p>The password on your Rolebook account was just changed.</p>" +
+		"<p>If this was you, no action is needed. If it wasn't, secure your account or contact support right away.</p>"
+	text = "The password on your Rolebook account was just changed. If this wasn't you, secure your account or contact support right away."
+	return subject, html, text
+}
+
 // verificationEmailBody returns the (subject, htmlBody, textBody) for an OTP.
 func verificationEmailBody(code string) (subject, html, text string) {
 	subject = "Your Rolebook verification code"

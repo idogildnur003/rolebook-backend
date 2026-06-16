@@ -58,6 +58,19 @@ func TestChangeEmailCodeBody_ContainsCode(t *testing.T) {
 	}
 }
 
+func TestPasswordChangedNotificationBody_NoSecrets(t *testing.T) {
+	subject, html, text := passwordChangedNotificationBody()
+	if subject == "" || html == "" || text == "" {
+		t.Fatal("empty subject/html/text")
+	}
+	// Must not echo any password or code material — it is a generic heads-up.
+	for _, s := range []string{html, text} {
+		if strings.Contains(strings.ToLower(s), "code") {
+			t.Errorf("password-change notice should not mention a code: %q", s)
+		}
+	}
+}
+
 func TestEmailChangedNotificationBody_HasNewEmailNoCode(t *testing.T) {
 	subject, html, text := emailChangedNotificationBody("new@example.com")
 	if subject == "" {

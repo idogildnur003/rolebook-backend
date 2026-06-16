@@ -270,6 +270,12 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Best-effort security heads-up to the account address.
+	subject, html, text := passwordChangedNotificationBody()
+	if err := h.email.Send(r.Context(), user.Email, subject, html, text); err != nil {
+		log.Printf("[auth] failed to send password-change notice to %s: %v", user.Email, err)
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
