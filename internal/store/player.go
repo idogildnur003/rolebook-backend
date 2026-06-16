@@ -290,6 +290,12 @@ func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, cam
 // RemoveEquipmentFromAllInventories but scoped to the players who lost access on
 // a visibility change. Returns the number of player documents modified.
 func (s *PlayerStore) RemoveEquipmentFromPlayersExcept(ctx context.Context, campaignID, equipmentID string, allowedPlayerIDs []string) (int64, error) {
+	// Normalise nil → empty slice so it encodes as a BSON array ([]) rather than
+	// null. {$nin: null} is an invalid $nin argument (errors); {$nin: []} matches
+	// every player — the intended "remove from everyone" when the allow-list is empty.
+	if allowedPlayerIDs == nil {
+		allowedPlayerIDs = []string{}
+	}
 	res, err := s.col.UpdateMany(ctx,
 		bson.M{
 			"campaignId":            campaignID,
@@ -366,6 +372,10 @@ func (s *PlayerStore) ListSpellSummaries(ctx context.Context, campaignID string)
 
 // RemoveSpellFromPlayersExcept — spell-list variant of RemoveEquipmentFromPlayersExcept.
 func (s *PlayerStore) RemoveSpellFromPlayersExcept(ctx context.Context, campaignID, spellID string, allowedPlayerIDs []string) (int64, error) {
+	// See RemoveEquipmentFromPlayersExcept: nil → [] so $nin gets a valid array.
+	if allowedPlayerIDs == nil {
+		allowedPlayerIDs = []string{}
+	}
 	res, err := s.col.UpdateMany(ctx,
 		bson.M{
 			"campaignId":     campaignID,

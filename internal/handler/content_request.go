@@ -461,7 +461,12 @@ func (h *ContentRequestHandler) EditPending(w http.ResponseWriter, r *http.Reque
 			return
 		}
 		fields["suggestedVisibilityMode"] = mode
-		fields["suggestedVisiblePlayerIds"] = body.SuggestedVisiblePlayerIDs
+		// Clear the suggested player list for campaign mode, matching Create/Approve.
+		if mode == model.VisibilityPlayers {
+			fields["suggestedVisiblePlayerIds"] = body.SuggestedVisiblePlayerIDs
+		} else {
+			fields["suggestedVisiblePlayerIds"] = []string{}
+		}
 	}
 	if len(fields) == 0 {
 		writeError(w, http.StatusBadRequest, "no editable fields provided", "BAD_REQUEST")
