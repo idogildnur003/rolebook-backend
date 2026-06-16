@@ -96,3 +96,32 @@ func (s *UserStore) UpdatePasswordHash(ctx context.Context, id, hash string) err
 	_, err := s.col.UpdateByID(ctx, id, bson.M{"$set": bson.M{"passwordHash": hash}})
 	return err
 }
+
+// SetPendingEmailCode stores a pending email change plus its OTP (reusing the
+// VerifyCode* fields), stamps the send time, and resets the attempt counter.
+func (s *UserStore) SetPendingEmailCode(ctx context.Context, userID, pendingEmail, codeHash string, expiresAt, sentAt time.Time) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{"$set": bson.M{
+		"pendingEmail":        pendingEmail,
+		"verifyCodeHash":      codeHash,
+		"verifyCodeExpiresAt": expiresAt,
+		"verifyCodeSentAt":    sentAt,
+		"verifyCodeAttempts":  0,
+	}})
+	return err
+}
+
+// CommitEmailChange swaps the account email to newEmail and clears the pending
+// change plus all transient code state.
+func (s *UserStore) CommitEmailChange(ctx context.Context, userID, newEmail string) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{
+		"$set": bson.M{"email": newEmail},
+		"$unset": bson.M{
+			"pendingEmail":        "",
+			"verifyCodeHash":      "",
+			"verifyCodeExpiresAt": "",
+			"verifyCodeAttempts":  "",
+			"verifyCodeSentAt":    "",
+		},
+	})
+	return err
+}
