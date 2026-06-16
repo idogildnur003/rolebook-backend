@@ -358,3 +358,50 @@ func TestPresignGet_SetsCacheControl(t *testing.T) {
 		t.Errorf("GetPresignTTL = %v, want >= 30m so client caches survive a session", GetPresignTTL)
 	}
 }
+
+// countingPresign counts PresignGetObject calls to prove memoization.
+type countingPresign struct {
+	getCalls int
+}
+
+func (c *countingPresign) PresignPutObject(ctx context.Context, in *s3.PutObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error) {
+	return &presignedRequest{URL: "https://put.example/" + *in.Key}, nil
+}
+func (c *countingPresign) PresignGetObject(ctx context.Context, in *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*presignedRequest, error) {
+	c.getCalls++
+	return &presignedRequest{URL: "https://get.example/" + *in.Key}, nil
+}
+func (c *countingPresign) HeadObject(ctx context.Context, in *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
+	return &s3.HeadObjectOutput{}, nil
+}
+func (c *countingPresign) DeleteObject(ctx context.Context, in *s3.DeleteObjectInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectOutput, error) {
+	return &s3.DeleteObjectOutput{}, nil
+}
+
+func TestResolveImageURICached_MemoizesPerKey(t *testing.T) {
+	s := New(cfg("us-east-1", "b", "a", "s"))
+	stub := &countingPresign{}
+	s.SetClient(stub)
+
+	key := "arsenal/equipment/longsword/abc.png"
+	u1 := s.ResolveImageURICached(context.Background(), key)
+	u2 := s.ResolveImageURICached(context.Background(), key)
+
+	if u1 != u2 {
+		t.Fatalf("expected stable URL, got %q then %q", u1, u2)
+	}
+	if !strings.HasPrefix(u1, "https://get.example/") {
+		t.Fatalf("unexpected URL %q", u1)
+	}
+	if stub.getCalls != 1 {
+		t.Fatalf("expected 1 presign call (memoized), got %d", stub.getCalls)
+	}
+}
+
+func TestResolveImageURICached_PassThroughWhenUnconfigured(t *testing.T) {
+	s := New(config.Config{}) // not configured
+	got := s.ResolveImageURICached(context.Background(), "arsenal/equipment/x.png")
+	if got != "arsenal/equipment/x.png" {
+		t.Fatalf("expected pass-through, got %q", got)
+	}
+}

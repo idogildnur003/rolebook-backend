@@ -25,6 +25,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -37,7 +38,11 @@ import (
 func main() {
 	_ = godotenv.Load()
 
-	endpoint := os.Getenv("AWS_S3_ENDPOINT")
+	endpoint := os.Getenv("AWS_ENDPOINT_URL")
+	if endpoint == "" {
+		endpoint = os.Getenv("AWS_S3_ENDPOINT") // legacy fallback
+	}
+	pathStyle := isTrue(os.Getenv("AWS_S3_FORCE_PATH_STYLE"))
 	region := mustEnv("AWS_REGION")
 	bucket := mustEnv("AWS_S3_BUCKET")
 	accessKey := mustEnv("AWS_ACCESS_KEY_ID")
@@ -61,9 +66,12 @@ func main() {
 	if endpoint != "" {
 		clientOpts = append(clientOpts, func(o *s3.Options) { o.BaseEndpoint = aws.String(endpoint) })
 	}
+	if pathStyle {
+		clientOpts = append(clientOpts, func(o *s3.Options) { o.UsePathStyle = true })
+	}
 	client := s3.NewFromConfig(cfg, clientOpts...)
 
-	fmt.Printf("bucket=%s region=%s endpoint=%q origin=%s\n\n", bucket, region, endpoint, origin)
+	fmt.Printf("bucket=%s region=%s endpoint=%q pathStyle=%v origin=%s\n\n", bucket, region, endpoint, pathStyle, origin)
 
 	// 1. Current CORS
 	fmt.Println("─── 1. GetBucketCors ───")
@@ -153,4 +161,13 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return s[:n] + "...(truncated)"
+}
+
+func isTrue(s string) bool {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "true", "1", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }

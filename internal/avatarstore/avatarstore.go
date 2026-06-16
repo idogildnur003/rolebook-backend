@@ -46,6 +46,15 @@ const GetPresignTTL = 1 * time.Hour
 // to revalidate with an already-expired signature.
 const GetCacheControl = "private, max-age=3000" // 50 minutes
 
+// CatalogImagePresignTTL is the lifetime of presigned GET URLs for catalog
+// images. Long enough that clients cache the image across sessions; under the
+// SigV4 7-day maximum.
+const CatalogImagePresignTTL = 6 * 24 * time.Hour
+
+// catalogCacheRefreshAhead re-signs a cached catalog URL once it is within this
+// window of expiry, so callers never receive an about-to-expire URL.
+const catalogCacheRefreshAhead = 12 * time.Hour
+
 // MaxAvatarBytes is the upper bound on a single avatar upload (10 MiB).
 // Enforced by the frontend before requesting an upload URL. The backend
 // rejects oversized requests at /uploads/url when ContentLength is provided.
@@ -74,6 +83,12 @@ type PresignedPut struct {
 	ExpiresAt time.Time
 }
 
+// cachedURL holds a memoized presigned GET URL and its expiry time.
+type cachedURL struct {
+	url       string
+	expiresAt time.Time
+}
+
 // presignClient is the small slice of the AWS SDK presign API we use.
 // Defining it as an interface lets tests stub the SDK without mocking S3.
 type presignClient interface {
@@ -90,26 +105,31 @@ type presignedRequest struct {
 
 // Store generates presigned URLs for player avatar objects.
 type Store struct {
-	baseUrl   string
-	region    string
-	bucket    string
-	accessKey string
-	secretKey string
+	baseUrl      string
+	region       string
+	bucket       string
+	accessKey    string
+	secretKey    string
+	usePathStyle bool
 
 	once   sync.Once
 	client presignClient
 	initEr error
+
+	cacheMu  sync.RWMutex
+	urlCache map[string]cachedURL
 }
 
 // New constructs a Store from raw env values. Empty values are allowed; the
 // store will report IsConfigured() == false and refuse presign calls.
 func New(cfg config.Config) *Store {
 	return &Store{
-		baseUrl:   cfg.AWSS3Endpoint,
-		region:    cfg.AWSRegion,
-		bucket:    cfg.AWSS3Bucket,
-		accessKey: cfg.AWSAccessKeyID,
-		secretKey: cfg.AWSSecretAccessKey,
+		baseUrl:      cfg.AWSS3Endpoint,
+		region:       cfg.AWSRegion,
+		bucket:       cfg.AWSS3Bucket,
+		accessKey:    cfg.AWSAccessKeyID,
+		secretKey:    cfg.AWSSecretAccessKey,
+		usePathStyle: cfg.AWSS3UsePathStyle,
 	}
 }
 
@@ -140,7 +160,14 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 			s.initEr = fmt.Errorf("avatarstore: aws config: %w", err)
 			return
 		}
-		s3client := s3.NewFromConfig(cfg)
+		s3client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			// Path-style ("<endpoint>/<bucket>/<key>") is required by
+			// S3-compatible stores like MinIO. Real AWS uses virtual-hosted
+			// style ("<bucket>.<endpoint>") via DNS, so this stays opt-in.
+			if s.usePathStyle {
+				o.UsePathStyle = true
+			}
+		})
 		s.client = realPresign{ps: s3.NewPresignClient(s3client), client: s3client}
 	})
 	if s.initEr != nil {
@@ -331,4 +358,54 @@ func (s *Store) ResolveAvatarURI(ctx context.Context, avatarUri string) string {
 // (when the store is configured), fully-qualified URLs → unchanged.
 func (s *Store) ResolveImageURI(ctx context.Context, uri string) string {
 	return s.ResolveAvatarURI(ctx, uri)
+}
+
+// presignGetWithTTL signs a GET URL for key with an explicit expiry.
+func (s *Store) presignGetWithTTL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	client, err := s.ensureClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	req, err := client.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	}, func(o *s3.PresignOptions) {
+		o.Expires = ttl
+	})
+	if err != nil {
+		return "", fmt.Errorf("avatarstore: presign get: %w", err)
+	}
+	return req.URL, nil
+}
+
+// ResolveImageURICached behaves like ResolveImageURI but memoizes the presigned
+// GET URL per object key with a long TTL, so repeated catalog reads return a
+// stable URL (letting clients cache the image) and each key is signed at most
+// once per refresh window. Falls back to the original value on any failure or
+// when unconfigured / not a key.
+func (s *Store) ResolveImageURICached(ctx context.Context, uri string) string {
+	if !LooksLikeKey(uri) || !s.IsConfigured() {
+		return uri
+	}
+	now := time.Now()
+
+	s.cacheMu.RLock()
+	entry, ok := s.urlCache[uri]
+	s.cacheMu.RUnlock()
+	if ok && now.Before(entry.expiresAt.Add(-catalogCacheRefreshAhead)) {
+		return entry.url
+	}
+
+	url, err := s.presignGetWithTTL(ctx, uri, CatalogImagePresignTTL)
+	if err != nil {
+		return uri
+	}
+
+	s.cacheMu.Lock()
+	if s.urlCache == nil {
+		s.urlCache = make(map[string]cachedURL)
+	}
+	s.urlCache[uri] = cachedURL{url: url, expiresAt: now.Add(CatalogImagePresignTTL)}
+	s.cacheMu.Unlock()
+	return url
 }

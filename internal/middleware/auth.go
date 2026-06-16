@@ -57,3 +57,37 @@ func writeUnauthorized(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
 	w.Write([]byte(`{"error":"missing or invalid token","code":"UNAUTHORIZED"}`))
 }
+
+// IsAdmin reports whether userID is in the admin allowlist. An empty userID or
+// empty allowlist is never admin.
+func IsAdmin(adminIDs []string, userID string) bool {
+	if userID == "" {
+		return false
+	}
+	for _, id := range adminIDs {
+		if id == userID {
+			return true
+		}
+	}
+	return false
+}
+
+// RequireAdmin allows only requests whose authenticated user ID is in adminIDs.
+// Must run inside an Authenticate group (it reads the userID from context).
+func RequireAdmin(adminIDs []string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !IsAdmin(adminIDs, UserIDFromContext(r.Context())) {
+				writeForbidden(w)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func writeForbidden(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"error":"forbidden","code":"FORBIDDEN"}`))
+}
