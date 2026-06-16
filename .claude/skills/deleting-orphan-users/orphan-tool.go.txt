@@ -1,0 +1,221 @@
+// Throwaway tool for the deleting-orphan-users skill. NOT committed to the repo.
+//
+// Copy this to cmd/orphan-scratch/main.go, run it, then `rm -rf cmd/orphan-scratch`.
+// (mongosh is not installed; this uses the repo's mongo driver via go run.)
+//
+// Detect (read-only — writes nothing):
+//
+//	go run ./cmd/orphan-scratch
+//
+// Delete (explicit, human-approved IDs only; backs up first, re-verifies, caps):
+//
+//	go run ./cmd/orphan-scratch -mode=delete \
+//	    -ids=ID1,ID2,ID3 \
+//	    -backup=orphan-backup-20060102-150405.json \
+//	    -max=25
+//
+// Reads MONGO_URI and ADMIN_USER_IDS from the environment (and .env in cwd).
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strings"
+	"time"
+
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
+)
+
+func main() {
+	mode := flag.String("mode", "detect", "detect | delete")
+	idsCSV := flag.String("ids", "", "delete mode: explicit comma-separated, human-approved user _ids")
+	backupPath := flag.String("backup", "", "delete mode: path to write a JSON backup of the deleted users (required)")
+	max := flag.Int("max", 25, "delete mode: refuse to delete more than this many users in one run")
+	flag.Parse()
+
+	_ = godotenv.Load()
+	uri := os.Getenv("MONGO_URI")
+	if uri == "" {
+		log.Fatal("MONGO_URI required")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
+	if err != nil {
+		log.Fatalf("connect: %v", err)
+	}
+	defer func() { _ = client.Disconnect(context.Background()) }()
+	db := client.Database("rolebook")
+
+	switch *mode {
+	case "detect":
+		runDetect(ctx, db)
+	case "delete":
+		runDelete(ctx, db, *idsCSV, *backupPath, *max)
+	default:
+		log.Fatalf("unknown -mode %q (want detect|delete)", *mode)
+	}
+}
+
+// keepSet returns the user IDs that must never be treated as orphans: any
+// campaign member, anyone with a linked player, and every configured admin.
+func keepSet(ctx context.Context, db *mongo.Database) (map[string]struct{}, error) {
+	keep := map[string]struct{}{}
+	add := func(v string) {
+		if v != "" {
+			keep[v] = struct{}{}
+		}
+	}
+	for _, spec := range []struct{ coll, field string }{
+		{"campaigns", "members.userId"},
+		{"players", "linkedUserId"},
+	} {
+		res := db.Collection(spec.coll).Distinct(ctx, spec.field, bson.M{})
+		if err := res.Err(); err != nil {
+			return nil, fmt.Errorf("distinct %s.%s: %w", spec.coll, spec.field, err)
+		}
+		var vals []string
+		if err := res.Decode(&vals); err != nil {
+			return nil, fmt.Errorf("decode %s.%s: %w", spec.coll, spec.field, err)
+		}
+		for _, v := range vals {
+			add(v)
+		}
+	}
+	for _, id := range strings.Split(os.Getenv("ADMIN_USER_IDS"), ",") {
+		add(strings.TrimSpace(id))
+	}
+	return keep, nil
+}
+
+type userDoc struct {
+	ID    string `bson:"_id"   json:"id"`
+	Email string `bson:"email" json:"email"`
+}
+
+func runDetect(ctx context.Context, db *mongo.Database) {
+	keep, err := keepSet(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cur, err := db.Collection("users").Find(ctx, bson.M{})
+	if err != nil {
+		log.Fatalf("find users: %v", err)
+	}
+	defer cur.Close(ctx)
+
+	var orphans []userDoc
+	var total int
+	for cur.Next(ctx) {
+		var u userDoc
+		if err := cur.Decode(&u); err != nil {
+			log.Fatalf("decode: %v", err)
+		}
+		total++
+		if _, ok := keep[u.ID]; !ok {
+			orphans = append(orphans, u)
+		}
+	}
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+	sort.Slice(orphans, func(i, j int) bool { return orphans[i].Email < orphans[j].Email })
+	for _, u := range orphans {
+		fmt.Printf("ORPHAN\t%s\t%s\n", u.ID, u.Email)
+	}
+	fmt.Printf("\nkept (members+players+admins): %d\norphans: %d\ntotal users: %d\n",
+		len(keep), len(orphans), total)
+}
+
+func runDelete(ctx context.Context, db *mongo.Database, idsCSV, backupPath string, max int) {
+	var ids []string
+	for _, id := range strings.Split(idsCSV, ",") {
+		if id = strings.TrimSpace(id); id != "" {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		log.Fatal("delete mode: -ids is required (explicit, human-approved user _ids)")
+	}
+	if backupPath == "" {
+		log.Fatal("delete mode: -backup is required (no backup, no delete)")
+	}
+	if len(ids) > max {
+		log.Fatalf("refusing: %d ids exceeds -max=%d (raise the cap deliberately if intended)", len(ids), max)
+	}
+
+	// Re-verify every id is STILL an orphan right now. This closes the gap
+	// between detection and deletion and rejects any admin / member / linked id.
+	keep, err := keepSet(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var toDelete []string
+	for _, id := range ids {
+		if _, kept := keep[id]; kept {
+			fmt.Printf("SKIP\t%s\t(no longer an orphan: now a member/player/admin)\n", id)
+			continue
+		}
+		toDelete = append(toDelete, id)
+	}
+	if len(toDelete) == 0 {
+		fmt.Println("nothing to delete after re-verification.")
+		return
+	}
+
+	// Back up the full docs BEFORE deleting; abort everything if it can't be written.
+	if err := backupUsers(ctx, db, toDelete, backupPath); err != nil {
+		log.Fatalf("backup failed, no deletes performed: %v", err)
+	}
+	fmt.Printf("backed up %d user(s) to %s\n", len(toDelete), backupPath)
+
+	col := db.Collection("users")
+	var deleted int
+	for _, id := range toDelete {
+		res, err := col.DeleteOne(ctx, bson.M{"_id": id})
+		if err != nil {
+			fmt.Printf("FAILED\t%s\t%v\n", id, err)
+			continue
+		}
+		if res.DeletedCount == 0 {
+			fmt.Printf("SKIPPED\t%s\t(already gone)\n", id)
+			continue
+		}
+		deleted++
+		fmt.Printf("deleted\t%s\n", id)
+	}
+	fmt.Printf("deleted %d of %d verified user(s).\n", deleted, len(toDelete))
+}
+
+// backupUsers writes the full Mongo documents for ids to path as a JSON array.
+// It requires every id to resolve to a doc, so a bogus id aborts the run before
+// any deletion happens.
+func backupUsers(ctx context.Context, db *mongo.Database, ids []string, path string) error {
+	cur, err := db.Collection("users").Find(ctx, bson.M{"_id": bson.M{"$in": ids}})
+	if err != nil {
+		return err
+	}
+	defer cur.Close(ctx)
+	var docs []bson.M
+	if err := cur.All(ctx, &docs); err != nil {
+		return err
+	}
+	if len(docs) != len(ids) {
+		return fmt.Errorf("expected %d docs to back up, found %d (a requested id does not exist)", len(ids), len(docs))
+	}
+	data, err := json.MarshalIndent(docs, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o600)
+}
