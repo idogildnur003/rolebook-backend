@@ -49,7 +49,7 @@ Verification is **on** when the server has `RESEND_API_KEY` set (or `EMAIL_VERIF
 
 - `POST /auth/verify-email` with `{ "email", "code" }` → on success returns `{ token, userId, emailVerified: true }`. Wrong/expired code → `400 INVALID_CODE`; too many attempts → `429 TOO_MANY_ATTEMPTS`; already verified → `400 ALREADY_VERIFIED`.
 - `POST /auth/resend-verification` with `{ "email" }` → always `200 { "status": "ok" }` (no account enumeration); a fresh code is sent only when the account is unverified and past the 60s cooldown.
-- `login` for an unverified new account → `403 EMAIL_NOT_VERIFIED` (grandfathered accounts can still log in and are prompted to verify). Successful login responses now also include `emailVerified`.
+- `login` for an unverified account → `403 EMAIL_NOT_VERIFIED`. Successful login responses also include `emailVerified`.
 
 In Postman, run **Register** first (it stashes `verifyEmail`), read the code from the server log, paste it into **Verify Email**'s `code`, and send.
 

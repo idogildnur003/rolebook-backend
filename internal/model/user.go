@@ -13,10 +13,6 @@ type User struct {
 
 	// EmailVerified is true once the address has been confirmed via OTP.
 	EmailVerified bool `bson:"emailVerified" json:"emailVerified"`
-	// LegacyUnverified marks the small, fixed set of accounts that predate email
-	// verification (set once by the backfill migration). They are exempt from the
-	// hard gate (soft prompt instead). New signups leave it false and must verify.
-	LegacyUnverified bool `bson:"legacyUnverified,omitempty" json:"-"`
 
 	// PendingEmail holds a not-yet-confirmed new email during a change-email
 	// flow. The OTP for it reuses the VerifyCode* fields below. Empty when no
