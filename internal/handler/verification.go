@@ -46,11 +46,10 @@ func codeExpired(expiresAt, now time.Time) bool {
 	return now.After(expiresAt)
 }
 
-// emailVerificationBlocksLogin reports whether login must be refused: only for
-// unverified accounts that are subject to the hard gate (new signups). Legacy
-// accounts (LegacyUnverified=true) are exempt and may log in unverified.
+// emailVerificationBlocksLogin reports whether login must be refused: any account
+// whose email has not been verified is blocked (the hard gate applies to all).
 func emailVerificationBlocksLogin(u *model.User) bool {
-	return !u.EmailVerified && !u.LegacyUnverified
+	return !u.EmailVerified
 }
 
 // changeEmailCodeBody returns the (subject, html, text) for the OTP sent to a

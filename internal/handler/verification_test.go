@@ -91,10 +91,8 @@ func TestEmailVerificationBlocksLogin(t *testing.T) {
 		user model.User
 		want bool
 	}{
-		{"verified new account", model.User{EmailVerified: true}, false},
-		{"verified legacy account", model.User{EmailVerified: true, LegacyUnverified: true}, false},
-		{"unverified new signup (gated)", model.User{}, true},
-		{"unverified legacy account (exempt)", model.User{LegacyUnverified: true}, false},
+		{"verified account", model.User{EmailVerified: true}, false},
+		{"unverified account (gated)", model.User{}, true},
 	}
 	for _, c := range cases {
 		if got := emailVerificationBlocksLogin(&c.user); got != c.want {
