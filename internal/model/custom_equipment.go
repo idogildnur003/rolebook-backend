@@ -32,6 +32,9 @@ type CustomEquipment struct {
 	WeaponType string   `json:"weaponType,omitempty" bson:"weaponType,omitempty"`
 	Properties []string `json:"properties,omitempty" bson:"properties,omitempty"`
 
+	AttackRollBonus *int     `json:"attackRollBonus,omitempty" bson:"attackRollBonus,omitempty"`
+	Weight          *float64 `json:"weight,omitempty"          bson:"weight,omitempty"`
+
 	ArmorClass          *int   `json:"armorClass,omitempty"          bson:"armorClass,omitempty"`
 	ArmorBonus          *int   `json:"armorBonus,omitempty"          bson:"armorBonus,omitempty"`
 	ShieldBonus         *int   `json:"shieldBonus,omitempty"         bson:"shieldBonus,omitempty"`

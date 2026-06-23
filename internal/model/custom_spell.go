@@ -29,6 +29,12 @@ type CustomSpell struct {
 	Source      string   `json:"source,omitempty"      bson:"source,omitempty"`
 	ImageURI    string   `json:"imageUri,omitempty"    bson:"imageUri,omitempty"`
 
+	Classes            []string `json:"classes,omitempty"            bson:"classes,omitempty"`
+	Concentration      bool     `json:"concentration,omitempty"      bson:"concentration,omitempty"`
+	Damage             string   `json:"damage,omitempty"             bson:"damage,omitempty"`
+	DamageType         string   `json:"damageType,omitempty"         bson:"damageType,omitempty"`
+	SavingThrowAbility string   `json:"savingThrowAbility,omitempty" bson:"savingThrowAbility,omitempty"`
+
 	// VisibilityMode — "campaign" (all members) or "players" (VisiblePlayerIDs only).
 	// Empty/missing is treated as "campaign" for pre-feature documents.
 	VisibilityMode   string   `json:"visibilityMode,omitempty"   bson:"visibilityMode,omitempty"`

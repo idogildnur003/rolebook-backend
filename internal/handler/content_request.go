@@ -411,10 +411,6 @@ func (h *ContentRequestHandler) EditPending(w http.ResponseWriter, r *http.Reque
 	if membership == nil {
 		return
 	}
-	if !membership.IsDM {
-		writeError(w, http.StatusForbidden, "only the DM can edit a pending request", "FORBIDDEN")
-		return
-	}
 	existing, err := h.requests.GetByID(r.Context(), campaignID, id)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -422,6 +418,12 @@ func (h *ContentRequestHandler) EditPending(w http.ResponseWriter, r *http.Reque
 	}
 	if existing == nil {
 		writeError(w, http.StatusNotFound, "request not found", "NOT_FOUND")
+		return
+	}
+	// The DM may edit any pending request (edit-before-approve); a player may
+	// edit their own pending proposal. Anyone else is forbidden.
+	if !membership.IsDM && existing.ProposedByUserID != membership.UserID {
+		writeError(w, http.StatusForbidden, "you can only edit your own pending request", "FORBIDDEN")
 		return
 	}
 	if !model.CanResolveRequest(existing.Status) {

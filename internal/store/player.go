@@ -393,6 +393,33 @@ func (s *PlayerStore) RemoveSpellFromPlayersExcept(ctx context.Context, campaign
 	return res.ModifiedCount, nil
 }
 
+// PlayerRosterEntry is a player's id + display name (no stats). Used by the
+// member-visible campaign roster so any member can resolve player names.
+type PlayerRosterEntry struct {
+	ID   string `bson:"_id"  json:"playerId"`
+	Name string `bson:"name" json:"name"`
+}
+
+// ListRoster returns the {id, name} of every PC/DM player in a campaign
+// (excludes npc/enemy game entities). Member-visible: names only, no sheets.
+func (s *PlayerStore) ListRoster(ctx context.Context, campaignID string) ([]PlayerRosterEntry, error) {
+	cursor, err := s.col.Find(ctx,
+		bson.M{"campaignId": campaignID, "kind": bson.M{"$in": []string{string(model.PlayerKindPC), string(model.PlayerKindDM)}}},
+		options.Find().SetProjection(bson.M{"name": 1}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var roster []PlayerRosterEntry
+	if err := cursor.All(ctx, &roster); err != nil {
+		return nil, err
+	}
+	if roster == nil {
+		roster = []PlayerRosterEntry{}
+	}
+	return roster, nil
+}
+
 // RemoveSpellFromAllPlayers pulls a given spellId out of every player's
 // embedded spells array within a campaign. Returns the number of player
 // documents modified. Mirrors RemoveEquipmentFromAllInventories for the
