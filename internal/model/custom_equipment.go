@@ -22,10 +22,18 @@ type CustomEquipment struct {
 	Notes    string   `json:"notes,omitempty"    bson:"notes,omitempty"`
 	ImageURI string   `json:"imageUri,omitempty" bson:"imageUri,omitempty"`
 
+	// VisibilityMode — "campaign" (all members) or "players" (VisiblePlayerIDs only).
+	// Empty/missing is treated as "campaign" for pre-feature documents.
+	VisibilityMode   string   `json:"visibilityMode,omitempty"   bson:"visibilityMode,omitempty"`
+	VisiblePlayerIDs []string `json:"visiblePlayerIds,omitempty" bson:"visiblePlayerIds,omitempty"`
+
 	Damage     string   `json:"damage,omitempty"     bson:"damage,omitempty"`
 	DamageType string   `json:"damageType,omitempty" bson:"damageType,omitempty"`
 	WeaponType string   `json:"weaponType,omitempty" bson:"weaponType,omitempty"`
 	Properties []string `json:"properties,omitempty" bson:"properties,omitempty"`
+
+	AttackRollBonus *int     `json:"attackRollBonus,omitempty" bson:"attackRollBonus,omitempty"`
+	Weight          *float64 `json:"weight,omitempty"          bson:"weight,omitempty"`
 
 	ArmorClass          *int   `json:"armorClass,omitempty"          bson:"armorClass,omitempty"`
 	ArmorBonus          *int   `json:"armorBonus,omitempty"          bson:"armorBonus,omitempty"`

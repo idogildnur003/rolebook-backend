@@ -68,6 +68,34 @@ func (s *CustomSpellStore) ListByCampaign(ctx context.Context, campaignID string
 	return spells, nil
 }
 
+// ListVisibleToPlayer — see CustomEquipmentStore.ListVisibleToPlayer.
+func (s *CustomSpellStore) ListVisibleToPlayer(ctx context.Context, campaignID, callerPlayerID string, isDM bool) ([]model.CustomSpell, error) {
+	filter := bson.M{"campaignId": campaignID}
+	if !isDM {
+		filter["$or"] = []bson.M{
+			{"visibilityMode": bson.M{"$ne": model.VisibilityPlayers}},
+			{"visiblePlayerIds": callerPlayerID},
+		}
+	}
+	cursor, err := s.col.Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	var spells []model.CustomSpell
+	if err := cursor.All(ctx, &spells); err != nil {
+		return nil, err
+	}
+	if spells == nil {
+		spells = []model.CustomSpell{}
+	}
+	return spells, nil
+}
+
+// RemoveExceptForPlayers — see CustomEquipmentStore.RemoveExceptForPlayers (spell list variant).
+func (s *CustomSpellStore) RemoveExceptForPlayers(ctx context.Context, campaignID, spellID string, allowedPlayerIDs []string, players *PlayerStore) (int64, error) {
+	return players.RemoveSpellFromPlayersExcept(ctx, campaignID, spellID, allowedPlayerIDs)
+}
+
 // Update applies a partial update scoped by (campaignId, id) and bumps
 // updatedAt. The caller is responsible for stripping immutable fields
 // (_id, campaignId, createdBy, createdAt) from the patch before calling.

@@ -97,6 +97,22 @@ func listKindForRole(isDM bool) model.PlayerKind {
 	return model.PlayerKindPC
 }
 
+// Roster handles GET /api/campaigns/:campaignId/roster.
+// Any campaign member may read it — returns each PC/DM player's id + name only
+// (not full sheets), so clients can resolve player names in pickers.
+func (h *PlayerHandler) Roster(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	if resolveCampaignMembership(w, r, h.campaigns, campaignID) == nil {
+		return
+	}
+	roster, err := h.players.ListRoster(r.Context(), campaignID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	writeJSON(w, http.StatusOK, roster)
+}
+
 // ListForCampaign handles GET /api/campaigns/:campaignId/players (campaign DM only).
 func (h *PlayerHandler) ListForCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")

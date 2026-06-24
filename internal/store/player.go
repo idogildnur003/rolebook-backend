@@ -285,6 +285,34 @@ func (s *PlayerStore) RemoveEquipmentFromAllInventories(ctx context.Context, cam
 	return res.ModifiedCount, nil
 }
 
+// RemoveEquipmentFromPlayersExcept pulls equipmentID from the inventory of every
+// player in the campaign EXCEPT those whose _id is in allowedPlayerIDs. Mirrors
+// RemoveEquipmentFromAllInventories but scoped to the players who lost access on
+// a visibility change. Returns the number of player documents modified.
+func (s *PlayerStore) RemoveEquipmentFromPlayersExcept(ctx context.Context, campaignID, equipmentID string, allowedPlayerIDs []string) (int64, error) {
+	// Normalise nil → empty slice so it encodes as a BSON array ([]) rather than
+	// null. {$nin: null} is an invalid $nin argument (errors); {$nin: []} matches
+	// every player — the intended "remove from everyone" when the allow-list is empty.
+	if allowedPlayerIDs == nil {
+		allowedPlayerIDs = []string{}
+	}
+	res, err := s.col.UpdateMany(ctx,
+		bson.M{
+			"campaignId":            campaignID,
+			"inventory.equipmentId": equipmentID,
+			"_id":                   bson.M{"$nin": allowedPlayerIDs},
+		},
+		bson.M{
+			"$pull": bson.M{"inventory": bson.M{"equipmentId": equipmentID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount, nil
+}
+
 // PlayerInventorySummary is a lightweight projection of a player used to
 // compute custom-equipment usage without loading full character sheets.
 type PlayerInventorySummary struct {
@@ -312,6 +340,84 @@ func (s *PlayerStore) ListInventorySummaries(ctx context.Context, campaignID str
 		summaries = []PlayerInventorySummary{}
 	}
 	return summaries, nil
+}
+
+// PlayerSpellSummary is the id, name, owner and embedded spells of a player.
+type PlayerSpellSummary struct {
+	ID           string              `bson:"_id"`
+	Name         string              `bson:"name"`
+	LinkedUserID string              `bson:"linkedUserId"`
+	Spells       []model.PlayerSpell `bson:"spells"`
+}
+
+// ListSpellSummaries returns the id, name and embedded spells of every player in
+// a campaign. Used to compute which players know each custom spell.
+func (s *PlayerStore) ListSpellSummaries(ctx context.Context, campaignID string) ([]PlayerSpellSummary, error) {
+	cursor, err := s.col.Find(ctx,
+		bson.M{"campaignId": campaignID},
+		options.Find().SetProjection(bson.M{"name": 1, "linkedUserId": 1, "spells": 1}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var summaries []PlayerSpellSummary
+	if err := cursor.All(ctx, &summaries); err != nil {
+		return nil, err
+	}
+	if summaries == nil {
+		summaries = []PlayerSpellSummary{}
+	}
+	return summaries, nil
+}
+
+// RemoveSpellFromPlayersExcept — spell-list variant of RemoveEquipmentFromPlayersExcept.
+func (s *PlayerStore) RemoveSpellFromPlayersExcept(ctx context.Context, campaignID, spellID string, allowedPlayerIDs []string) (int64, error) {
+	// See RemoveEquipmentFromPlayersExcept: nil → [] so $nin gets a valid array.
+	if allowedPlayerIDs == nil {
+		allowedPlayerIDs = []string{}
+	}
+	res, err := s.col.UpdateMany(ctx,
+		bson.M{
+			"campaignId":     campaignID,
+			"spells.spellId": spellID,
+			"_id":            bson.M{"$nin": allowedPlayerIDs},
+		},
+		bson.M{
+			"$pull": bson.M{"spells": bson.M{"spellId": spellID}},
+			"$set":  bson.M{"updatedAt": time.Now().UTC()},
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.ModifiedCount, nil
+}
+
+// PlayerRosterEntry is a player's id + display name (no stats). Used by the
+// member-visible campaign roster so any member can resolve player names.
+type PlayerRosterEntry struct {
+	ID   string `bson:"_id"  json:"playerId"`
+	Name string `bson:"name" json:"name"`
+}
+
+// ListRoster returns the {id, name} of every PC/DM player in a campaign
+// (excludes npc/enemy game entities). Member-visible: names only, no sheets.
+func (s *PlayerStore) ListRoster(ctx context.Context, campaignID string) ([]PlayerRosterEntry, error) {
+	cursor, err := s.col.Find(ctx,
+		bson.M{"campaignId": campaignID, "kind": bson.M{"$in": []string{string(model.PlayerKindPC), string(model.PlayerKindDM)}}},
+		options.Find().SetProjection(bson.M{"name": 1}),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var roster []PlayerRosterEntry
+	if err := cursor.All(ctx, &roster); err != nil {
+		return nil, err
+	}
+	if roster == nil {
+		roster = []PlayerRosterEntry{}
+	}
+	return roster, nil
 }
 
 // RemoveSpellFromAllPlayers pulls a given spellId out of every player's
