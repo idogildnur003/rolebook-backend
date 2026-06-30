@@ -99,6 +99,42 @@ func (h *ContentRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Default to create; accept an explicit edit from the client.
+	if body.Kind == "" {
+		body.Kind = model.RequestKindCreate
+	}
+	if !model.IsValidRequestKind(body.Kind) {
+		writeError(w, http.StatusBadRequest, "kind must be 'create' or 'edit'", "BAD_REQUEST")
+		return
+	}
+	if model.IsEditRequest(body.Kind) {
+		if body.ResultID == "" {
+			writeError(w, http.StatusBadRequest, "resultId is required for an edit request", "BAD_REQUEST")
+			return
+		}
+		if body.TargetType == model.RequestTargetItem {
+			existing, err := h.customEquipment.GetByID(r.Context(), campaignID, body.ResultID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+				return
+			}
+			if existing == nil || !model.CanPlayerSeeEntry(existing.VisibilityMode, existing.VisiblePlayerIDs, membership.PlayerID, membership.IsDM) {
+				writeError(w, http.StatusNotFound, "custom item not found", "NOT_FOUND")
+				return
+			}
+		} else {
+			existing, err := h.customSpells.GetByID(r.Context(), campaignID, body.ResultID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+				return
+			}
+			if existing == nil || !model.CanPlayerSeeEntry(existing.VisibilityMode, existing.VisiblePlayerIDs, membership.PlayerID, membership.IsDM) {
+				writeError(w, http.StatusNotFound, "custom spell not found", "NOT_FOUND")
+				return
+			}
+		}
+	}
+
 	id, err := allocateRequestID(r, h.requests, campaignID, proposalName(&body))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -106,10 +142,12 @@ func (h *ContentRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	body.ID = id
 	body.CampaignID = campaignID
-	body.Kind = model.RequestKindCreate
 	body.Status = model.RequestStatusPending
 	body.ProposedByUserID = membership.UserID
-	body.ResultID = ""
+	// An edit keeps its validated target id; a create has no live entry yet.
+	if !model.IsEditRequest(body.Kind) {
+		body.ResultID = ""
+	}
 	body.ResolvedAt = nil
 	body.ResolvedByUserID = ""
 	body.CreatedAt = time.Now().UTC()
@@ -345,7 +383,12 @@ func (h *ContentRequestHandler) Approve(w http.ResponseWriter, r *http.Request) 
 		body.VisiblePlayerIDs = nil
 	}
 
-	resultID, err := h.materialise(r, campaignID, req, body)
+	var resultID string
+	if model.IsEditRequest(req.Kind) {
+		resultID, err = h.applyEdit(r, campaignID, req)
+	} else {
+		resultID, err = h.materialise(r, campaignID, req, body)
+	}
 	if err != nil {
 		// Mirror the direct-create handler: a slug collision on the live entry is
 		// a 409, not a 500 (narrow TOCTOU window after the id-allocation check).
@@ -534,6 +577,92 @@ func (h *ContentRequestHandler) materialise(r *http.Request, campaignID string, 
 		return "", err
 	}
 	return id, nil
+}
+
+// applyEdit updates an existing custom entry from an approved edit request.
+// Content fields only — visibility is DM-controlled and left untouched.
+func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, req *model.ContentRequest) (string, error) {
+	if req.ResultID == "" {
+		return "", errors.New("edit request has no target id")
+	}
+	if req.TargetType == model.RequestTargetItem {
+		if req.ItemPayload == nil {
+			return "", errors.New("edit request has no item payload")
+		}
+		updated, err := h.customEquipment.Update(r.Context(), campaignID, req.ResultID, contentFieldsForEquipment(req.ItemPayload))
+		if err != nil {
+			return "", err
+		}
+		if updated == nil {
+			return "", errors.New("custom item not found")
+		}
+		return req.ResultID, nil
+	}
+	if req.SpellPayload == nil {
+		return "", errors.New("edit request has no spell payload")
+	}
+	updated, err := h.customSpells.Update(r.Context(), campaignID, req.ResultID, contentFieldsForSpell(req.SpellPayload))
+	if err != nil {
+		return "", err
+	}
+	if updated == nil {
+		return "", errors.New("custom spell not found")
+	}
+	return req.ResultID, nil
+}
+
+// contentFieldsForEquipment projects the editable CONTENT fields of a proposed
+// equipment payload to a bson patch, keyed by the model's bson tags. It excludes
+// every server-owned/immutable field (_id, campaignId, createdBy, createdAt,
+// updatedAt) and the DM-controlled visibility fields. Pointer fields are passed
+// through as-is so an omitted optional becomes a $set to null.
+func contentFieldsForEquipment(p *model.CustomEquipment) bson.M {
+	return bson.M{
+		"name":                p.Name,
+		"category":            p.Category,
+		"tags":                p.Tags,
+		"notes":               p.Notes,
+		"imageUri":            p.ImageURI,
+		"damage":              p.Damage,
+		"damageType":          p.DamageType,
+		"weaponType":          p.WeaponType,
+		"properties":          p.Properties,
+		"attackRollBonus":     p.AttackRollBonus,
+		"weight":              p.Weight,
+		"armorClass":          p.ArmorClass,
+		"armorBonus":          p.ArmorBonus,
+		"shieldBonus":         p.ShieldBonus,
+		"armorType":           p.ArmorType,
+		"strengthRequirement": p.StrengthRequirement,
+		"stealthDisadvantage": p.StealthDisadvantage,
+		"cost":                p.Cost,
+		// compatibleWith, effectSummary, currency: DM-only fields, not in the player proposal form → not editable via an edit request.
+	}
+}
+
+// contentFieldsForSpell projects the editable CONTENT fields of a proposed spell
+// payload to a bson patch, keyed by the model's bson tags. It excludes every
+// server-owned/immutable field (_id, campaignId, createdBy, createdAt, updatedAt)
+// and the DM-controlled visibility fields.
+func contentFieldsForSpell(p *model.CustomSpell) bson.M {
+	return bson.M{
+		"name":               p.Name,
+		"level":              p.Level,
+		"school":             p.School,
+		"castingTime":        p.CastingTime,
+		"range":              p.Range,
+		"components":         p.Components,
+		"material":           p.Material,
+		"duration":           p.Duration,
+		"description":        p.Description,
+		"isRitual":           p.IsRitual,
+		"classes":            p.Classes,
+		"concentration":      p.Concentration,
+		"damage":             p.Damage,
+		"damageType":         p.DamageType,
+		"savingThrowAbility": p.SavingThrowAbility,
+		"imageUri":           p.ImageURI,
+	}
 }
 
 func allocateCustomEquipmentID(r *http.Request, s *store.CustomEquipmentStore, campaignID, name string) (string, error) {
