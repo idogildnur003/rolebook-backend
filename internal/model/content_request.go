@@ -55,3 +55,11 @@ func CanWithdrawRequest(status string) bool { return status == RequestStatusPend
 func IsValidRequestTarget(target string) bool {
 	return target == RequestTargetItem || target == RequestTargetSpell
 }
+
+// IsValidRequestKind reports whether kind is a supported request kind.
+func IsValidRequestKind(kind string) bool {
+	return kind == RequestKindCreate || kind == RequestKindEdit
+}
+
+// IsEditRequest reports whether the request edits an existing entry (vs creating one).
+func IsEditRequest(kind string) bool { return kind == RequestKindEdit }
