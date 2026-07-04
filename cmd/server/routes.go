@@ -24,6 +24,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	customEquipmentStore := store.NewCustomEquipmentStore(db)
 	customSpellStore := store.NewCustomSpellStore(db)
 	contentRequestStore := store.NewContentRequestStore(db)
+	contentNoteStore := store.NewContentNoteStore(db)
 	catalogImageStore := store.NewCatalogImageStore(db)
 	locationStore := store.NewLocationStore(db)
 	npcStore := store.NewNPCStore(db)
@@ -55,6 +56,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore, avatars)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore, avatars)
 	contentRequestHandler := handler.NewContentRequestHandler(contentRequestStore, customEquipmentStore, customSpellStore, playerStore, campaignStore, avatars)
+	contentNoteHandler := handler.NewContentNoteHandler(contentNoteStore, campaignStore)
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
@@ -183,6 +185,12 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 				r.Patch("/{id}", contentRequestHandler.EditPending)
 				r.Post("/{id}/approve", contentRequestHandler.Approve)
 				r.Post("/{id}/deny", contentRequestHandler.Deny)
+			})
+
+			// Per-campaign PRIVATE per-entry notes (owner-scoped; no DM path)
+			r.Route("/campaigns/{campaignId}/content-notes", func(r chi.Router) {
+				r.Get("/", contentNoteHandler.List)
+				r.Put("/{targetType}/{entryId}", contentNoteHandler.Upsert)
 			})
 
 			// Per-campaign locations
