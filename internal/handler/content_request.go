@@ -13,6 +13,11 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
+// errEditTargetNotFound signals that an edit request's target entry no longer
+// exists (e.g. the DM deleted it after the edit was proposed but before it was
+// approved). Approve maps this to a 404 instead of a generic 500.
+var errEditTargetNotFound = errors.New("edit target not found")
+
 // ContentRequestHandler exposes the DM-moderation queue: players propose, the DM
 // approves/denies. Approval of a create request materialises a live custom
 // equipment/spell entry with the DM-chosen visibility.
@@ -396,6 +401,10 @@ func (h *ContentRequestHandler) Approve(w http.ResponseWriter, r *http.Request) 
 			writeError(w, http.StatusConflict, "a custom entry with that id already exists", "DUPLICATE")
 			return
 		}
+		if errors.Is(err, errEditTargetNotFound) {
+			writeError(w, http.StatusNotFound, "the entry being edited no longer exists", "NOT_FOUND")
+			return
+		}
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
@@ -594,7 +603,7 @@ func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, re
 			return "", err
 		}
 		if updated == nil {
-			return "", errors.New("custom item not found")
+			return "", errEditTargetNotFound
 		}
 		return req.ResultID, nil
 	}
@@ -606,7 +615,7 @@ func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, re
 		return "", err
 	}
 	if updated == nil {
-		return "", errors.New("custom spell not found")
+		return "", errEditTargetNotFound
 	}
 	return req.ResultID, nil
 }

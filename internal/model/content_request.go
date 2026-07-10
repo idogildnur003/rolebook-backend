@@ -5,7 +5,7 @@ import "time"
 // Request kinds, targets, and statuses for the DM-moderated custom content queue.
 const (
 	RequestKindCreate = "create"
-	RequestKindEdit   = "edit" // reserved for Phase 2 (player-proposed edits)
+	RequestKindEdit   = "edit" // player-proposed edit of an existing entry
 
 	RequestTargetItem  = "item"
 	RequestTargetSpell = "spell"
@@ -24,7 +24,7 @@ type ContentRequest struct {
 	ID               string `json:"id"               bson:"_id"`
 	CampaignID       string `json:"campaignId"       bson:"campaignId"`
 	TargetType       string `json:"targetType"       bson:"targetType"` // item | spell
-	Kind             string `json:"kind"             bson:"kind"`       // create | edit (Phase 2)
+	Kind             string `json:"kind"             bson:"kind"`       // create | edit
 	Status           string `json:"status"           bson:"status"`     // pending | approved | denied
 	ProposedByUserID string `json:"proposedByUserId" bson:"proposedByUserId"`
 
@@ -35,7 +35,8 @@ type ContentRequest struct {
 	SuggestedVisibilityMode   string   `json:"suggestedVisibilityMode,omitempty"   bson:"suggestedVisibilityMode,omitempty"`
 	SuggestedVisiblePlayerIDs []string `json:"suggestedVisiblePlayerIds,omitempty" bson:"suggestedVisiblePlayerIds,omitempty"`
 
-	// Proposed content (only one is set, by TargetType, for kind=create).
+	// Proposed content (only one is set, by TargetType). For kind=edit it is the
+	// proposed new content for the entry identified by ResultID.
 	ItemPayload  *CustomEquipment `json:"itemPayload,omitempty"  bson:"itemPayload,omitempty"`
 	SpellPayload *CustomSpell     `json:"spellPayload,omitempty" bson:"spellPayload,omitempty"`
 

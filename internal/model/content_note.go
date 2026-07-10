@@ -20,9 +20,3 @@ type ContentNote struct {
 func IsValidNoteTarget(t string) bool {
 	return t == RequestTargetItem || t == RequestTargetSpell
 }
-
-// ContentNoteKey is a stable composite key identifying one note
-// (one per user+campaign+targetType+entry). For logging/dedup only.
-func ContentNoteKey(userID, campaignID, targetType, entryID string) string {
-	return userID + "|" + campaignID + "|" + targetType + "|" + entryID
-}

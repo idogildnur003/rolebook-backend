@@ -100,3 +100,17 @@ func (s *ContentNoteStore) Delete(ctx context.Context, campaignID, userID, targe
 	}
 	return res.DeletedCount > 0, nil
 }
+
+// DeleteForEntry removes EVERY user's note for one custom entry (used when the
+// entry itself is deleted). Not user-scoped — the entry is gone for everyone.
+func (s *ContentNoteStore) DeleteForEntry(ctx context.Context, campaignID, targetType, entryID string) (int64, error) {
+	res, err := s.col.DeleteMany(ctx, bson.M{
+		"campaignId": campaignID,
+		"targetType": targetType,
+		"entryId":    entryID,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
+}
