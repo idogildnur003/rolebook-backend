@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -12,6 +13,11 @@ import (
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
+
+// errEditTargetNotFound signals that an edit request's target entry no longer
+// exists (e.g. the DM deleted it after the edit was proposed but before it was
+// approved). Approve maps this to a 404 instead of a generic 500.
+var errEditTargetNotFound = errors.New("edit target not found")
 
 // ContentRequestHandler exposes the DM-moderation queue: players propose, the DM
 // approves/denies. Approval of a create request materialises a live custom
@@ -99,6 +105,42 @@ func (h *ContentRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Default to create; accept an explicit edit from the client.
+	if body.Kind == "" {
+		body.Kind = model.RequestKindCreate
+	}
+	if !model.IsValidRequestKind(body.Kind) {
+		writeError(w, http.StatusBadRequest, "kind must be 'create' or 'edit'", "BAD_REQUEST")
+		return
+	}
+	if model.IsEditRequest(body.Kind) {
+		if body.ResultID == "" {
+			writeError(w, http.StatusBadRequest, "resultId is required for an edit request", "BAD_REQUEST")
+			return
+		}
+		if body.TargetType == model.RequestTargetItem {
+			existing, err := h.customEquipment.GetByID(r.Context(), campaignID, body.ResultID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+				return
+			}
+			if existing == nil || !model.CanPlayerSeeEntry(existing.VisibilityMode, existing.VisiblePlayerIDs, membership.PlayerID, membership.IsDM) {
+				writeError(w, http.StatusNotFound, "custom item not found", "NOT_FOUND")
+				return
+			}
+		} else {
+			existing, err := h.customSpells.GetByID(r.Context(), campaignID, body.ResultID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+				return
+			}
+			if existing == nil || !model.CanPlayerSeeEntry(existing.VisibilityMode, existing.VisiblePlayerIDs, membership.PlayerID, membership.IsDM) {
+				writeError(w, http.StatusNotFound, "custom spell not found", "NOT_FOUND")
+				return
+			}
+		}
+	}
+
 	id, err := allocateRequestID(r, h.requests, campaignID, proposalName(&body))
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -106,10 +148,12 @@ func (h *ContentRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	body.ID = id
 	body.CampaignID = campaignID
-	body.Kind = model.RequestKindCreate
 	body.Status = model.RequestStatusPending
 	body.ProposedByUserID = membership.UserID
-	body.ResultID = ""
+	// An edit keeps its validated target id; a create has no live entry yet.
+	if !model.IsEditRequest(body.Kind) {
+		body.ResultID = ""
+	}
 	body.ResolvedAt = nil
 	body.ResolvedByUserID = ""
 	body.CreatedAt = time.Now().UTC()
@@ -345,12 +389,21 @@ func (h *ContentRequestHandler) Approve(w http.ResponseWriter, r *http.Request) 
 		body.VisiblePlayerIDs = nil
 	}
 
-	resultID, err := h.materialise(r, campaignID, req, body)
+	var resultID string
+	if model.IsEditRequest(req.Kind) {
+		resultID, err = h.applyEdit(r, campaignID, req, body)
+	} else {
+		resultID, err = h.materialise(r, campaignID, req, body)
+	}
 	if err != nil {
 		// Mirror the direct-create handler: a slug collision on the live entry is
 		// a 409, not a 500 (narrow TOCTOU window after the id-allocation check).
 		if errors.Is(err, store.ErrDuplicateEntry) {
 			writeError(w, http.StatusConflict, "a custom entry with that id already exists", "DUPLICATE")
+			return
+		}
+		if errors.Is(err, errEditTargetNotFound) {
+			writeError(w, http.StatusNotFound, "the entry being edited no longer exists", "NOT_FOUND")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -534,6 +587,119 @@ func (h *ContentRequestHandler) materialise(r *http.Request, campaignID string, 
 		return "", err
 	}
 	return id, nil
+}
+
+// applyEdit updates an existing custom entry from an approved edit request.
+// Content fields are taken from the proposal; visibility is the DM's decision
+// (body), mirroring a create approval. If the DM narrowed visibility, players
+// who lost access have the entry cascaded out of their inventory (best-effort).
+func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, req *model.ContentRequest, body approveBody) (string, error) {
+	if req.ResultID == "" {
+		return "", errors.New("edit request has no target id")
+	}
+	mode := model.NormalizeVisibilityMode(body.VisibilityMode)
+	var visiblePlayerIDs []string
+	if mode == model.VisibilityPlayers {
+		visiblePlayerIDs = body.VisiblePlayerIDs
+	} else {
+		visiblePlayerIDs = []string{}
+	}
+	if req.TargetType == model.RequestTargetItem {
+		if req.ItemPayload == nil {
+			return "", errors.New("edit request has no item payload")
+		}
+		fields := contentFieldsForEquipment(req.ItemPayload)
+		fields["visibilityMode"] = mode
+		fields["visiblePlayerIds"] = visiblePlayerIDs
+		updated, err := h.customEquipment.Update(r.Context(), campaignID, req.ResultID, fields)
+		if err != nil {
+			return "", err
+		}
+		if updated == nil {
+			return "", errEditTargetNotFound
+		}
+		// Cascade: if visibility narrowed, pull the entry from players who lost access.
+		if allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs); runCascade {
+			if _, err := h.customEquipment.RemoveExceptForPlayers(r.Context(), campaignID, req.ResultID, allowed, h.players); err != nil {
+				log.Printf("[content-request] edit visibility cascade failed for %s/%s: %v", campaignID, req.ResultID, err)
+			}
+		}
+		return req.ResultID, nil
+	}
+	if req.SpellPayload == nil {
+		return "", errors.New("edit request has no spell payload")
+	}
+	fields := contentFieldsForSpell(req.SpellPayload)
+	fields["visibilityMode"] = mode
+	fields["visiblePlayerIds"] = visiblePlayerIDs
+	updated, err := h.customSpells.Update(r.Context(), campaignID, req.ResultID, fields)
+	if err != nil {
+		return "", err
+	}
+	if updated == nil {
+		return "", errEditTargetNotFound
+	}
+	// Cascade: if visibility narrowed, pull the entry from players who lost access.
+	if allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs); runCascade {
+		if _, err := h.customSpells.RemoveExceptForPlayers(r.Context(), campaignID, req.ResultID, allowed, h.players); err != nil {
+			log.Printf("[content-request] edit visibility cascade failed for %s/%s: %v", campaignID, req.ResultID, err)
+		}
+	}
+	return req.ResultID, nil
+}
+
+// contentFieldsForEquipment projects the editable CONTENT fields of a proposed
+// equipment payload to a bson patch, keyed by the model's bson tags. It excludes
+// every server-owned/immutable field (_id, campaignId, createdBy, createdAt,
+// updatedAt) and the DM-controlled visibility fields. Pointer fields are passed
+// through as-is so an omitted optional becomes a $set to null.
+func contentFieldsForEquipment(p *model.CustomEquipment) bson.M {
+	return bson.M{
+		"name":                p.Name,
+		"category":            p.Category,
+		"tags":                p.Tags,
+		"notes":               p.Notes,
+		"imageUri":            p.ImageURI,
+		"damage":              p.Damage,
+		"damageType":          p.DamageType,
+		"weaponType":          p.WeaponType,
+		"properties":          p.Properties,
+		"attackRollBonus":     p.AttackRollBonus,
+		"weight":              p.Weight,
+		"armorClass":          p.ArmorClass,
+		"armorBonus":          p.ArmorBonus,
+		"shieldBonus":         p.ShieldBonus,
+		"armorType":           p.ArmorType,
+		"strengthRequirement": p.StrengthRequirement,
+		"stealthDisadvantage": p.StealthDisadvantage,
+		"cost":                p.Cost,
+		// compatibleWith, effectSummary, currency: DM-only fields, not in the player proposal form → not editable via an edit request.
+	}
+}
+
+// contentFieldsForSpell projects the editable CONTENT fields of a proposed spell
+// payload to a bson patch, keyed by the model's bson tags. It excludes every
+// server-owned/immutable field (_id, campaignId, createdBy, createdAt, updatedAt)
+// and the DM-controlled visibility fields.
+func contentFieldsForSpell(p *model.CustomSpell) bson.M {
+	return bson.M{
+		"name":               p.Name,
+		"level":              p.Level,
+		"school":             p.School,
+		"castingTime":        p.CastingTime,
+		"range":              p.Range,
+		"components":         p.Components,
+		"material":           p.Material,
+		"duration":           p.Duration,
+		"description":        p.Description,
+		"isRitual":           p.IsRitual,
+		"classes":            p.Classes,
+		"concentration":      p.Concentration,
+		"damage":             p.Damage,
+		"damageType":         p.DamageType,
+		"savingThrowAbility": p.SavingThrowAbility,
+		"imageUri":           p.ImageURI,
+	}
 }
 
 func allocateCustomEquipmentID(r *http.Request, s *store.CustomEquipmentStore, campaignID, name string) (string, error) {

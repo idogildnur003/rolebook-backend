@@ -27,6 +27,7 @@ type CustomEquipmentHandler struct {
 	players         *store.PlayerStore
 	campaigns       *store.CampaignStore
 	avatars         *avatarstore.Store
+	contentNotes    *store.ContentNoteStore
 }
 
 func NewCustomEquipmentHandler(
@@ -34,12 +35,14 @@ func NewCustomEquipmentHandler(
 	players *store.PlayerStore,
 	campaigns *store.CampaignStore,
 	avatars *avatarstore.Store,
+	contentNotes *store.ContentNoteStore,
 ) *CustomEquipmentHandler {
 	return &CustomEquipmentHandler{
 		customEquipment: customEquipment,
 		players:         players,
 		campaigns:       campaigns,
 		avatars:         avatars,
+		contentNotes:    contentNotes,
 	}
 }
 
@@ -260,6 +263,10 @@ func (h *CustomEquipmentHandler) Delete(w http.ResponseWriter, r *http.Request) 
 		// tolerates dangling references.
 		log.Printf("[custom-equipment] cascade cleanup failed for %s/%s after delete: %v",
 			campaignID, id, result.InventoryCleanupErr)
+	}
+	// Best-effort: also drop players' private notes for this now-deleted entry.
+	if _, err := h.contentNotes.DeleteForEntry(r.Context(), campaignID, "item", id); err != nil {
+		log.Printf("[custom-equipment] note cleanup failed for %s/%s after delete: %v", campaignID, id, err)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

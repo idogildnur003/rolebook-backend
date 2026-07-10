@@ -26,6 +26,7 @@ type CustomSpellHandler struct {
 	players      *store.PlayerStore
 	campaigns    *store.CampaignStore
 	avatars      *avatarstore.Store
+	contentNotes *store.ContentNoteStore
 }
 
 func NewCustomSpellHandler(
@@ -33,12 +34,14 @@ func NewCustomSpellHandler(
 	players *store.PlayerStore,
 	campaigns *store.CampaignStore,
 	avatars *avatarstore.Store,
+	contentNotes *store.ContentNoteStore,
 ) *CustomSpellHandler {
 	return &CustomSpellHandler{
 		customSpells: customSpells,
 		players:      players,
 		campaigns:    campaigns,
 		avatars:      avatars,
+		contentNotes: contentNotes,
 	}
 }
 
@@ -258,6 +261,10 @@ func (h *CustomSpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		// return 204 — the spell list handler tolerates dangling references.
 		log.Printf("[custom-spell] cascade cleanup failed for %s/%s after delete: %v",
 			campaignID, id, result.CleanupErr)
+	}
+	// Best-effort: also drop players' private notes for this now-deleted entry.
+	if _, err := h.contentNotes.DeleteForEntry(r.Context(), campaignID, "spell", id); err != nil {
+		log.Printf("[custom-spell] note cleanup failed for %s/%s after delete: %v", campaignID, id, err)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
