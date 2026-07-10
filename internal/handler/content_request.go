@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -390,7 +391,7 @@ func (h *ContentRequestHandler) Approve(w http.ResponseWriter, r *http.Request) 
 
 	var resultID string
 	if model.IsEditRequest(req.Kind) {
-		resultID, err = h.applyEdit(r, campaignID, req)
+		resultID, err = h.applyEdit(r, campaignID, req, body)
 	} else {
 		resultID, err = h.materialise(r, campaignID, req, body)
 	}
@@ -589,33 +590,60 @@ func (h *ContentRequestHandler) materialise(r *http.Request, campaignID string, 
 }
 
 // applyEdit updates an existing custom entry from an approved edit request.
-// Content fields only — visibility is DM-controlled and left untouched.
-func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, req *model.ContentRequest) (string, error) {
+// Content fields are taken from the proposal; visibility is the DM's decision
+// (body), mirroring a create approval. If the DM narrowed visibility, players
+// who lost access have the entry cascaded out of their inventory (best-effort).
+func (h *ContentRequestHandler) applyEdit(r *http.Request, campaignID string, req *model.ContentRequest, body approveBody) (string, error) {
 	if req.ResultID == "" {
 		return "", errors.New("edit request has no target id")
+	}
+	mode := model.NormalizeVisibilityMode(body.VisibilityMode)
+	var visiblePlayerIDs []string
+	if mode == model.VisibilityPlayers {
+		visiblePlayerIDs = body.VisiblePlayerIDs
+	} else {
+		visiblePlayerIDs = []string{}
 	}
 	if req.TargetType == model.RequestTargetItem {
 		if req.ItemPayload == nil {
 			return "", errors.New("edit request has no item payload")
 		}
-		updated, err := h.customEquipment.Update(r.Context(), campaignID, req.ResultID, contentFieldsForEquipment(req.ItemPayload))
+		fields := contentFieldsForEquipment(req.ItemPayload)
+		fields["visibilityMode"] = mode
+		fields["visiblePlayerIds"] = visiblePlayerIDs
+		updated, err := h.customEquipment.Update(r.Context(), campaignID, req.ResultID, fields)
 		if err != nil {
 			return "", err
 		}
 		if updated == nil {
 			return "", errEditTargetNotFound
 		}
+		// Cascade: if visibility narrowed, pull the entry from players who lost access.
+		if allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs); runCascade {
+			if _, err := h.customEquipment.RemoveExceptForPlayers(r.Context(), campaignID, req.ResultID, allowed, h.players); err != nil {
+				log.Printf("[content-request] edit visibility cascade failed for %s/%s: %v", campaignID, req.ResultID, err)
+			}
+		}
 		return req.ResultID, nil
 	}
 	if req.SpellPayload == nil {
 		return "", errors.New("edit request has no spell payload")
 	}
-	updated, err := h.customSpells.Update(r.Context(), campaignID, req.ResultID, contentFieldsForSpell(req.SpellPayload))
+	fields := contentFieldsForSpell(req.SpellPayload)
+	fields["visibilityMode"] = mode
+	fields["visiblePlayerIds"] = visiblePlayerIDs
+	updated, err := h.customSpells.Update(r.Context(), campaignID, req.ResultID, fields)
 	if err != nil {
 		return "", err
 	}
 	if updated == nil {
 		return "", errEditTargetNotFound
+	}
+	// Cascade: if visibility narrowed, pull the entry from players who lost access.
+	if allowed, runCascade := model.AllowedPlayerIDsForCascade(updated.VisibilityMode, updated.VisiblePlayerIDs); runCascade {
+		if _, err := h.customSpells.RemoveExceptForPlayers(r.Context(), campaignID, req.ResultID, allowed, h.players); err != nil {
+			log.Printf("[content-request] edit visibility cascade failed for %s/%s: %v", campaignID, req.ResultID, err)
+		}
 	}
 	return req.ResultID, nil
 }
