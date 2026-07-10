@@ -14,12 +14,27 @@ import (
 	"github.com/elad/rolebook-backend/internal/email"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
-	"github.com/elad/rolebook-backend/internal/store"
 )
+
+// userRepo is the subset of *store.UserStore that AuthHandler depends on.
+// Declaring it as an interface here keeps the handler testable with an in-memory
+// fake (mirrors catalogImageRepo in arsenal.go); *store.UserStore satisfies it,
+// so the production wiring in routes.go is unchanged.
+type userRepo interface {
+	Create(ctx context.Context, u *model.User) error
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	GetByID(ctx context.Context, id string) (*model.User, error)
+	SetVerificationCode(ctx context.Context, userID, codeHash string, expiresAt, sentAt time.Time) error
+	IncrementVerifyAttempts(ctx context.Context, userID string) error
+	MarkVerified(ctx context.Context, userID string) error
+	UpdatePasswordHash(ctx context.Context, id, hash string) error
+	SetPendingEmailCode(ctx context.Context, userID, pendingEmail, codeHash string, expiresAt, sentAt time.Time) error
+	CommitEmailChange(ctx context.Context, userID, newEmail string) error
+}
 
 // AuthHandler handles user registration, login, and email verification.
 type AuthHandler struct {
-	users               *store.UserStore
+	users               userRepo
 	jwtSecret           []byte
 	email               email.Sender
 	verificationEnabled bool
@@ -30,7 +45,7 @@ type AuthHandler struct {
 // entire OTP flow: when false (e.g. local dev with no Resend key), Register
 // issues a JWT directly and Login skips the unverified gate. adminIDs is the
 // allowlist used to stamp IsAdmin on auth responses.
-func NewAuthHandler(users *store.UserStore, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string) *AuthHandler {
+func NewAuthHandler(users userRepo, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string) *AuthHandler {
 	return &AuthHandler{
 		users:               users,
 		jwtSecret:           []byte(jwtSecret),
@@ -183,8 +198,19 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if emailVerificationBlocksLogin(user) {
-		writeError(w, http.StatusForbidden, "email not verified", "EMAIL_NOT_VERIFIED")
+	// The gate only applies when verification is enabled. With it disabled (local
+	// dev, or an incident switch), existing unverified accounts log in normally —
+	// otherwise flipping the flag off would strand every account created while it
+	// was on.
+	if h.verificationEnabled && emailVerificationBlocksLogin(user) {
+		// Proactively (re)issue a code so the client's verify screen has one
+		// waiting, instead of forcing the user to tap "Resend". Cooldown-guarded.
+		sent := h.issueVerificationCode(r.Context(), user)
+		writeJSON(w, http.StatusForbidden, map[string]any{
+			"error":    "email not verified",
+			"code":     "EMAIL_NOT_VERIFIED",
+			"codeSent": sent,
+		})
 		return
 	}
 
@@ -195,6 +221,34 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, authResponse{Token: token, UserID: user.ID, EmailVerified: user.EmailVerified, IsAdmin: middleware.IsAdmin(h.adminIDs, user.ID)})
+}
+
+// issueVerificationCode ensures an unverified user has a usable OTP: if the
+// resend cooldown has elapsed it generates, persists, and emails a fresh code;
+// otherwise the previously-sent code still stands (its TTL exceeds the cooldown).
+// Returns whether a code is available to the user afterwards. All inner failures
+// are logged, never surfaced — a false return means no code could be issued now.
+func (h *AuthHandler) issueVerificationCode(ctx context.Context, user *model.User) bool {
+	if !user.VerifyCodeSentAt.IsZero() && time.Since(user.VerifyCodeSentAt) < resendCooldown {
+		return true // a recently-sent code is still valid
+	}
+	code, err := generateVerificationCode()
+	if err != nil {
+		log.Printf("[auth] issue code: generate failed for %s: %v", user.ID, err)
+		return false
+	}
+	codeHash, err := hashVerificationCode(code)
+	if err != nil {
+		log.Printf("[auth] issue code: hash failed for %s: %v", user.ID, err)
+		return false
+	}
+	now := time.Now()
+	if err := h.users.SetVerificationCode(ctx, user.ID, codeHash, now.Add(verifyCodeTTL), now); err != nil {
+		log.Printf("[auth] issue code: persist failed for %s: %v", user.ID, err)
+		return false
+	}
+	h.sendVerificationCode(ctx, user.Email, code)
+	return true
 }
 
 // sendVerificationCode emails an OTP, logging (but not surfacing) send errors.
@@ -392,29 +446,11 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Always return 200 (no account enumeration). issueVerificationCode is
+	// cooldown-guarded and logs any inner failure, so a broken DB / RNG / sender
+	// stays visible to operators instead of looking like a successful send.
 	if user != nil && !user.EmailVerified {
-		withinCooldown := !user.VerifyCodeSentAt.IsZero() && time.Since(user.VerifyCodeSentAt) < resendCooldown
-		if !withinCooldown {
-			// We always return 200 to the caller (no account enumeration), but
-			// inner failures must still be logged so a broken DB / RNG / sender
-			// is visible to operators instead of looking like a successful send.
-			code, gerr := generateVerificationCode()
-			if gerr != nil {
-				log.Printf("[auth] resend: generate code failed for %s: %v", user.ID, gerr)
-			} else {
-				codeHash, herr := hashVerificationCode(code)
-				if herr != nil {
-					log.Printf("[auth] resend: hash code failed for %s: %v", user.ID, herr)
-				} else {
-					now := time.Now()
-					if serr := h.users.SetVerificationCode(r.Context(), user.ID, codeHash, now.Add(verifyCodeTTL), now); serr != nil {
-						log.Printf("[auth] resend: persist code failed for %s: %v", user.ID, serr)
-					} else {
-						h.sendVerificationCode(r.Context(), user.Email, code)
-					}
-				}
-			}
-		}
+		h.issueVerificationCode(r.Context(), user)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
