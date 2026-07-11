@@ -88,6 +88,10 @@ type Player struct {
 	DeathSaveSuccesses int `bson:"deathSaveSuccesses" json:"deathSaveSuccesses"`
 	DeathSaveFailures  int `bson:"deathSaveFailures"  json:"deathSaveFailures"`
 
+	// HeroicInspiration reports whether the character currently holds Heroic
+	// Inspiration (RAW: at most one). Defaults false; toggled from the HUD.
+	HeroicInspiration bool `bson:"heroicInspiration" json:"heroicInspiration"`
+
 	// Spellcasting stats
 	SpellcastingSaveDC      int `bson:"spellcastingSaveDc"      json:"spellcastingSaveDc"`
 	SpellcastingModifier    int `bson:"spellcastingModifier"    json:"spellcastingModifier"`
@@ -126,18 +130,19 @@ type Player struct {
 // All maps and slices are initialized (never nil) to ensure clean JSON serialisation.
 func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind PlayerKind) *Player {
 	p := &Player{
-		ID:               id,
-		CampaignID:       campaignID,
-		LinkedUserID:     linkedUserID,
-		Name:             name,
-		Level:            level,
-		Size:             "Medium",
-		CurrentHP:        10,
-		MaxHP:            10,
-		TempHP:           0,
-		AC:               10,
-		Speed:            30,
-		ProficiencyBonus: 2,
+		ID:                id,
+		CampaignID:        campaignID,
+		LinkedUserID:      linkedUserID,
+		Name:              name,
+		Level:             level,
+		Size:              "Medium",
+		CurrentHP:         10,
+		MaxHP:             10,
+		TempHP:            0,
+		HeroicInspiration: false,
+		AC:                10,
+		Speed:             30,
+		ProficiencyBonus:  2,
 		// Spellcasting defaults assume a fresh caster: 8 + proficiency, proficiency, +0 ability mod
 		SpellcastingSaveDC:      10,
 		SpellcastingModifier:    0,
