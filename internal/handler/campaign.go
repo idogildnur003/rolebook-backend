@@ -37,11 +37,13 @@ type campaignListItem struct {
 	ID          string                  `json:"id"`
 	MyRole      model.Role              `json:"myRole"`
 	MyPlayerID  string                  `json:"myPlayerId"`
-	Name        string                  `json:"name"`
-	ThemeImage  string                  `json:"themeImage"`
-	MapImageURI *string                 `json:"mapImageUri,omitempty"`
-	Sessions    []campaignListSession   `json:"sessions"`
-	Members     []campaignMemberSummary `json:"members,omitempty"`
+	Name           string                  `json:"name"`
+	ThemeImage     string                  `json:"themeImage"`
+	MapImageURI    *string                 `json:"mapImageUri,omitempty"`
+	MapImageWidth  *int                    `json:"mapImageWidth,omitempty"`
+	MapImageHeight *int                    `json:"mapImageHeight,omitempty"`
+	Sessions       []campaignListSession   `json:"sessions"`
+	Members        []campaignMemberSummary `json:"members,omitempty"`
 }
 
 type campaignListSession struct {
@@ -66,6 +68,8 @@ type campaignDetail struct {
 	Name              string                  `json:"name"`
 	ThemeImage        string                  `json:"themeImage"`
 	MapImageURI       *string                 `json:"mapImageUri"`
+	MapImageWidth     *int                    `json:"mapImageWidth,omitempty"`
+	MapImageHeight    *int                    `json:"mapImageHeight,omitempty"`
 	Sessions          []model.Session         `json:"sessions"`
 	Members           []campaignMemberSummary `json:"members"`
 	DisabledSpells    []string                `json:"disabledSpells"`
@@ -98,6 +102,8 @@ func toCampaignDetail(c *model.Campaign, callerUserID string) campaignDetail {
 		Name:              c.Name,
 		ThemeImage:        c.ThemeImage,
 		MapImageURI:       c.MapImageURI,
+		MapImageWidth:     c.MapImageWidth,
+		MapImageHeight:    c.MapImageHeight,
 		Sessions:          c.Sessions,
 		Members:           toMemberSummaries(c.Members),
 		DisabledSpells:    c.DisabledSpells,
@@ -117,6 +123,29 @@ func toCampaignDetailWithImages(ctx context.Context, c *model.Campaign, callerUs
 		d.MapImageURI = &resolved
 	}
 	return d
+}
+
+func campaignUpdateFields(req map[string]any) bson.M {
+	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "disabledSpells": true, "disabledEquipment": true, "mapImageWidth": true, "mapImageHeight": true}
+	fields := bson.M{}
+	for k, v := range req {
+		if !allowed[k] {
+			continue
+		}
+		if k == "mapImageWidth" || k == "mapImageHeight" {
+			switch n := v.(type) {
+			case float64:
+				fields[k] = int(n)
+			case int:
+				fields[k] = n
+			case int64:
+				fields[k] = int(n)
+			}
+			continue
+		}
+		fields[k] = v
+	}
+	return fields
 }
 
 // List handles GET /api/campaigns.
@@ -156,6 +185,8 @@ func (h *CampaignHandler) List(w http.ResponseWriter, r *http.Request) {
 		if c.MapImageURI != nil && *c.MapImageURI != "" {
 			resolved := h.avatars.ResolveImageURI(ctx, *c.MapImageURI)
 			item.MapImageURI = &resolved
+			item.MapImageWidth = c.MapImageWidth
+			item.MapImageHeight = c.MapImageHeight
 		}
 		if myRole == model.RoleDM {
 			item.Members = toMemberSummaries(c.Members)
@@ -250,13 +281,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
 		return
 	}
-	allowed := map[string]bool{"name": true, "themeImage": true, "mapImageUri": true, "disabledSpells": true, "disabledEquipment": true}
-	fields := bson.M{}
-	for k, v := range req {
-		if allowed[k] {
-			fields[k] = v
-		}
-	}
+	fields := campaignUpdateFields(req)
 	if len(fields) == 0 {
 		writeError(w, http.StatusBadRequest, "no valid fields to update", "BAD_REQUEST")
 		return
