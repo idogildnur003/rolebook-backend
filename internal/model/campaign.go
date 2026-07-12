@@ -76,6 +76,8 @@ type Campaign struct {
 	Name              string           `bson:"name"              json:"name"`
 	ThemeImage        string           `bson:"themeImage"        json:"themeImage"`
 	MapImageURI       *string          `bson:"mapImageUri"       json:"mapImageUri"`
+	MapImageWidth     *int             `bson:"mapImageWidth,omitempty"  json:"mapImageWidth,omitempty"`
+	MapImageHeight    *int             `bson:"mapImageHeight,omitempty" json:"mapImageHeight,omitempty"`
 	Sessions          []Session        `bson:"sessions"          json:"sessions"`
 	Members           []CampaignMember `bson:"members"           json:"members"`
 	DisabledSpells    []string         `bson:"disabledSpells"    json:"disabledSpells"`

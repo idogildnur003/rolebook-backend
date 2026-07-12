@@ -127,3 +127,78 @@ func TestCampaignListItem_OmitsMapImageURIWhenNil(t *testing.T) {
 		t.Errorf("campaignListItem leaked nil mapImageUri: %s", b)
 	}
 }
+
+func TestCampaignUpdateFields_AllowsMapImageDimensionsAsInts(t *testing.T) {
+	fields := campaignUpdateFields(map[string]any{
+		"name":           "New",
+		"mapImageWidth":  float64(1024),
+		"mapImageHeight": float64(768),
+		"bogus":          "nope",
+	})
+
+	if fields["name"] != "New" {
+		t.Errorf("name = %v, want New", fields["name"])
+	}
+	if _, ok := fields["bogus"]; ok {
+		t.Errorf("bogus field was not filtered out: %v", fields)
+	}
+	w, ok := fields["mapImageWidth"].(int)
+	if !ok || w != 1024 {
+		t.Errorf("mapImageWidth = %v (%T), want int 1024", fields["mapImageWidth"], fields["mapImageWidth"])
+	}
+	h, ok := fields["mapImageHeight"].(int)
+	if !ok || h != 768 {
+		t.Errorf("mapImageHeight = %v (%T), want int 768", fields["mapImageHeight"], fields["mapImageHeight"])
+	}
+}
+
+func TestCampaignUpdateFields_RejectsEmptyAndUnknown(t *testing.T) {
+	fields := campaignUpdateFields(map[string]any{"userId": "hax", "role": "dm"})
+	if len(fields) != 0 {
+		t.Errorf("expected no allow-listed fields, got %v", fields)
+	}
+}
+
+func TestCampaignDetail_IncludesMapImageDimensionsWhenSet(t *testing.T) {
+	w, h := 1024, 768
+	d := campaignDetail{ID: "c1", Name: "Test", MapImageWidth: &w, MapImageHeight: &h}
+	b, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	got := string(b)
+	if !strings.Contains(got, `"mapImageWidth":1024`) || !strings.Contains(got, `"mapImageHeight":768`) {
+		t.Errorf("campaignDetail missing map image dimensions: %s", got)
+	}
+}
+
+func TestCampaignDetail_OmitsMapImageDimensionsWhenNil(t *testing.T) {
+	d := campaignDetail{ID: "c1", Name: "Test"}
+	b, err := json.Marshal(d)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(b), "mapImageWidth") || strings.Contains(string(b), "mapImageHeight") {
+		t.Errorf("campaignDetail leaked nil map image dimensions: %s", b)
+	}
+}
+
+func TestToCampaignDetail_CopiesMapImageDimensions(t *testing.T) {
+	w, h := 800, 600
+	c := &model.Campaign{
+		ID:             "c1",
+		Name:           "Test",
+		MapImageWidth:  &w,
+		MapImageHeight: &h,
+		Members: []model.CampaignMember{
+			{UserID: "u1", PlayerID: "p1", Role: model.RoleDM, IsActive: true},
+		},
+	}
+	d := toCampaignDetail(c, "u1")
+	if d.MapImageWidth == nil || *d.MapImageWidth != 800 {
+		t.Errorf("MapImageWidth = %v, want 800", d.MapImageWidth)
+	}
+	if d.MapImageHeight == nil || *d.MapImageHeight != 600 {
+		t.Errorf("MapImageHeight = %v, want 600", d.MapImageHeight)
+	}
+}
