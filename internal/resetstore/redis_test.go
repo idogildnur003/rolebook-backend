@@ -60,3 +60,26 @@ func TestRedis_MarkSentCooldown(t *testing.T) {
 		t.Fatal("second MarkSent = true, want false (cooldown)")
 	}
 }
+
+// IncrAttempts on an absent/expired session must no-op: return 0 and, crucially,
+// never auto-create a TTL-less orphan hash (matching Memory.IncrAttempts).
+func TestRedis_IncrAttemptsNoSessionNoOrphan(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+	s := NewRedis("redis://" + mr.Addr())
+	ctx := context.Background()
+	email := "a@b.com"
+
+	if n, err := s.IncrAttempts(ctx, email); err != nil || n != 0 {
+		t.Fatalf("IncrAttempts on absent session = %d, %v; want 0, nil", n, err)
+	}
+	if mr.Exists(sessionKey(email)) {
+		t.Fatalf("IncrAttempts created orphan key %q; want no key", sessionKey(email))
+	}
+	if got, _ := s.Get(ctx, email); got != nil {
+		t.Fatalf("Get after IncrAttempts on absent session = %+v; want nil", got)
+	}
+}

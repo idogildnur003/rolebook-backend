@@ -26,6 +26,19 @@ func NewRedis(url string) *Redis {
 func sessionKey(email string) string  { return "pwreset:sess:" + email }
 func cooldownKey(email string) string { return "pwreset:cd:" + email }
 
+// incrAttemptsScript increments the attempts field only when the session hash
+// already exists, returning 0 otherwise. This mirrors Memory.IncrAttempts
+// (no-op on a missing/expired session) and — crucially — avoids HINCRBY
+// auto-creating a TTL-less orphan hash. The EXISTS+HINCRBY runs atomically in
+// one Redis call, so there's no check-then-act race.
+var incrAttemptsScript = redis.NewScript(`
+if redis.call('EXISTS', KEYS[1]) == 1 then
+	return redis.call('HINCRBY', KEYS[1], 'attempts', 1)
+else
+	return 0
+end
+`)
+
 func (r *Redis) MarkSent(ctx context.Context, email string) (bool, error) {
 	// SET key 1 NX EX 60 — true only if we set it (no active cooldown).
 	ok, err := r.client.SetNX(ctx, cooldownKey(email), "1", CooldownTTL).Result()
@@ -62,8 +75,13 @@ func (r *Redis) Get(ctx context.Context, email string) (*Session, error) {
 }
 
 func (r *Redis) IncrAttempts(ctx context.Context, email string) (int, error) {
-	n, err := r.client.HIncrBy(ctx, sessionKey(email), "attempts", 1).Result()
-	return int(n), err
+	// Only increment when the session hash exists; never auto-create a
+	// TTL-less orphan (see incrAttemptsScript).
+	n, err := incrAttemptsScript.Run(ctx, r.client, []string{sessionKey(email)}).Int64()
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
 }
 
 func (r *Redis) PromoteToToken(ctx context.Context, email, tokenHash string) error {
