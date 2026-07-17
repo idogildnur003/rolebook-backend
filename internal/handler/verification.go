@@ -2,6 +2,9 @@ package handler
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
@@ -102,4 +105,41 @@ func verificationEmailBody(code string) (subject, html, text string) {
 	)
 	text = fmt.Sprintf("Your Rolebook verification code is %s. It expires in 10 minutes.", code)
 	return subject, html, text
+}
+
+// passwordResetEmailBody returns the (subject, html, text) for the OTP sent when
+// a user requests a password reset.
+func passwordResetEmailBody(code string) (subject, html, text string) {
+	subject = "Reset your Rolebook password"
+	html = fmt.Sprintf(
+		"<p>We received a request to reset your Rolebook password.</p>"+
+			"<p>Your reset code is:</p>"+
+			"<p style=\"font-size:28px;font-weight:bold;letter-spacing:4px\">%s</p>"+
+			"<p>It expires in 10 minutes. If you didn't request this, ignore this email — your password is unchanged.</p>",
+		code,
+	)
+	text = fmt.Sprintf("Your Rolebook password reset code is %s. It expires in 10 minutes. If you didn't request this, ignore this email.", code)
+	return subject, html, text
+}
+
+// generateResetToken returns a 32-byte cryptographically-random token, hex-encoded.
+func generateResetToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// hashResetToken returns the SHA-256 hex digest of a reset token, for storage
+// at rest. The token is high-entropy, so a fast hash (not bcrypt) is appropriate.
+func hashResetToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// resetTokenMatches reports whether token hashes to the stored hash, using a
+// constant-time comparison.
+func resetTokenMatches(hash, token string) bool {
+	return subtle.ConstantTimeCompare([]byte(hash), []byte(hashResetToken(token))) == 1
 }
