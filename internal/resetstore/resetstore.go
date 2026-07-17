@@ -44,10 +44,11 @@ type Store interface {
 	Clear(ctx context.Context, email string) error
 }
 
-// New returns a Store backed by an in-memory implementation. A Redis-backed
-// implementation (used when cfg.RedisURL is set) is added in a later task; for
-// now New always returns the in-memory Store regardless of cfg.
+// New returns a Redis-backed Store when cfg.RedisURL is set, otherwise an
+// in-memory Store (local dev / CI).
 func New(cfg config.Config) Store {
-	_ = cfg.RedisURL // reserved for the Redis-backed impl added in a later task
+	if cfg.RedisURL != "" {
+		return NewRedis(cfg.RedisURL)
+	}
 	return NewMemory()
 }
