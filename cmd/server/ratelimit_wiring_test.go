@@ -42,7 +42,7 @@ func TestRegisterRoutes_RateLimitWiring(t *testing.T) {
 	call := func(method, path string) int {
 		req := httptest.NewRequest(method, path, nil)
 		req.RemoteAddr = "10.0.0.1:1000"
-		req.Header.Set("X-Envoy-External-Address", "203.0.113.7")
+		req.Header.Set("X-Real-IP", "203.0.113.7")
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 		return rr.Code

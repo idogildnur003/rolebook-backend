@@ -18,15 +18,15 @@ func TestKeyByTrustedIP(t *testing.T) {
 	cases := []struct {
 		name       string
 		remoteAddr string
-		envoy      string
+		realIP     string
 		xff        string
 		want       string
 	}{
-		{"envoy wins over spoofed xff", "10.0.0.1:1234", "203.0.113.5", "1.2.3.4, 203.0.113.5", "203.0.113.5"},
-		{"rightmost xff when no envoy", "10.0.0.1:1234", "", "1.2.3.4, 5.6.7.8, 203.0.113.5", "203.0.113.5"},
+		{"x-real-ip wins over xff", "10.0.0.1:1234", "203.0.113.5", "1.2.3.4, 9.9.9.9", "203.0.113.5"},
+		{"left-most xff when no x-real-ip", "10.0.0.1:1234", "", "203.0.113.5, 152.99.99.99", "203.0.113.5"},
 		{"single xff", "10.0.0.1:1234", "", "203.0.113.5", "203.0.113.5"},
 		{"remoteaddr fallback", "203.0.113.9:5555", "", "", "203.0.113.9"},
-		{"envoy with port", "10.0.0.1:1234", "203.0.113.5:443", "", "203.0.113.5"},
+		{"x-real-ip with port", "10.0.0.1:1234", "203.0.113.5:443", "", "203.0.113.5"},
 		// IPv6 clients are bucketed to their /64 so they can't rotate within it.
 		{"ipv6 bucketed to /64", "10.0.0.1:1234", "2001:db8:abcd:1234::1", "", "2001:db8:abcd:1234::"},
 	}
@@ -34,8 +34,8 @@ func TestKeyByTrustedIP(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r.RemoteAddr = tc.remoteAddr
-			if tc.envoy != "" {
-				r.Header.Set("X-Envoy-External-Address", tc.envoy)
+			if tc.realIP != "" {
+				r.Header.Set("X-Real-IP", tc.realIP)
 			}
 			if tc.xff != "" {
 				r.Header.Set("X-Forwarded-For", tc.xff)
@@ -69,8 +69,10 @@ func fire(t *testing.T, h http.Handler, n int, decorate func(*http.Request)) []i
 	return codes
 }
 
-func envoy(ip string) func(*http.Request) {
-	return func(r *http.Request) { r.Header.Set("X-Envoy-External-Address", ip) }
+// realip sets X-Real-IP, which is how Railway's edge proxy conveys the true
+// client IP to the app (see KeyByTrustedIP).
+func realip(ip string) func(*http.Request) {
+	return func(r *http.Request) { r.Header.Set("X-Real-IP", ip) }
 }
 
 func TestRateLimiter_GlobalOverLimit(t *testing.T) {
@@ -81,7 +83,7 @@ func TestRateLimiter_GlobalOverLimit(t *testing.T) {
 	defer rl.Close()
 
 	// Same client IP: exactly GlobalRequests pass, the next is limited.
-	codes := fire(t, rl.Global(okHandler), 4, envoy("203.0.113.5"))
+	codes := fire(t, rl.Global(okHandler), 4, realip("203.0.113.5"))
 	want := []int{200, 200, 200, 429}
 	for i := range want {
 		if codes[i] != want[i] {
@@ -98,11 +100,11 @@ func TestRateLimiter_429ResponseShape(t *testing.T) {
 	defer rl.Close()
 	h := rl.Auth(okHandler)
 
-	_ = fire(t, h, 1, envoy("203.0.113.5")) // exhaust (limit 1)
+	_ = fire(t, h, 1, realip("203.0.113.5")) // exhaust (limit 1)
 
 	r := httptest.NewRequest(http.MethodPost, "/api/auth/login", nil)
 	r.RemoteAddr = "10.0.0.1:1000"
-	r.Header.Set("X-Envoy-External-Address", "203.0.113.5")
+	r.Header.Set("X-Real-IP", "203.0.113.5")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
 
@@ -128,18 +130,19 @@ func TestRateLimiter_PerIPIsolation(t *testing.T) {
 	defer rl.Close()
 	h := rl.Global(okHandler)
 
-	a := fire(t, h, 3, envoy("203.0.113.1")) // 200,200,429
+	a := fire(t, h, 3, realip("203.0.113.1")) // 200,200,429
 	if a[2] != http.StatusTooManyRequests {
 		t.Fatalf("IP A not limited: %v", a)
 	}
-	b := fire(t, h, 2, envoy("203.0.113.2")) // different IP, own bucket
+	b := fire(t, h, 2, realip("203.0.113.2")) // different IP, own bucket
 	if b[0] != http.StatusOK || b[1] != http.StatusOK {
 		t.Fatalf("IP B wrongly limited: %v", b)
 	}
 }
 
 // A malicious client that rotates X-Forwarded-For must not win fresh buckets:
-// the Envoy-supplied real IP is authoritative, so all requests share one bucket.
+// Railway's X-Real-IP is authoritative, so all requests share one bucket even as
+// the client-supplied XFF changes.
 func TestRateLimiter_SpoofedXFFCannotBypass(t *testing.T) {
 	rl := NewRateLimiters(RateLimitOptions{
 		Enabled: true, GlobalRequests: 2, GlobalWindow: time.Minute,
@@ -152,8 +155,8 @@ func TestRateLimiter_SpoofedXFFCannotBypass(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		r := httptest.NewRequest(http.MethodGet, "/x", nil)
 		r.RemoteAddr = "10.0.0.1:1000"
-		r.Header.Set("X-Envoy-External-Address", "203.0.113.5")        // constant real client
-		r.Header.Set("X-Forwarded-For", fmt.Sprintf("9.9.9.%d", i))    // attacker rotates
+		r.Header.Set("X-Real-IP", "203.0.113.5")                    // constant real client (Railway-set)
+		r.Header.Set("X-Forwarded-For", fmt.Sprintf("9.9.9.%d", i)) // attacker rotates
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
 		codes[i] = w.Code
@@ -199,7 +202,7 @@ func TestRateLimiter_DisabledPassthrough(t *testing.T) {
 		t.Fatal("expected Enabled=false")
 	}
 	for _, mw := range []func(http.Handler) http.Handler{rl.Global, rl.User, rl.Auth} {
-		codes := fire(t, mw(okHandler), 50, envoy("203.0.113.5"))
+		codes := fire(t, mw(okHandler), 50, realip("203.0.113.5"))
 		for i, c := range codes {
 			if c != http.StatusOK {
 				t.Fatalf("request %d limited while disabled: %d", i, c)

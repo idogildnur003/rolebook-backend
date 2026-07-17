@@ -20,25 +20,27 @@ const rateLimitedBody = `{"error":"Too many requests. Please slow down.","code":
 // KeyByTrustedIP resolves the real client IP behind Railway's proxy in a
 // spoof-resistant way, then buckets IPv6 clients by /64 (httprate.CanonicalizeIP).
 //
-// httprate's own KeyByRealIP is deprecated precisely because it trusts the
-// left-most X-Forwarded-For / X-Real-IP, which any client can forge. Trust order:
-//  1. X-Envoy-External-Address — Railway's Envoy edge sets this to the true
-//     external client IP and strips a client-supplied copy, so it can't be forged.
-//  2. Right-most X-Forwarded-For entry — the address Railway's edge appended.
-//     The left-most entries are client-controllable and must NOT be trusted.
+// httprate's own KeyByRealIP is deprecated because trusting client-supplied IP
+// headers is only safe when a trusted proxy sanitizes them first. Railway's edge
+// does exactly that: it OVERWRITES inbound X-Real-IP and X-Forwarded-For with the
+// true client IP (verified against the live edge — a forged X-Real-IP / left-most
+// XFF is stripped), and sets X-Real-IP to that address. Trust order:
+//  1. X-Real-IP — Railway's edge sets this to the true client IP; not forgeable.
+//  2. LEFT-most X-Forwarded-For entry — the client the first trusted proxy saw.
+//     (The RIGHT-most entry is Railway's own edge proxy IP and rotates per
+//     request, so it must NOT be used as the key.)
 //  3. r.RemoteAddr — the TCP peer (the proxy in prod, the client in local dev).
 //
-// NOTE: confirm on Railway that X-Envoy-External-Address is populated (see the
-// implementation plan). The per-user limiter protects authenticated routes
-// regardless of IP trust, so IP-keying only has to be right for the auth tier.
+// Railway does NOT populate X-Envoy-External-Address, so it is intentionally not
+// used. The per-user limiter protects authenticated routes regardless of IP trust,
+// so IP-keying only has to be right for the auth and global tiers.
 func KeyByTrustedIP(r *http.Request) (string, error) {
-	if ext := strings.TrimSpace(r.Header.Get("X-Envoy-External-Address")); ext != "" {
-		return httprate.CanonicalizeIP(hostOnly(ext)), nil
+	if xrip := strings.TrimSpace(r.Header.Get("X-Real-IP")); xrip != "" {
+		return httprate.CanonicalizeIP(hostOnly(xrip)), nil
 	}
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		if last := strings.TrimSpace(parts[len(parts)-1]); last != "" {
-			return httprate.CanonicalizeIP(hostOnly(last)), nil
+		if first := strings.TrimSpace(strings.Split(xff, ",")[0]); first != "" {
+			return httprate.CanonicalizeIP(hostOnly(first)), nil
 		}
 	}
 	ip, _, err := net.SplitHostPort(r.RemoteAddr)
