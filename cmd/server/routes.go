@@ -16,7 +16,7 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
-func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
+func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.RateLimiters) {
 	// Stores
 	userStore := store.NewUserStore(db)
 	campaignStore := store.NewCampaignStore(db)
@@ -64,15 +64,34 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB) {
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore, arsenalCatalog, cfg.AdminUserIDs)
 
 	r.Route("/api", func(r chi.Router) {
-		// Public
-		r.Post("/auth/register", authHandler.Register)
-		r.Post("/auth/login", authHandler.Login)
-		r.Post("/auth/verify-email", authHandler.VerifyEmail)
-		r.Post("/auth/resend-verification", authHandler.ResendVerification)
+		// Global per-IP rate limit over the whole API surface. Placed here (inside
+		// /api, above the public/protected split) so every current and future route
+		// is covered automatically, while /health — registered on the root mux
+		// below — stays unthrottled for Railway's health checks.
+		if rl.Enabled {
+			r.Use(rl.Global)
+		}
+
+		// Public. Wrapped in a group so the tighter auth limiter applies to just
+		// these brute-force / OTP-guess / email-spam targets, on top of the global one.
+		r.Group(func(r chi.Router) {
+			if rl.Enabled {
+				r.Use(rl.Auth)
+			}
+			r.Post("/auth/register", authHandler.Register)
+			r.Post("/auth/login", authHandler.Login)
+			r.Post("/auth/verify-email", authHandler.VerifyEmail)
+			r.Post("/auth/resend-verification", authHandler.ResendVerification)
+		})
 
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Authenticate(cfg.JWTSecret))
+			// Per-user limit, keyed on the JWT userID Authenticate just injected.
+			// Covers every current and future authenticated route in this group.
+			if rl.Enabled {
+				r.Use(rl.User)
+			}
 
 			// Account
 			r.Post("/auth/change-password", authHandler.ChangePassword)
