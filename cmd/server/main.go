@@ -21,6 +21,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
@@ -61,13 +62,31 @@ func main() {
 		}
 	}()
 
+	// Rate limiters (per-IP global + per-user + tight per-IP auth). Backed by
+	// Redis when REDIS_URL is set (shared counters, local fallback on outage),
+	// otherwise in-process in-memory. Close releases the Redis client on shutdown.
+	rateLimiters := middleware.NewRateLimiters(middleware.RateLimitOptions{
+		Enabled:        cfg.RateLimitEnabled,
+		RedisURL:       cfg.RedisURL,
+		GlobalRequests: cfg.RateLimitGlobalRequests,
+		GlobalWindow:   cfg.RateLimitGlobalWindow,
+		UserRequests:   cfg.RateLimitUserRequests,
+		UserWindow:     cfg.RateLimitUserWindow,
+		AuthRequests:   cfg.RateLimitAuthRequests,
+		AuthWindow:     cfg.RateLimitAuthWindow,
+	})
+	defer func() {
+		if err := rateLimiters.Close(); err != nil {
+			log.Printf("error closing rate limiter redis client: %v", err)
+		}
+	}()
+
 	r := chi.NewRouter()
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(corsMiddleware)
 
-	// Routes registered in subsequent tasks via registerRoutes
-	registerRoutes(r, cfg, db)
+	registerRoutes(r, cfg, db, rateLimiters)
 
 	// baseCtx is the parent of every request's context. Cancelling it on
 	// shutdown trips r.Context().Done() in all in-flight handlers — notably the

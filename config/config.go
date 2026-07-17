@@ -2,7 +2,9 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // Config holds all runtime configuration loaded from environment variables.
@@ -28,6 +30,22 @@ type Config struct {
 	AWSS3UsePathStyle  bool
 
 	AdminUserIDs []string
+
+	// Rate limiting. RateLimitEnabled is the master switch (default on). When
+	// RedisURL is set, limiter counters live in Redis (shared across restarts and
+	// instances); when empty, an in-process in-memory counter is used, which is
+	// fine for local dev / CI. Each tier has its own request count + window:
+	//   - Global: per-IP floor over the whole /api surface.
+	//   - User:   per-authenticated-user limit inside the protected group.
+	//   - Auth:   tighter per-IP limit on the public auth routes (brute force).
+	RateLimitEnabled        bool
+	RedisURL                string
+	RateLimitGlobalRequests int
+	RateLimitGlobalWindow   time.Duration
+	RateLimitUserRequests   int
+	RateLimitUserWindow     time.Duration
+	RateLimitAuthRequests   int
+	RateLimitAuthWindow     time.Duration
 }
 
 // Load reads configuration from environment variables.
@@ -49,6 +67,15 @@ func Load(portFlag string) Config {
 		AWSSecretAccessKey:       os.Getenv("AWS_SECRET_ACCESS_KEY"),
 		AWSS3UsePathStyle:        envBool(os.Getenv("AWS_S3_FORCE_PATH_STYLE")),
 		AdminUserIDs:             parseCSV(os.Getenv("ADMIN_USER_IDS")),
+
+		RateLimitEnabled:        envBoolDefault("RATE_LIMIT_ENABLED", true),
+		RedisURL:                os.Getenv("REDIS_URL"),
+		RateLimitGlobalRequests: envInt("RATE_LIMIT_GLOBAL_REQUESTS", 600),
+		RateLimitGlobalWindow:   envDuration("RATE_LIMIT_GLOBAL_WINDOW", time.Minute),
+		RateLimitUserRequests:   envInt("RATE_LIMIT_USER_REQUESTS", 300),
+		RateLimitUserWindow:     envDuration("RATE_LIMIT_USER_WINDOW", time.Minute),
+		RateLimitAuthRequests:   envInt("RATE_LIMIT_AUTH_REQUESTS", 10),
+		RateLimitAuthWindow:     envDuration("RATE_LIMIT_AUTH_WINDOW", time.Minute),
 	}
 }
 
@@ -80,6 +107,47 @@ func envBool(s string) bool {
 	default:
 		return false
 	}
+}
+
+// envBoolDefault parses a boolean-ish env value, returning def when unset/blank.
+// Explicit "true"/"1"/"yes"/"on" -> true; "false"/"0"/"no"/"off" -> false
+// (case-insensitive). Unlike envBool, an unset var yields def, so it works for
+// flags that default on (e.g. RATE_LIMIT_ENABLED).
+func envBoolDefault(key string, def bool) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "true", "1", "yes", "on":
+		return true
+	case "false", "0", "no", "off":
+		return false
+	}
+	return def
+}
+
+// envInt parses an integer env value, returning def when unset or unparseable.
+func envInt(key string, def int) int {
+	s := strings.TrimSpace(os.Getenv(key))
+	if s == "" {
+		return def
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+// envDuration parses a Go duration env value (e.g. "1m", "30s", "500ms"),
+// returning def when unset or unparseable.
+func envDuration(key string, def time.Duration) time.Duration {
+	s := strings.TrimSpace(os.Getenv(key))
+	if s == "" {
+		return def
+	}
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return def
+	}
+	return d
 }
 
 // resolvePort selects the HTTP listen port with precedence: flag > PORT env > "3000".
