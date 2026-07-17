@@ -14,6 +14,7 @@ import (
 	"github.com/elad/rolebook-backend/internal/email"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
+	"github.com/elad/rolebook-backend/internal/resetstore"
 )
 
 // userRepo is the subset of *store.UserStore that AuthHandler depends on.
@@ -39,19 +40,22 @@ type AuthHandler struct {
 	email               email.Sender
 	verificationEnabled bool
 	adminIDs            []string
+	resets              resetstore.Store
 }
 
 // NewAuthHandler creates a new AuthHandler. verificationEnabled gates the
 // entire OTP flow: when false (e.g. local dev with no Resend key), Register
 // issues a JWT directly and Login skips the unverified gate. adminIDs is the
-// allowlist used to stamp IsAdmin on auth responses.
-func NewAuthHandler(users userRepo, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string) *AuthHandler {
+// allowlist used to stamp IsAdmin on auth responses. resets backs the
+// forgot-password flow (reset codes, cooldowns, and — later — reset tokens).
+func NewAuthHandler(users userRepo, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string, resets resetstore.Store) *AuthHandler {
 	return &AuthHandler{
 		users:               users,
 		jwtSecret:           []byte(jwtSecret),
 		email:               sender,
 		verificationEnabled: verificationEnabled,
 		adminIDs:            adminIDs,
+		resets:              resets,
 	}
 }
 
@@ -454,6 +458,66 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+type forgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+// ForgotPassword handles POST /api/auth/forgot-password (public). It always
+// responds 200 with a generic body — never revealing whether the account
+// exists. When it does exist and the resend cooldown has elapsed, it stores a
+// fresh reset code and emails it.
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgotPasswordRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	// Generic OK regardless of outcome (anti-enumeration). Real work is
+	// best-effort and its failures are logged, never surfaced.
+	if email != "" {
+		if user, err := h.users.FindByEmail(r.Context(), email); err == nil && user != nil {
+			h.issueResetCode(r.Context(), email)
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "reset_requested",
+	})
+}
+
+// issueResetCode generates, stores, and emails a reset code, guarded by the
+// resend cooldown. All failures are logged, never surfaced.
+func (h *AuthHandler) issueResetCode(ctx context.Context, email string) {
+	allowed, err := h.resets.MarkSent(ctx, email)
+	if err != nil {
+		log.Printf("[auth] reset: cooldown check failed for %s: %v", email, err)
+		return
+	}
+	if !allowed {
+		return // still within the 60s resend window
+	}
+	code, err := generateVerificationCode()
+	if err != nil {
+		log.Printf("[auth] reset: generate code failed for %s: %v", email, err)
+		return
+	}
+	codeHash, err := hashVerificationCode(code)
+	if err != nil {
+		log.Printf("[auth] reset: hash code failed for %s: %v", email, err)
+		return
+	}
+	if err := h.resets.SetCode(ctx, email, codeHash); err != nil {
+		log.Printf("[auth] reset: store code failed for %s: %v", email, err)
+		return
+	}
+	subject, html, text := passwordResetEmailBody(code)
+	if err := h.email.Send(ctx, email, subject, html, text); err != nil {
+		log.Printf("[auth] reset: send email failed for %s: %v", email, err)
+	}
 }
 
 type changeEmailRequest struct {
