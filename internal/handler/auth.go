@@ -520,6 +520,61 @@ func (h *AuthHandler) issueResetCode(ctx context.Context, email string) {
 	}
 }
 
+type verifyResetCodeRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+// VerifyResetCode handles POST /api/auth/verify-reset-code (public). On a valid
+// code it consumes the code and returns a single-use reset token. All failures
+// use a generic 400 to avoid revealing whether an account or code exists.
+func (h *AuthHandler) VerifyResetCode(w http.ResponseWriter, r *http.Request) {
+	var req verifyResetCodeRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	code := strings.TrimSpace(req.Code)
+	if email == "" || code == "" {
+		writeError(w, http.StatusBadRequest, "email and code are required", "BAD_REQUEST")
+		return
+	}
+
+	sess, err := h.resets.Get(r.Context(), email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	// No session, or already promoted to a token (CodeHash cleared) -> generic invalid.
+	if sess == nil || sess.CodeHash == "" {
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+	if sess.Attempts >= maxVerifyAttempts {
+		writeError(w, http.StatusBadRequest, "too many attempts; request a new code", "TOO_MANY_ATTEMPTS")
+		return
+	}
+	if !verificationCodeMatches(sess.CodeHash, code) {
+		if _, err := h.resets.IncrAttempts(r.Context(), email); err != nil {
+			log.Printf("[auth] reset: incr attempts failed for %s: %v", email, err)
+		}
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+
+	token, err := generateResetToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if err := h.resets.PromoteToToken(r.Context(), email, hashResetToken(token)); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"resetToken": token})
+}
+
 type changeEmailRequest struct {
 	NewEmail        string `json:"newEmail"`
 	CurrentPassword string `json:"currentPassword"`
