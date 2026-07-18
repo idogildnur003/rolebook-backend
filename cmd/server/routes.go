@@ -91,7 +91,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.Authenticate(cfg.JWTSecret))
+			r.Use(middleware.Authenticate(cfg.JWTSecret, userStore))
 			// Per-user limit, keyed on the JWT userID Authenticate just injected.
 			// Covers every current and future authenticated route in this group.
 			if rl.Enabled {

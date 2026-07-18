@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -17,9 +19,16 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// PasswordResetLookup returns when a user's password was last reset, so tokens
+// issued before that instant can be revoked. Implemented by *store.UserStore.
+type PasswordResetLookup interface {
+	PasswordChangedAt(ctx context.Context, userID string) (time.Time, error)
+}
+
 // Authenticate validates the Bearer JWT and injects userID into the request context.
-// Returns 401 if the token is missing, malformed, or expired.
-func Authenticate(jwtSecret string) func(http.Handler) http.Handler {
+// Returns 401 if the token is missing, malformed, expired, or was issued before
+// the user's last password reset.
+func Authenticate(jwtSecret string, users PasswordResetLookup) func(http.Handler) http.Handler {
 	secret := []byte(jwtSecret)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +49,18 @@ func Authenticate(jwtSecret string) func(http.Handler) http.Handler {
 				writeUnauthorized(w)
 				return
 			}
+
+			// Session revocation: reject tokens issued before the user's last
+			// password reset. Fails OPEN on lookup error — the token is already
+			// cryptographically valid, and a transient DB blip must not log
+			// every user out.
+			if changedAt, lerr := users.PasswordChangedAt(r.Context(), claims.Subject); lerr != nil {
+				log.Printf("[auth] revocation lookup failed for %s: %v", claims.Subject, lerr)
+			} else if !changedAt.IsZero() && claims.IssuedAt != nil && claims.IssuedAt.Time.Before(changedAt) {
+				writeUnauthorized(w)
+				return
+			}
+
 			ctx := context.WithValue(r.Context(), contextKeyUserID, claims.Subject)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
