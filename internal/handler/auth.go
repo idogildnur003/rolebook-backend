@@ -480,7 +480,10 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	// Generic OK regardless of outcome (anti-enumeration). Real work is
 	// best-effort and its failures are logged, never surfaced.
 	if email != "" {
-		if user, err := h.users.FindByEmail(r.Context(), email); err == nil && user != nil {
+		user, err := h.users.FindByEmail(r.Context(), email)
+		if err != nil {
+			log.Printf("[auth] reset: lookup failed for %s: %v", email, err)
+		} else if user != nil {
 			h.issueResetCode(r.Context(), email)
 		}
 	}

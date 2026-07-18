@@ -3,6 +3,7 @@ package resetstore
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 func TestMemory_SetCodeGetPromoteClear(t *testing.T) {
@@ -55,5 +56,31 @@ func TestMemory_MarkSentCooldown(t *testing.T) {
 	ok, _ = s.MarkSent(ctx, "a@b.com")
 	if ok {
 		t.Fatal("second MarkSent within window = true, want false (cooldown)")
+	}
+}
+
+func TestMemory_MarkSentCooldownExpires(t *testing.T) {
+	s := NewMemory()
+	ctx := context.Background()
+	email := "a@b.com"
+
+	current := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	s.now = func() time.Time { return current }
+
+	ok, err := s.MarkSent(ctx, email)
+	if err != nil || !ok {
+		t.Fatalf("first MarkSent = %v, %v, want true", ok, err)
+	}
+
+	ok, err = s.MarkSent(ctx, email)
+	if err != nil || ok {
+		t.Fatalf("second immediate MarkSent = %v, %v, want false (cooldown)", ok, err)
+	}
+
+	current = current.Add(CooldownTTL + time.Second)
+
+	ok, err = s.MarkSent(ctx, email)
+	if err != nil || !ok {
+		t.Fatalf("MarkSent after cooldown expiry = %v, %v, want true", ok, err)
 	}
 }
