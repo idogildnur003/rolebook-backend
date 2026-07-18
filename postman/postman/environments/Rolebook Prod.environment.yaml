@@ -45,3 +45,6 @@ values:
   - key: avatarKey
     value: ''
     enabled: true
+  - key: resetToken
+    value: ''
+    enabled: true

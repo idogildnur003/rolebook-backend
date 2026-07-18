@@ -33,11 +33,27 @@ No Bearer token required. Test scripts auto-set `token`, `userId`, and `verifyEm
 | POST | `/auth/verify-email` | Confirm the emailed OTP, get JWT | 200 |
 | POST | `/auth/resend-verification` | Re-send the OTP (always 200) | 200 |
 | POST | `/auth/change-password` | Change password (Bearer required) | 204 |
+| POST | `/auth/forgot-password` | Request a password-reset code (always 200) | 200 |
+| POST | `/auth/verify-reset-code` | Exchange the reset code for a single-use token | 200 |
+| POST | `/auth/reset-password` | Set a new password with the reset token | 204 |
 
 **Register / Login body:**
 ```json
 { "email": "dm@example.com", "password": "secret123" }
 ```
+
+**Forgot / reset password bodies:**
+```json
+// POST /auth/forgot-password
+{ "email": "dm@example.com" }
+
+// POST /auth/verify-reset-code  → { "resetToken": "<hex>" }
+{ "email": "dm@example.com", "code": "123456" }
+
+// POST /auth/reset-password  → 204, revokes pre-reset JWTs
+{ "email": "dm@example.com", "resetToken": "<hex>", "newPassword": "new-secret123" }
+```
+Run **Forgot Password → Verify Reset Code** (paste the logged code) **→ Reset Password**; the token auto-carries via `{{resetToken}}`.
 
 ### Email verification
 

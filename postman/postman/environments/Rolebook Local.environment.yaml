@@ -30,3 +30,5 @@ values:
     value: ''
   - key: avatarKey
     value: ''
+  - key: resetToken
+    value: ''
