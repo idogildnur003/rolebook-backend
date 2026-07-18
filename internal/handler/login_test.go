@@ -62,6 +62,14 @@ func (s *stubUserRepo) SetPendingEmailCode(context.Context, string, string, stri
 }
 func (s *stubUserRepo) CommitEmailChange(context.Context, string, string) error { return nil }
 
+func (s *stubUserRepo) MarkPasswordReset(_ context.Context, userID, hash string, _ time.Time) error {
+	if u := s.byID(userID); u != nil {
+		u.PasswordHash = hash
+		u.EmailVerified = true
+	}
+	return nil
+}
+
 // recordingSender counts the emails it is asked to deliver.
 type recordingSender struct {
 	sends  int

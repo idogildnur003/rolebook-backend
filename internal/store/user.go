@@ -126,3 +126,32 @@ func (s *UserStore) CommitEmailChange(ctx context.Context, userID, newEmail stri
 	})
 	return err
 }
+
+// MarkPasswordReset atomically stores a new password hash, stamps
+// passwordChangedAt (to revoke pre-reset tokens), and marks the account
+// verified — receiving the emailed code proves control of the address.
+func (s *UserStore) MarkPasswordReset(ctx context.Context, userID, hash string, changedAt time.Time) error {
+	_, err := s.col.UpdateByID(ctx, userID, bson.M{"$set": bson.M{
+		"passwordHash":      hash,
+		"passwordChangedAt": changedAt,
+		"emailVerified":     true,
+	}})
+	return err
+}
+
+// PasswordChangedAt returns the user's passwordChangedAt (zero if unset/unknown),
+// used by the auth middleware to revoke tokens issued before a reset.
+func (s *UserStore) PasswordChangedAt(ctx context.Context, userID string) (time.Time, error) {
+	var u struct {
+		PasswordChangedAt time.Time `bson:"passwordChangedAt"`
+	}
+	err := s.col.FindOne(ctx, bson.M{"_id": userID},
+		options.FindOne().SetProjection(bson.M{"passwordChangedAt": 1})).Decode(&u)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return u.PasswordChangedAt, nil
+}
