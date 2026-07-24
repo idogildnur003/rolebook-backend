@@ -13,6 +13,7 @@ import (
 	"github.com/elad/rolebook-backend/internal/handler"
 	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/middleware"
+	"github.com/elad/rolebook-backend/internal/resetstore"
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
@@ -44,7 +45,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 
 	// Handlers
 	emailSender := email.New(cfg)
-	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled, cfg.AdminUserIDs)
+	resetStore := resetstore.New(cfg)
+	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled, cfg.AdminUserIDs, resetStore)
 	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
@@ -82,11 +84,14 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 			r.Post("/auth/login", authHandler.Login)
 			r.Post("/auth/verify-email", authHandler.VerifyEmail)
 			r.Post("/auth/resend-verification", authHandler.ResendVerification)
+			r.Post("/auth/forgot-password", authHandler.ForgotPassword)
+			r.Post("/auth/verify-reset-code", authHandler.VerifyResetCode)
+			r.Post("/auth/reset-password", authHandler.ResetPassword)
 		})
 
 		// Protected (JWT required)
 		r.Group(func(r chi.Router) {
-			r.Use(middleware.Authenticate(cfg.JWTSecret))
+			r.Use(middleware.Authenticate(cfg.JWTSecret, userStore))
 			// Per-user limit, keyed on the JWT userID Authenticate just injected.
 			// Covers every current and future authenticated route in this group.
 			if rl.Enabled {

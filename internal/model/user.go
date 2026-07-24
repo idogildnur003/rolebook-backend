@@ -23,4 +23,9 @@ type User struct {
 	VerifyCodeExpiresAt time.Time `bson:"verifyCodeExpiresAt,omitempty" json:"-"`
 	VerifyCodeAttempts  int       `bson:"verifyCodeAttempts,omitempty"  json:"-"`
 	VerifyCodeSentAt    time.Time `bson:"verifyCodeSentAt,omitempty"    json:"-"`
+
+	// PasswordChangedAt records the last password reset, used to revoke JWTs
+	// issued before it (see middleware.Authenticate). Zero for accounts that
+	// have never reset. Only set by the reset flow, not by change-password.
+	PasswordChangedAt time.Time `bson:"passwordChangedAt,omitempty" json:"-"`
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/elad/rolebook-backend/internal/email"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
+	"github.com/elad/rolebook-backend/internal/resetstore"
 )
 
 // userRepo is the subset of *store.UserStore that AuthHandler depends on.
@@ -30,6 +31,7 @@ type userRepo interface {
 	UpdatePasswordHash(ctx context.Context, id, hash string) error
 	SetPendingEmailCode(ctx context.Context, userID, pendingEmail, codeHash string, expiresAt, sentAt time.Time) error
 	CommitEmailChange(ctx context.Context, userID, newEmail string) error
+	MarkPasswordReset(ctx context.Context, userID, hash string, changedAt time.Time) error
 }
 
 // AuthHandler handles user registration, login, and email verification.
@@ -39,19 +41,22 @@ type AuthHandler struct {
 	email               email.Sender
 	verificationEnabled bool
 	adminIDs            []string
+	resets              resetstore.Store
 }
 
 // NewAuthHandler creates a new AuthHandler. verificationEnabled gates the
 // entire OTP flow: when false (e.g. local dev with no Resend key), Register
 // issues a JWT directly and Login skips the unverified gate. adminIDs is the
-// allowlist used to stamp IsAdmin on auth responses.
-func NewAuthHandler(users userRepo, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string) *AuthHandler {
+// allowlist used to stamp IsAdmin on auth responses. resets backs the
+// forgot-password flow (reset codes, cooldowns, and — later — reset tokens).
+func NewAuthHandler(users userRepo, jwtSecret string, sender email.Sender, verificationEnabled bool, adminIDs []string, resets resetstore.Store) *AuthHandler {
 	return &AuthHandler{
 		users:               users,
 		jwtSecret:           []byte(jwtSecret),
 		email:               sender,
 		verificationEnabled: verificationEnabled,
 		adminIDs:            adminIDs,
+		resets:              resets,
 	}
 }
 
@@ -454,6 +459,193 @@ func (h *AuthHandler) ResendVerification(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+type forgotPasswordRequest struct {
+	Email string `json:"email"`
+}
+
+// ForgotPassword handles POST /api/auth/forgot-password (public). It always
+// responds 200 with a generic body — never revealing whether the account
+// exists. When it does exist and the resend cooldown has elapsed, it stores a
+// fresh reset code and emails it.
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req forgotPasswordRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+
+	// Generic OK regardless of outcome (anti-enumeration). Real work is
+	// best-effort and its failures are logged, never surfaced.
+	if email != "" {
+		user, err := h.users.FindByEmail(r.Context(), email)
+		if err != nil {
+			log.Printf("[auth] reset: lookup failed for %s: %v", email, err)
+		} else if user != nil {
+			h.issueResetCode(r.Context(), email)
+		}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "reset_requested",
+	})
+}
+
+// issueResetCode generates, stores, and emails a reset code, guarded by the
+// resend cooldown. All failures are logged, never surfaced.
+func (h *AuthHandler) issueResetCode(ctx context.Context, email string) {
+	allowed, err := h.resets.MarkSent(ctx, email)
+	if err != nil {
+		log.Printf("[auth] reset: cooldown check failed for %s: %v", email, err)
+		return
+	}
+	if !allowed {
+		return // still within the 60s resend window
+	}
+	code, err := generateVerificationCode()
+	if err != nil {
+		log.Printf("[auth] reset: generate code failed for %s: %v", email, err)
+		return
+	}
+	codeHash, err := hashVerificationCode(code)
+	if err != nil {
+		log.Printf("[auth] reset: hash code failed for %s: %v", email, err)
+		return
+	}
+	if err := h.resets.SetCode(ctx, email, codeHash); err != nil {
+		log.Printf("[auth] reset: store code failed for %s: %v", email, err)
+		return
+	}
+	subject, html, text := passwordResetEmailBody(code)
+	if err := h.email.Send(ctx, email, subject, html, text); err != nil {
+		log.Printf("[auth] reset: send email failed for %s: %v", email, err)
+	}
+}
+
+type verifyResetCodeRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+// VerifyResetCode handles POST /api/auth/verify-reset-code (public). On a valid
+// code it consumes the code and returns a single-use reset token. All failures
+// use a generic 400 to avoid revealing whether an account or code exists.
+func (h *AuthHandler) VerifyResetCode(w http.ResponseWriter, r *http.Request) {
+	var req verifyResetCodeRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	code := strings.TrimSpace(req.Code)
+	if email == "" || code == "" {
+		writeError(w, http.StatusBadRequest, "email and code are required", "BAD_REQUEST")
+		return
+	}
+
+	sess, err := h.resets.Get(r.Context(), email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	// No session, or already promoted to a token (CodeHash cleared) -> generic invalid.
+	if sess == nil || sess.CodeHash == "" {
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+	if sess.Attempts >= maxVerifyAttempts {
+		writeError(w, http.StatusBadRequest, "too many attempts; request a new code", "TOO_MANY_ATTEMPTS")
+		return
+	}
+	if !verificationCodeMatches(sess.CodeHash, code) {
+		if _, err := h.resets.IncrAttempts(r.Context(), email); err != nil {
+			log.Printf("[auth] reset: incr attempts failed for %s: %v", email, err)
+		}
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+
+	token, err := generateResetToken()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if err := h.resets.PromoteToToken(r.Context(), email, hashResetToken(token)); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"resetToken": token})
+}
+
+type resetPasswordRequest struct {
+	Email       string `json:"email"`
+	ResetToken  string `json:"resetToken"`
+	NewPassword string `json:"newPassword"`
+}
+
+// ResetPassword handles POST /api/auth/reset-password (public). It exchanges a
+// single-use reset token for a password change, stamps passwordChangedAt to
+// revoke pre-reset sessions, and clears the reset session. Email is included so
+// the user is looked up by the indexed email field rather than by token.
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var req resetPasswordRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body", "BAD_REQUEST")
+		return
+	}
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	if email == "" || req.ResetToken == "" || req.NewPassword == "" {
+		writeError(w, http.StatusBadRequest, "email, resetToken and newPassword are required", "BAD_REQUEST")
+		return
+	}
+	if msg := validateNewPassword(req.NewPassword); msg != "" {
+		writeError(w, http.StatusBadRequest, msg, "WEAK_PASSWORD")
+		return
+	}
+
+	sess, err := h.resets.Get(r.Context(), email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if sess == nil || sess.TokenHash == "" || !resetTokenMatches(sess.TokenHash, req.ResetToken) {
+		writeError(w, http.StatusBadRequest, "invalid or expired reset token", "INVALID_TOKEN")
+		return
+	}
+
+	user, err := h.users.FindByEmail(r.Context(), email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if user == nil {
+		// Token existed but account vanished — treat as invalid.
+		writeError(w, http.StatusBadRequest, "invalid or expired reset token", "INVALID_TOKEN")
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), 12)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if err := h.users.MarkPasswordReset(r.Context(), user.ID, string(hash), time.Now()); err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if err := h.resets.Clear(r.Context(), email); err != nil {
+		log.Printf("[auth] reset: clear session failed for %s: %v", email, err)
+	}
+
+	// Best-effort security heads-up.
+	subject, html, text := passwordChangedNotificationBody()
+	if err := h.email.Send(r.Context(), user.Email, subject, html, text); err != nil {
+		log.Printf("[auth] reset: send notice failed for %s: %v", user.Email, err)
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 type changeEmailRequest struct {

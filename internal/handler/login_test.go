@@ -12,6 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/elad/rolebook-backend/internal/model"
+	"github.com/elad/rolebook-backend/internal/resetstore"
 )
 
 const loginTestPassword = "correct-horse-battery"
@@ -61,6 +62,14 @@ func (s *stubUserRepo) SetPendingEmailCode(context.Context, string, string, stri
 }
 func (s *stubUserRepo) CommitEmailChange(context.Context, string, string) error { return nil }
 
+func (s *stubUserRepo) MarkPasswordReset(_ context.Context, userID, hash string, _ time.Time) error {
+	if u := s.byID(userID); u != nil {
+		u.PasswordHash = hash
+		u.EmailVerified = true
+	}
+	return nil
+}
+
 // recordingSender counts the emails it is asked to deliver.
 type recordingSender struct {
 	sends  int
@@ -70,6 +79,48 @@ type recordingSender struct {
 func (r *recordingSender) Send(_ context.Context, to, _, _, _ string) error {
 	r.sends++
 	r.lastTo = to
+	return nil
+}
+
+// stubResetStore is an in-memory resetstore.Store for auth handler tests.
+type stubResetStore struct {
+	sessions  map[string]*resetstore.Session
+	cooldown  map[string]bool
+	markCalls int
+}
+
+func newStubResetStore() *stubResetStore {
+	return &stubResetStore{sessions: map[string]*resetstore.Session{}, cooldown: map[string]bool{}}
+}
+
+func (s *stubResetStore) MarkSent(_ context.Context, email string) (bool, error) {
+	s.markCalls++
+	if s.cooldown[email] {
+		return false, nil
+	}
+	s.cooldown[email] = true
+	return true, nil
+}
+func (s *stubResetStore) SetCode(_ context.Context, email, codeHash string) error {
+	s.sessions[email] = &resetstore.Session{CodeHash: codeHash}
+	return nil
+}
+func (s *stubResetStore) Get(_ context.Context, email string) (*resetstore.Session, error) {
+	return s.sessions[email], nil
+}
+func (s *stubResetStore) IncrAttempts(_ context.Context, email string) (int, error) {
+	if s.sessions[email] == nil {
+		return 0, nil
+	}
+	s.sessions[email].Attempts++
+	return s.sessions[email].Attempts, nil
+}
+func (s *stubResetStore) PromoteToToken(_ context.Context, email, tokenHash string) error {
+	s.sessions[email] = &resetstore.Session{TokenHash: tokenHash}
+	return nil
+}
+func (s *stubResetStore) Clear(_ context.Context, email string) error {
+	delete(s.sessions, email)
 	return nil
 }
 
@@ -97,7 +148,7 @@ func TestLogin_VerificationDisabled_AllowsUnverifiedUser(t *testing.T) {
 	user := newUserWithPassword(t, "u1", "a@b.com", false)
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
 	sender := &recordingSender{}
-	h := NewAuthHandler(repo, "secret", sender, false, nil)
+	h := NewAuthHandler(repo, "secret", sender, false, nil, newStubResetStore())
 
 	w := doLogin(t, h, "a@b.com", loginTestPassword)
 
@@ -122,7 +173,7 @@ func TestLogin_VerificationEnabled_BlocksUnverifiedAndSendsCode(t *testing.T) {
 	user := newUserWithPassword(t, "u1", "a@b.com", false) // no prior code (zero VerifyCodeSentAt)
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
 	sender := &recordingSender{}
-	h := NewAuthHandler(repo, "secret", sender, true, nil)
+	h := NewAuthHandler(repo, "secret", sender, true, nil, newStubResetStore())
 
 	w := doLogin(t, h, "a@b.com", loginTestPassword)
 
@@ -157,7 +208,7 @@ func TestLogin_VerificationEnabled_WithinCooldown_DoesNotResend(t *testing.T) {
 	user.VerifyCodeSentAt = time.Now() // just sent → inside the 60s cooldown
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
 	sender := &recordingSender{}
-	h := NewAuthHandler(repo, "secret", sender, true, nil)
+	h := NewAuthHandler(repo, "secret", sender, true, nil, newStubResetStore())
 
 	w := doLogin(t, h, "a@b.com", loginTestPassword)
 
@@ -195,7 +246,7 @@ func TestResendVerification_UnverifiedUser_SendsCode(t *testing.T) {
 	user := newUserWithPassword(t, "u1", "a@b.com", false)
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
 	sender := &recordingSender{}
-	h := NewAuthHandler(repo, "secret", sender, true, nil)
+	h := NewAuthHandler(repo, "secret", sender, true, nil, newStubResetStore())
 
 	w := doResend(t, h, "a@b.com")
 
@@ -213,7 +264,7 @@ func TestResendVerification_VerifiedUser_NoSend(t *testing.T) {
 	user := newUserWithPassword(t, "u1", "a@b.com", true)
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
 	sender := &recordingSender{}
-	h := NewAuthHandler(repo, "secret", sender, true, nil)
+	h := NewAuthHandler(repo, "secret", sender, true, nil, newStubResetStore())
 
 	w := doResend(t, h, "a@b.com")
 
@@ -229,7 +280,7 @@ func TestResendVerification_VerifiedUser_NoSend(t *testing.T) {
 func TestLogin_VerifiedUser_Succeeds(t *testing.T) {
 	user := newUserWithPassword(t, "u1", "a@b.com", true)
 	repo := &stubUserRepo{byEmail: map[string]*model.User{"a@b.com": user}}
-	h := NewAuthHandler(repo, "secret", &recordingSender{}, true, nil)
+	h := NewAuthHandler(repo, "secret", &recordingSender{}, true, nil, newStubResetStore())
 
 	w := doLogin(t, h, "a@b.com", loginTestPassword)
 
