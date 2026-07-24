@@ -135,3 +135,39 @@ func TestIsDMCreatableKind(t *testing.T) {
 		}
 	}
 }
+
+// TestHeroicInspirationRoundTrips guards the new heroicInspiration boolean across
+// the PATCH ($set) -> bson -> Player decode -> JSON read hops, and confirms it
+// defaults false on a fresh character.
+func TestHeroicInspirationRoundTrips(t *testing.T) {
+	// PATCH path: {"heroicInspiration": true} -> bson -> decoded Player.
+	raw, err := bson.Marshal(bson.M{"heroicInspiration": true})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var fromMongo Player
+	if err := bson.Unmarshal(raw, &fromMongo); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if !fromMongo.HeroicInspiration {
+		t.Fatalf("HeroicInspiration after bson round-trip = false, want true")
+	}
+
+	// Read path: Player -> JSON keyed "heroicInspiration".
+	out, err := json.Marshal(Player{HeroicInspiration: true})
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	var wire map[string]any
+	if err := json.Unmarshal(out, &wire); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if got, ok := wire["heroicInspiration"]; !ok || got.(bool) != true {
+		t.Fatalf("JSON heroicInspiration = %v (present=%v), want true", got, ok)
+	}
+
+	// Default: a fresh character has no inspiration.
+	if DefaultPlayer("p", "c", "u", "A", 1, PlayerKindPC).HeroicInspiration {
+		t.Fatalf("DefaultPlayer HeroicInspiration = true, want false")
+	}
+}

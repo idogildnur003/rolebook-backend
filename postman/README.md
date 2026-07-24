@@ -515,6 +515,7 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
   "expertiseBonus": 4,
   "deathSaveSuccesses": 0,
   "deathSaveFailures": 0,
+  "heroicInspiration": false,
   "abilityScores": { "STR": 12, "DEX": 16, "CON": 14, "INT": 10, "WIS": 14, "CHA": 8 },
   "abilityTemporaryModifiers": {},
   "skillTemporaryModifiers": {},
