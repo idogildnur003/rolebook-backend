@@ -245,6 +245,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 				r.Delete("/enemies/{participantId}", initiativeHandler.RemoveEnemy)
 				r.Post("/participants/{participantId}/skip", initiativeHandler.Skip)
 				r.Post("/end-turn", initiativeHandler.EndTurn)
+				r.Post("/resort", initiativeHandler.Resort)
 				r.Post("/resolve", initiativeHandler.Resolve)
 			})
 
