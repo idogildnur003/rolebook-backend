@@ -348,6 +348,27 @@ func (h *InitiativeHandler) EndTurn(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Resort handles POST /api/campaigns/{campaignId}/initiative/resort (DM only).
+// Rebuilds the turn order from the participants' initiative values, keeping
+// the combatant currently acting on their turn. Use after adding an enemy
+// mid-fight or correcting a roll, both of which otherwise leave the
+// participant stuck at the end of the frozen order.
+func (h *InitiativeHandler) Resort(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignId")
+	m := resolveCampaignMembership(w, r, h.campaigns, campaignID)
+	if m == nil {
+		return
+	}
+	if !m.IsDM {
+		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
+		return
+	}
+	h.mutateWithRetry(w, r, campaignID, func(c *model.InitiativeCall) (int, string, string) {
+		initiative.Resort(c)
+		return 0, "", ""
+	})
+}
+
 // Resolve handles POST /api/campaigns/{campaignId}/initiative/resolve (DM only).
 func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")

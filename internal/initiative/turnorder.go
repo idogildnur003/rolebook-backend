@@ -99,6 +99,26 @@ func TurnOrderParticipantIDs(c *model.InitiativeCall) []string {
 	return rotateIDsToFront(merged, c.CurrentTurnParticipantID)
 }
 
+// Resort discards the frozen turn order so the next SyncTurnState re-derives
+// it from initiative values.
+//
+// Once HasTurnCycleStarted flips true, TurnOrderParticipantIDs preserves the
+// persisted order and appends anyone who rolled later to the end — so an enemy
+// added mid-fight, or a corrected roll, sits in the wrong slot for the rest of
+// combat. Clearing the persisted ids drops TurnOrderParticipantIDs into its
+// "sorted" branch, which then rotates to CurrentTurnParticipantID: the order
+// is rebuilt by initiative but the combatant currently acting keeps their turn.
+//
+// HasTurnCycleStarted is deliberately left alone. The freshly sorted order
+// becomes the new frozen baseline, so later additions are appended again
+// rather than silently reshuffling the round.
+func Resort(c *model.InitiativeCall) {
+	if c == nil {
+		return
+	}
+	c.TurnOrderParticipantIDs = nil
+}
+
 // SyncTurnState recomputes turn order and current turn after a mutation.
 // Mirrors testApp syncInitiativeCallTurnState.
 func SyncTurnState(c *model.InitiativeCall) *model.InitiativeCall {
