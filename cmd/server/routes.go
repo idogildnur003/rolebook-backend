@@ -62,7 +62,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	locationHandler := handler.NewLocationHandler(locationStore, npcStore, mapPinStore, campaignStore, avatars)
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
-	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore, initiativeBroadcast)
+	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore, avatars, initiativeBroadcast)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore, arsenalCatalog, cfg.AdminUserIDs)
 
 	r.Route("/api", func(r chi.Router) {
