@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/initiative"
 	"github.com/elad/rolebook-backend/internal/initiativehub"
 	"github.com/elad/rolebook-backend/internal/model"
@@ -41,14 +43,51 @@ type InitiativeHandler struct {
 	calls     *store.InitiativeStore
 	players   *store.PlayerStore
 	campaigns *store.CampaignStore
+	avatars   *avatarstore.Store
 	hub       *initiativehub.Hub
 }
 
-func NewInitiativeHandler(calls *store.InitiativeStore, players *store.PlayerStore, campaigns *store.CampaignStore, hub *initiativehub.Hub) *InitiativeHandler {
-	return &InitiativeHandler{calls: calls, players: players, campaigns: campaigns, hub: hub}
+func NewInitiativeHandler(calls *store.InitiativeStore, players *store.PlayerStore, campaigns *store.CampaignStore, avatars *avatarstore.Store, hub *initiativehub.Hub) *InitiativeHandler {
+	return &InitiativeHandler{calls: calls, players: players, campaigns: campaigns, avatars: avatars, hub: hub}
 }
 
 func nowMillis() int64 { return time.Now().UnixMilli() }
+
+// withResolvedAvatars returns a copy of call whose participants carry wire-ready
+// avatar URIs.
+//
+// Participants persist the *stored* avatar value (an S3 key), so a participant's
+// identity stays stable for the whole call and no expiring URL is ever written to
+// Mongo. Presigned GET URLs are therefore minted per emission, onto a copy:
+// mutating in place would both persist a signature on the next UpdateWithVersion
+// and race the hub, which hands one snapshot pointer to every subscriber.
+func withResolvedAvatars(call *model.InitiativeCall, resolve func(string) string) *model.InitiativeCall {
+	if call == nil || len(call.Participants) == 0 {
+		return call
+	}
+	out := *call
+	out.Participants = make([]model.InitiativeParticipant, len(call.Participants))
+	copy(out.Participants, call.Participants)
+	for i := range out.Participants {
+		if out.Participants[i].AvatarURI == "" {
+			continue
+		}
+		out.Participants[i].AvatarURI = resolve(out.Participants[i].AvatarURI)
+	}
+	return &out
+}
+
+// wireCall prepares a call for the wire (HTTP body or SSE frame). Every emission
+// path must go through it — clients render participant.avatarUri directly and
+// cannot presign a bare S3 key.
+func (h *InitiativeHandler) wireCall(ctx context.Context, call *model.InitiativeCall) *model.InitiativeCall {
+	if h.avatars == nil {
+		return call
+	}
+	return withResolvedAvatars(call, func(uri string) string {
+		return h.avatars.ResolveAvatarURI(ctx, uri)
+	})
+}
 
 // Get handles GET /api/campaigns/{campaignId}/initiative.
 // Returns 204 when there is no call (including after the TTL sweeps a
@@ -68,7 +107,7 @@ func (h *InitiativeHandler) Get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	writeJSON(w, http.StatusOK, call)
+	writeJSON(w, http.StatusOK, h.wireCall(r.Context(), call))
 }
 
 // Start handles POST /api/campaigns/{campaignId}/initiative (DM only).
@@ -140,8 +179,9 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	h.hub.Publish(campaignID, call)
-	writeJSON(w, http.StatusOK, call)
+	wire := h.wireCall(r.Context(), call)
+	h.hub.Publish(campaignID, wire)
+	writeJSON(w, http.StatusOK, wire)
 }
 
 // mutateWithRetry loads the call, applies mutate, recomputes turn state, and
@@ -176,8 +216,9 @@ func (h *InitiativeHandler) mutateWithRetry(
 			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 			return
 		}
-		h.hub.Publish(campaignID, updated)
-		writeJSON(w, http.StatusOK, updated)
+		wire := h.wireCall(r.Context(), updated)
+		h.hub.Publish(campaignID, wire)
+		writeJSON(w, http.StatusOK, wire)
 		return
 	}
 	writeError(w, http.StatusConflict, "initiative is being updated, retry", "CONFLICT")
@@ -327,8 +368,9 @@ func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no initiative call", "NOT_FOUND")
 		return
 	}
-	h.hub.Publish(campaignID, call)
-	writeJSON(w, http.StatusOK, call)
+	wire := h.wireCall(r.Context(), call)
+	h.hub.Publish(campaignID, wire)
+	writeJSON(w, http.StatusOK, wire)
 }
 
 type skipParticipantRequest struct {
@@ -457,9 +499,11 @@ func (h *InitiativeHandler) Stream(w http.ResponseWriter, r *http.Request) {
 
 	// Initial snapshot: current call state, or nothing if no call exists. The
 	// client treats absence the same as the GET 204 path.
+	// Relayed hub events are already wire-ready (publishers resolve before
+	// Publish); this snapshot comes straight from the store, so resolve it here.
 	initial, err := h.calls.Get(r.Context(), campaignID)
 	if err == nil && initial != nil {
-		if !writeSSE(w, flusher, initial) {
+		if !writeSSE(w, flusher, h.wireCall(r.Context(), initial)) {
 			return
 		}
 	}
