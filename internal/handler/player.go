@@ -18,6 +18,21 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
+// stripProtectedPlayerFields removes keys a generic player PATCH must never set:
+// identity/ownership fields, and coins (including dotted "coins.<denom>" paths).
+func stripProtectedPlayerFields(req map[string]any) {
+	delete(req, "campaignId")
+	delete(req, "linkedUserId")
+	delete(req, "_id")
+	delete(req, "id")
+	delete(req, "coins")
+	for key := range req {
+		if strings.HasPrefix(key, "coins.") {
+			delete(req, key)
+		}
+	}
+}
+
 // displayNameFromEmail derives a human-readable display name from an email address.
 // "john.doe@example.com" → "John Doe"
 // "jdoe@example.com"    → "Jdoe"
@@ -281,11 +296,9 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Strip protected fields
-	delete(req, "campaignId")
-	delete(req, "linkedUserId")
-	delete(req, "_id")
-	delete(req, "id")
+	// Strip protected fields (identity/ownership, and coins, which only change
+	// through the atomic /coins endpoints).
+	stripProtectedPlayerFields(req)
 
 	// Validate death save bounds
 	if v, ok := req["deathSaveSuccesses"]; ok {
