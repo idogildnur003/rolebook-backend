@@ -593,6 +593,41 @@ Requires Bearer `{{token}}`. Inventory items are embedded in the player document
 
 ---
 
+## Player Coins
+
+Requires Bearer `{{token}}`. A player's purse is embedded in the player document (`coins`) and only changes through these endpoints; `coins` and `coins.<denom>` keys sent to `PATCH /players/{{playerId}}` are stripped (in any letter case); a body with no other fields returns 400 "no valid fields to update". Denominations: `cp`, `sp`, `ep`, `gp`, `pp` (1 gp = 10 sp = 100 cp = 2 ep, 1 pp = 10 gp). Any single adjustment or conversion amount is capped at 1,000,000,000.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/players/{{playerId}}/coins` | Campaign DM or linked user | Get the purse | 200 |
+| PATCH | `/players/{{playerId}}/coins` | Campaign DM or linked user | Atomically add (positive) or spend (negative) coins in one or more denominations | 200 |
+| POST | `/players/{{playerId}}/coins/convert` | Campaign DM or linked user | Atomically convert `amount` coins of `from` into `to` | 200 |
+
+Every success response has the same shape:
+```json
+{ "cp": 0, "sp": 20, "ep": 0, "gp": 3, "pp": 0 }
+```
+
+**PATCH body (integer deltas, zero entries ignored, at least one non-zero required):**
+```json
+{ "gp": 5, "sp": -3 }
+```
+
+**POST convert body (`amount` is a positive integer):**
+```json
+{ "from": "gp", "to": "sp", "amount": 2 }
+```
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `BAD_REQUEST` | Malformed body, unknown denomination, non-integer or out-of-range amount, empty adjustment, same `from`/`to` |
+| 400 | `UNEVEN_CONVERSION` | The amount does not convert to a whole number of target coins (e.g. 15 sp to gp) |
+| 403 | `FORBIDDEN` | Not the campaign DM or the linked user |
+| 404 | `NOT_FOUND` | Player not found |
+| 409 | `INSUFFICIENT_COINS` | The change would take a denomination below zero (nothing is applied) |
+
+---
+
 ## Custom Equipment
 
 Requires Bearer `{{token}}`. Per-campaign homebrew equipment catalog, stored in MongoDB alongside the read-only SRD arsenal. IDs are server-issued (`custom-{slug}-{hex}`) on create. Inventory endpoints resolve `equipmentId` against the SRD catalog first, then the campaign custom store.

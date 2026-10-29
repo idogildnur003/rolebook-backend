@@ -14,6 +14,11 @@ import (
 
 var ErrDuplicateEntry = errors.New("duplicate entry")
 
+// ErrInsufficientCoins is returned when a coin debit or conversion would take a
+// denomination below zero. It is also returned if the player no longer exists;
+// handlers verify existence first.
+var ErrInsufficientCoins = errors.New("insufficient coins")
+
 // PlayerStore handles persistence for player characters.
 type PlayerStore struct {
 	col *mongo.Collection
@@ -436,4 +441,59 @@ func (s *PlayerStore) RemoveSpellFromAllPlayers(ctx context.Context, campaignID,
 		return 0, err
 	}
 	return res.ModifiedCount, nil
+}
+
+// --- Coin purse methods ---
+
+// coinsDoc is the projection decoded from coin-purse updates.
+type coinsDoc struct {
+	Coins model.Coins `bson:"coins"`
+}
+
+// applyCoinUpdate runs an atomic guarded update and returns the resulting purse.
+// A filter miss (a guard failed) maps to ErrInsufficientCoins.
+func (s *PlayerStore) applyCoinUpdate(ctx context.Context, filter bson.M, inc bson.M) (*model.Coins, error) {
+	res := s.col.FindOneAndUpdate(
+		ctx,
+		filter,
+		bson.M{
+			"$inc": inc,
+			"$set": bson.M{"updatedAt": time.Now().UTC()},
+		},
+		options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{"coins": 1}),
+	)
+	var doc coinsDoc
+	if err := res.Decode(&doc); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrInsufficientCoins
+		}
+		return nil, err
+	}
+	return &doc.Coins, nil
+}
+
+// AdjustCoins atomically applies per-denomination deltas to a player's purse.
+// Every debit is guarded in the filter, so the whole adjustment applies or none
+// of it does. Keys must be valid denominations and deltas non-zero (validated by
+// the caller). Returns ErrInsufficientCoins if any debit would go negative.
+func (s *PlayerStore) AdjustCoins(ctx context.Context, playerID string, deltas map[string]int) (*model.Coins, error) {
+	filter := bson.M{"_id": playerID}
+	inc := bson.M{}
+	for k, d := range deltas {
+		inc["coins."+k] = d
+		if d < 0 {
+			filter["coins."+k] = bson.M{"$gte": -d}
+		}
+	}
+	return s.applyCoinUpdate(ctx, filter, inc)
+}
+
+// ConvertCoins atomically moves amount coins of denomination from into gained
+// coins of denomination to. Inputs are validated by the caller. Returns
+// ErrInsufficientCoins if the player holds fewer than amount `from` coins.
+func (s *PlayerStore) ConvertCoins(ctx context.Context, playerID, from, to string, amount, gained int) (*model.Coins, error) {
+	return s.applyCoinUpdate(ctx,
+		bson.M{"_id": playerID, "coins." + from: bson.M{"$gte": amount}},
+		bson.M{"coins." + from: -amount, "coins." + to: gained},
+	)
 }
