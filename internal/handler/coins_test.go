@@ -56,6 +56,10 @@ func TestStripProtectedPlayerFields(t *testing.T) {
 		"id":           "y",
 		"coins":        map[string]any{"gp": 999.0},
 		"coins.gp":     999.0,
+		"Coins":        map[string]any{"gp": 999.0},
+		"COINS":        map[string]any{"gp": 999.0},
+		"Coins.gp":     999.0,
+		"cOiNs.pp":     999.0,
 		"name":         "x",
 	}
 	stripProtectedPlayerFields(req)

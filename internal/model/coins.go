@@ -17,7 +17,8 @@ var CoinDenominations = []string{"cp", "sp", "ep", "gp", "pp"}
 // CoinValueCP is each denomination's value in copper pieces.
 var CoinValueCP = map[string]int{"cp": 1, "sp": 10, "ep": 50, "gp": 100, "pp": 1000}
 
-// MaxCoinAmount caps both a single adjustment/conversion amount and a stored balance.
+// MaxCoinAmount caps the magnitude of each request value (a single adjustment delta or
+// conversion amount); it does not cap a stored balance.
 const MaxCoinAmount = 1_000_000_000
 
 var (

@@ -25,9 +25,12 @@ func stripProtectedPlayerFields(req map[string]any) {
 	delete(req, "linkedUserId")
 	delete(req, "_id")
 	delete(req, "id")
-	delete(req, "coins")
+	// Coins is matched case-insensitively: the driver's struct decoder falls
+	// back to a lowercase field match, so "Coins"/"COINS.gp" would otherwise
+	// reach the stored document.
 	for key := range req {
-		if strings.HasPrefix(key, "coins.") {
+		lk := strings.ToLower(key)
+		if lk == "coins" || strings.HasPrefix(lk, "coins.") {
 			delete(req, key)
 		}
 	}

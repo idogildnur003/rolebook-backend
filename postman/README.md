@@ -595,7 +595,7 @@ Requires Bearer `{{token}}`. Inventory items are embedded in the player document
 
 ## Player Coins
 
-Requires Bearer `{{token}}`. A player's purse is embedded in the player document (`coins`) and only changes through these endpoints; `coins` and `coins.<denom>` keys sent to `PATCH /players/{{playerId}}` are silently ignored. Denominations: `cp`, `sp`, `ep`, `gp`, `pp` (1 gp = 10 sp = 100 cp = 2 ep, 1 pp = 10 gp). Any single adjustment or conversion amount is capped at 1,000,000,000.
+Requires Bearer `{{token}}`. A player's purse is embedded in the player document (`coins`) and only changes through these endpoints; `coins` and `coins.<denom>` keys sent to `PATCH /players/{{playerId}}` are stripped (in any letter case); a body with no other fields returns 400 "no valid fields to update". Denominations: `cp`, `sp`, `ep`, `gp`, `pp` (1 gp = 10 sp = 100 cp = 2 ep, 1 pp = 10 gp). Any single adjustment or conversion amount is capped at 1,000,000,000.
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
