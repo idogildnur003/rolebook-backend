@@ -69,14 +69,20 @@ func NewPlayerHandler(players *store.PlayerStore, campaigns *store.CampaignStore
 	return &PlayerHandler{players: players, campaigns: campaigns, users: users, avatars: avatars}
 }
 
-// resolveAvatarURI rewrites a stored avatarUri (typically an S3 key) into a
+// resolvePlayerAvatar rewrites a stored avatarUri (typically an S3 key) into a
 // short-lived presigned GET URL suitable for the wire. Pass-through when the
-// store is unconfigured or the value already looks like a URL.
-func (h *PlayerHandler) resolveAvatarURI(ctx context.Context, p *model.Player) {
+// store is unconfigured or the value already looks like a URL. Every handler
+// that writes a full Player to the response must call this: clients render
+// avatarUri directly and cannot fetch a bare key.
+func resolvePlayerAvatar(ctx context.Context, avatars *avatarstore.Store, p *model.Player) {
 	if p == nil || p.AvatarURI == "" {
 		return
 	}
-	p.AvatarURI = h.avatars.ResolveAvatarURI(ctx, p.AvatarURI)
+	p.AvatarURI = avatars.ResolveAvatarURI(ctx, p.AvatarURI)
+}
+
+func (h *PlayerHandler) resolveAvatarURI(ctx context.Context, p *model.Player) {
+	resolvePlayerAvatar(ctx, h.avatars, p)
 }
 
 func (h *PlayerHandler) resolveAvatarURIs(ctx context.Context, ps []model.Player) {

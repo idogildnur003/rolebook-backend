@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
@@ -18,6 +19,7 @@ type SpellHandler struct {
 	campaigns    *store.CampaignStore
 	arsenal      *catalog.ArsenalCatalog
 	customSpells *store.CustomSpellStore
+	avatars      *avatarstore.Store
 }
 
 func NewSpellHandler(
@@ -25,12 +27,14 @@ func NewSpellHandler(
 	campaigns *store.CampaignStore,
 	arsenal *catalog.ArsenalCatalog,
 	customSpells *store.CustomSpellStore,
+	avatars *avatarstore.Store,
 ) *SpellHandler {
 	return &SpellHandler{
 		players:      players,
 		campaigns:    campaigns,
 		arsenal:      arsenal,
 		customSpells: customSpells,
+		avatars:      avatars,
 	}
 }
 
@@ -207,5 +211,6 @@ func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
 	}
+	resolvePlayerAvatar(r.Context(), h.avatars, updated)
 	writeJSON(w, http.StatusOK, updated)
 }
