@@ -405,3 +405,28 @@ func TestResolveImageURICached_PassThroughWhenUnconfigured(t *testing.T) {
 		t.Fatalf("expected pass-through, got %q", got)
 	}
 }
+
+// Presigned GETs must not carry X-Amz-Checksum-Mode: Railway buckets (Tigris)
+// reject those URLs with 403 AccessDenied. Signing is offline, so this runs the
+// real SDK client with no network.
+func TestPresignGet_RealClientOmitsChecksumMode(t *testing.T) {
+	s := New(config.Config{
+		AWSS3Endpoint:      "https://t3.storageapi.dev",
+		AWSRegion:          "auto",
+		AWSS3Bucket:        "bucket",
+		AWSAccessKeyID:     "access",
+		AWSSecretAccessKey: "secret",
+	})
+	for name, sign := range map[string]func() string{
+		"avatar":  func() string { return s.ResolveAvatarURI(context.Background(), "players/p1/avatar/a.jpg") },
+		"catalog": func() string { return s.ResolveImageURICached(context.Background(), "catalog/spells/a.jpg") },
+	} {
+		url := sign()
+		if !strings.Contains(url, "X-Amz-Signature=") {
+			t.Fatalf("%s: not presigned: %q", name, url)
+		}
+		if strings.Contains(url, "X-Amz-Checksum-Mode") {
+			t.Fatalf("%s: presigned GET carries X-Amz-Checksum-Mode: %q", name, url)
+		}
+	}
+}

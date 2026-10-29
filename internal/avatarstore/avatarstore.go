@@ -161,6 +161,13 @@ func (s *Store) ensureClient(ctx context.Context) (presignClient, error) {
 			return
 		}
 		s3client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			// Since s3 v1.73 the SDK defaults to flexible checksums, which
+			// adds X-Amz-Checksum-Mode=ENABLED to every presigned GET.
+			// Railway buckets (Tigris) answer such URLs with 403 AccessDenied,
+			// so no avatar or catalog image loads. Only send checksums when
+			// an operation requires them.
+			o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+			o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
 			// Path-style ("<endpoint>/<bucket>/<key>") is required by
 			// S3-compatible stores like MinIO. Real AWS uses virtual-hosted
 			// style ("<bucket>.<endpoint>") via DNS, so this stays opt-in.
