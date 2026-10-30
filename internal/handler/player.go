@@ -18,24 +18,6 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
-// stripProtectedPlayerFields removes keys a generic player PATCH must never set:
-// identity/ownership fields, and coins (including dotted "coins.<denom>" paths).
-func stripProtectedPlayerFields(req map[string]any) {
-	delete(req, "campaignId")
-	delete(req, "linkedUserId")
-	delete(req, "_id")
-	delete(req, "id")
-	// Coins is matched case-insensitively: the driver's struct decoder falls
-	// back to a lowercase field match, so "Coins"/"COINS.gp" would otherwise
-	// reach the stored document.
-	for key := range req {
-		lk := strings.ToLower(key)
-		if lk == "coins" || strings.HasPrefix(lk, "coins.") {
-			delete(req, key)
-		}
-	}
-}
-
 // displayNameFromEmail derives a human-readable display name from an email address.
 // "john.doe@example.com" → "John Doe"
 // "jdoe@example.com"    → "Jdoe"
@@ -281,9 +263,47 @@ func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, player)
 }
 
+// protectedPlayerFields are the lowercased top-level keys a generic player
+// PATCH must never set: identity/ownership, and coins (changed only through
+// the atomic /coins endpoints).
+var protectedPlayerFields = map[string]bool{
+	"campaignid":   true,
+	"linkeduserid": true,
+	"_id":          true,
+	"id":           true,
+	"coins":        true,
+}
+
+// stripProtectedPlayerFields removes identity/ownership keys from a PATCH body,
+// including dotted sub-paths. Matching is case-insensitive: Mongo stores "_ID"
+// as its own field, but the driver's struct decoder falls back to a lowercase
+// match, so the variant would shadow the real field on read.
+func stripProtectedPlayerFields(req map[string]any) {
+	for key := range req {
+		root, _, _ := strings.Cut(key, ".")
+		if protectedPlayerFields[strings.ToLower(root)] {
+			delete(req, key)
+		}
+	}
+}
+
+// hasOperatorKey reports whether any key has a path segment starting with "$"
+// (operators, positional or all-positional updates), which a PATCH body never needs.
+func hasOperatorKey(req map[string]any) bool {
+	for key := range req {
+		for seg := range strings.SplitSeq(key, ".") {
+			if strings.HasPrefix(seg, "$") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Update handles PATCH /api/players/:playerId.
 // DM of the player's campaign or the player's linked user can update.
-// Protected fields (campaignId, linkedUserId) are stripped before applying.
+// Protected fields (campaignId, linkedUserId, _id, id) are stripped case-insensitively;
+// keys with $-prefixed path segments are rejected.
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 
@@ -299,6 +319,10 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if hasOperatorKey(req) {
+		writeError(w, http.StatusBadRequest, "field names must not contain $ operators", "BAD_REQUEST")
+		return
+	}
 	// Strip protected fields (identity/ownership, and coins, which only change
 	// through the atomic /coins endpoints).
 	stripProtectedPlayerFields(req)
