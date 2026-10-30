@@ -149,3 +149,43 @@ func TestAuthenticate_LookupError_FailsOpen(t *testing.T) {
 		t.Errorf("lookup error should fail open (allow); status=%d", w.Code)
 	}
 }
+
+// A login in the same second as a reset gets an iat truncated to that second,
+// i.e. a few hundred ms "before" the millisecond-precision passwordChangedAt.
+// That token must still be accepted.
+func TestAuthenticate_AllowsTokenIssuedSameSecondAsPasswordChange(t *testing.T) {
+	secret := "secret"
+	second := time.Now().Add(-time.Minute).Truncate(time.Second)
+	changedAt := second.Add(400 * time.Millisecond)
+	issuedAt := second.Add(700 * time.Millisecond) // after the reset, truncated to `second` in the JWT
+	token := signTestToken(t, secret, "u1", issuedAt)
+
+	var reached bool
+	h := Authenticate(secret, fakeLookup{changedAt: changedAt})(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { reached = true }))
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, requestWithToken(token))
+
+	if !reached || w.Code == http.StatusUnauthorized {
+		t.Fatalf("same-second token should be allowed; reached=%v status=%d", reached, w.Code)
+	}
+}
+
+func TestAuthenticate_RevokesTokenIssuedSecondBeforePasswordChange(t *testing.T) {
+	secret := "secret"
+	second := time.Now().Add(-time.Minute).Truncate(time.Second)
+	changedAt := second.Add(100 * time.Millisecond)
+	issuedAt := second.Add(-500 * time.Millisecond) // previous whole second
+	token := signTestToken(t, secret, "u1", issuedAt)
+
+	h := Authenticate(secret, fakeLookup{changedAt: changedAt})(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, requestWithToken(token))
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401 (token from the previous second is revoked)", w.Code)
+	}
+}
