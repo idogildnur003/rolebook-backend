@@ -53,10 +53,13 @@ func Authenticate(jwtSecret string, users PasswordResetLookup) func(http.Handler
 			// Session revocation: reject tokens issued before the user's last
 			// password reset. Fails OPEN on lookup error — the token is already
 			// cryptographically valid, and a transient DB blip must not log
-			// every user out.
+			// every user out. JWT iat has whole-second precision while
+			// passwordChangedAt is stored to the millisecond, so compare at
+			// second granularity — otherwise a login in the same second as the
+			// reset gets a token stamped "before" it and is rejected at once.
 			if changedAt, lerr := users.PasswordChangedAt(r.Context(), claims.Subject); lerr != nil {
 				log.Printf("[auth] revocation lookup failed for %s: %v", claims.Subject, lerr)
-			} else if !changedAt.IsZero() && claims.IssuedAt != nil && claims.IssuedAt.Time.Before(changedAt) {
+			} else if !changedAt.IsZero() && claims.IssuedAt != nil && claims.IssuedAt.Time.Before(changedAt.Truncate(time.Second)) {
 				writeUnauthorized(w)
 				return
 			}

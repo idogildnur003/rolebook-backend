@@ -559,10 +559,24 @@ func (h *AuthHandler) VerifyResetCode(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "too many attempts; request a new code", "TOO_MANY_ATTEMPTS")
 		return
 	}
+	// Reserve the attempt atomically BEFORE comparing, so concurrent guesses
+	// can't all pass the read-then-check above and exceed the cap. A correct
+	// code also consumes an attempt; PromoteToToken drops the counter anyway.
+	attempts, err := h.resets.IncrAttempts(r.Context(), email)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
+		return
+	}
+	if attempts == 0 {
+		// Session expired between Get and IncrAttempts.
+		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
+		return
+	}
+	if attempts > maxVerifyAttempts {
+		writeError(w, http.StatusBadRequest, "too many attempts; request a new code", "TOO_MANY_ATTEMPTS")
+		return
+	}
 	if !verificationCodeMatches(sess.CodeHash, code) {
-		if _, err := h.resets.IncrAttempts(r.Context(), email); err != nil {
-			log.Printf("[auth] reset: incr attempts failed for %s: %v", email, err)
-		}
 		writeError(w, http.StatusBadRequest, "invalid or expired code", "INVALID_CODE")
 		return
 	}
