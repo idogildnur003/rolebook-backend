@@ -54,6 +54,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	playerHandler := handler.NewPlayerHandler(playerStore, campaignStore, userStore, avatars)
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog, customEquipmentStore)
+	coinsHandler := handler.NewCoinsHandler(playerStore, campaignStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog, catalogImageStore, avatars)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore, avatars, contentNoteStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore, avatars, contentNoteStore)
@@ -157,6 +158,11 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 				r.Post("/inventory", inventoryHandler.Create)
 				r.Patch("/inventory/{equipmentId}", inventoryHandler.Update)
 				r.Delete("/inventory/{equipmentId}", inventoryHandler.Delete)
+
+				// Coin purse
+				r.Get("/coins", coinsHandler.Get)
+				r.Patch("/coins", coinsHandler.Adjust)
+				r.Post("/coins/convert", coinsHandler.Convert)
 
 				// Spell slots
 				r.Put("/spell-slots", spellHandler.UpdateSpellSlots)

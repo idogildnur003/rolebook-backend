@@ -26,7 +26,7 @@ func TestPlayerDecode_CaseVariantShadowsID(t *testing.T) {
 	}
 }
 
-func TestStripProtectedPlayerFields(t *testing.T) {
+func TestStripProtectedPlayerFields_CaseVariants(t *testing.T) {
 	req := map[string]any{
 		"name":              "Aria",
 		"abilityScores.STR": 14,

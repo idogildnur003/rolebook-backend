@@ -123,6 +123,9 @@ type Player struct {
 	// EquipmentAssignments — which inventory items are equipped in each section
 	EquipmentAssignments EquipmentAssignments `bson:"equipmentAssignments" json:"equipmentAssignments"`
 
+	// Coins — the player's purse (CP/SP/EP/GP/PP)
+	Coins Coins `bson:"coins" json:"coins"`
+
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 

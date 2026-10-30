@@ -264,12 +264,14 @@ func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
 }
 
 // protectedPlayerFields are the lowercased top-level keys a generic player
-// PATCH must never set.
+// PATCH must never set: identity/ownership, and coins (changed only through
+// the atomic /coins endpoints).
 var protectedPlayerFields = map[string]bool{
 	"campaignid":   true,
 	"linkeduserid": true,
 	"_id":          true,
 	"id":           true,
+	"coins":        true,
 }
 
 // stripProtectedPlayerFields removes identity/ownership keys from a PATCH body,
@@ -321,6 +323,8 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "field names must not contain $ operators", "BAD_REQUEST")
 		return
 	}
+	// Strip protected fields (identity/ownership, and coins, which only change
+	// through the atomic /coins endpoints).
 	stripProtectedPlayerFields(req)
 
 	// Validate death save bounds
