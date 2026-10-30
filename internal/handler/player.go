@@ -263,9 +263,45 @@ func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, player)
 }
 
+// protectedPlayerFields are the lowercased top-level keys a generic player
+// PATCH must never set.
+var protectedPlayerFields = map[string]bool{
+	"campaignid":   true,
+	"linkeduserid": true,
+	"_id":          true,
+	"id":           true,
+}
+
+// stripProtectedPlayerFields removes identity/ownership keys from a PATCH body,
+// including dotted sub-paths. Matching is case-insensitive: Mongo stores "_ID"
+// as its own field, but the driver's struct decoder falls back to a lowercase
+// match, so the variant would shadow the real field on read.
+func stripProtectedPlayerFields(req map[string]any) {
+	for key := range req {
+		root, _, _ := strings.Cut(key, ".")
+		if protectedPlayerFields[strings.ToLower(root)] {
+			delete(req, key)
+		}
+	}
+}
+
+// hasOperatorKey reports whether any key has a path segment starting with "$"
+// (operators, positional or all-positional updates), which a PATCH body never needs.
+func hasOperatorKey(req map[string]any) bool {
+	for key := range req {
+		for seg := range strings.SplitSeq(key, ".") {
+			if strings.HasPrefix(seg, "$") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Update handles PATCH /api/players/:playerId.
 // DM of the player's campaign or the player's linked user can update.
-// Protected fields (campaignId, linkedUserId) are stripped before applying.
+// Protected fields (campaignId, linkedUserId, _id, id) are stripped case-insensitively;
+// keys with $-prefixed path segments are rejected.
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 
@@ -281,11 +317,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Strip protected fields
-	delete(req, "campaignId")
-	delete(req, "linkedUserId")
-	delete(req, "_id")
-	delete(req, "id")
+	if hasOperatorKey(req) {
+		writeError(w, http.StatusBadRequest, "field names must not contain $ operators", "BAD_REQUEST")
+		return
+	}
+	stripProtectedPlayerFields(req)
 
 	// Validate death save bounds
 	if v, ok := req["deathSaveSuccesses"]; ok {
