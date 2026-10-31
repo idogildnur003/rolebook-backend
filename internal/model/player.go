@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // SpellSlot holds the max and used count for a spell slot level.
 type SpellSlot struct {
@@ -126,7 +129,38 @@ type Player struct {
 	// Coins — the player's purse (CP/SP/EP/GP/PP)
 	Coins Coins `bson:"coins" json:"coins"`
 
+	// LimitedUses — trackable per-rest abilities (name, note, max, remaining).
+	LimitedUses LimitedUseList `bson:"limitedUses" json:"limitedUses"`
+
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
+}
+
+// Limits for LimitedUse entries.
+const (
+	LimitedUseNameMax  = 60
+	LimitedUseNoteMax  = 200
+	LimitedUseMaxUses  = 99
+	LimitedUseMaxCount = 50
+)
+
+// LimitedUse is a trackable ability with a finite number of uses.
+type LimitedUse struct {
+	ID        string `bson:"id"        json:"id"`
+	Name      string `bson:"name"      json:"name"`
+	Note      string `bson:"note"      json:"note"`
+	Max       int    `bson:"max"       json:"max"`
+	Remaining int    `bson:"remaining" json:"remaining"`
+	Resets    bool   `bson:"resets"    json:"resets"`
+}
+
+// LimitedUseList marshals a nil list as [] so clients never see null.
+type LimitedUseList []LimitedUse
+
+func (l LimitedUseList) MarshalJSON() ([]byte, error) {
+	if l == nil {
+		return []byte("[]"), nil
+	}
+	return json.Marshal([]LimitedUse(l))
 }
 
 // DefaultPlayer returns a new Player with sensible D&D 5e defaults.
@@ -165,9 +199,10 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 			"1": {}, "2": {}, "3": {}, "4": {}, "5": {},
 			"6": {}, "7": {}, "8": {}, "9": {},
 		},
-		Conditions: make(map[string]bool),
-		Spells:     []PlayerSpell{},
-		Inventory:  []PlayerInventoryItem{},
+		Conditions:  make(map[string]bool),
+		Spells:      []PlayerSpell{},
+		LimitedUses: LimitedUseList{},
+		Inventory:   []PlayerInventoryItem{},
 		// Initialized (never nil) so the client always receives clean arrays.
 		EquipmentAssignments: EquipmentAssignments{
 			Armor:                   []string{},

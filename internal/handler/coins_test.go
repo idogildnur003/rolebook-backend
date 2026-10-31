@@ -50,17 +50,21 @@ func TestParseCoinDeltas_RejectsEmpty(t *testing.T) {
 
 func TestStripProtectedPlayerFields(t *testing.T) {
 	req := map[string]any{
-		"campaignId":   "c",
-		"linkedUserId": "u",
-		"_id":          "x",
-		"id":           "y",
-		"coins":        map[string]any{"gp": 999.0},
-		"coins.gp":     999.0,
-		"Coins":        map[string]any{"gp": 999.0},
-		"COINS":        map[string]any{"gp": 999.0},
-		"Coins.gp":     999.0,
-		"cOiNs.pp":     999.0,
-		"name":         "x",
+		"campaignId":              "c",
+		"linkedUserId":            "u",
+		"_id":                     "x",
+		"id":                      "y",
+		"coins":                   map[string]any{"gp": 999.0},
+		"coins.gp":                999.0,
+		"Coins":                   map[string]any{"gp": 999.0},
+		"COINS":                   map[string]any{"gp": 999.0},
+		"Coins.gp":                999.0,
+		"cOiNs.pp":                999.0,
+		"limitedUses":             []any{},
+		"limitedUses.0.remaining": 0.0,
+		"LimitedUses":             []any{},
+		"LIMITEDUSES.0":           map[string]any{},
+		"name":                    "x",
 	}
 	stripProtectedPlayerFields(req)
 	if len(req) != 1 || req["name"] != "x" {
