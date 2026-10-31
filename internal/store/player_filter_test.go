@@ -41,3 +41,17 @@ func TestCompanionListFilter_PlayerSeesOnlyOwn(t *testing.T) {
 		t.Fatal("DM sees all companions")
 	}
 }
+
+func TestPlayerDeleteFilter_DMByIDOnly(t *testing.T) {
+	f := playerDeleteFilter("p1", "u1", true)
+	if len(f) != 1 || f["_id"] != "p1" {
+		t.Fatalf("got %v", f)
+	}
+}
+
+func TestPlayerDeleteFilter_NonDMOnlyOwnStoredCompanion(t *testing.T) {
+	f := playerDeleteFilter("p1", "u1", false)
+	if f["_id"] != "p1" || f["linkedUserId"] != "u1" || f["kind"] != "companion" || len(f) != 3 {
+		t.Fatalf("got %v", f)
+	}
+}

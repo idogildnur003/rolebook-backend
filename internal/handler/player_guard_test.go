@@ -69,3 +69,32 @@ func TestValidateCompanionFields(t *testing.T) {
 		}
 	}
 }
+
+func TestStripProtectedPlayerFields_CaseInsensitiveKindAndOwner(t *testing.T) {
+	req := map[string]any{
+		"Kind":            "companion",
+		"KIND":            "companion",
+		"kInD":            "companion",
+		"kind.x":          "y",
+		"Kind.x":          "y",
+		"OwnerPlayerId":   "p1",
+		"OWNERPLAYERID":   "p1",
+		"ownerPlayerId.x": "p1",
+		"CampaignId":      "c",
+		"LinkedUserId":    "u",
+		"ID":              "1",
+		"name":            "Ash",
+	}
+	stripProtectedPlayerFields(req)
+	if len(req) != 1 || req["name"] != "Ash" {
+		t.Fatalf("got %v", req)
+	}
+}
+
+func TestStripProtectedPlayerFields_KeepsLookalikeKeys(t *testing.T) {
+	req := map[string]any{"kindness": 1, "identity": "x", "coinsNote": "y", "name": "Ash"}
+	stripProtectedPlayerFields(req)
+	if len(req) != 4 {
+		t.Fatalf("lookalike keys must survive, got %v", req)
+	}
+}

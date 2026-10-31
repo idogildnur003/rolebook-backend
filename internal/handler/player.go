@@ -19,22 +19,28 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
-// stripProtectedPlayerFields removes keys a generic player PATCH must never set:
-// identity/ownership fields (including kind and ownerPlayerId), and coins
-// (including dotted "coins.<denom>" paths).
+// protectedPlayerKeys are the lowercased top-level keys a generic player PATCH
+// must never set: identity/ownership fields (including kind and ownerPlayerId)
+// and coins.
+var protectedPlayerKeys = map[string]bool{
+	"campaignid":    true,
+	"linkeduserid":  true,
+	"_id":           true,
+	"id":            true,
+	"kind":          true,
+	"ownerplayerid": true,
+	"coins":         true,
+}
+
+// stripProtectedPlayerFields removes keys a generic player PATCH must never set
+// (see protectedPlayerKeys), including dotted sub-paths such as "coins.gp".
+// Matching is case-insensitive: the driver's struct decoder falls back to a
+// case-insensitive field match, so "Kind"/"COINS.gp" would otherwise reach the
+// stored document and decode as the protected field.
 func stripProtectedPlayerFields(req map[string]any) {
-	delete(req, "campaignId")
-	delete(req, "linkedUserId")
-	delete(req, "_id")
-	delete(req, "id")
-	delete(req, "kind")
-	delete(req, "ownerPlayerId")
-	// Coins is matched case-insensitively: the driver's struct decoder falls
-	// back to a lowercase field match, so "Coins"/"COINS.gp" would otherwise
-	// reach the stored document.
 	for key := range req {
-		lk := strings.ToLower(key)
-		if lk == "coins" || strings.HasPrefix(lk, "coins.") {
+		root, _, _ := strings.Cut(strings.ToLower(key), ".")
+		if protectedPlayerKeys[root] {
 			delete(req, key)
 		}
 	}

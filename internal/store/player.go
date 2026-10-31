@@ -182,13 +182,22 @@ func (s *PlayerStore) Update(ctx context.Context, id, userID string, isDM bool, 
 	return &p, nil
 }
 
-// Delete removes a player.
-func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
+// playerDeleteFilter builds the DeleteOne filter. The DM deletes by ID; any
+// other caller may only delete a companion they own, enforced against the
+// stored kind and linkedUserId so a spoofed decoded value can never authorize
+// deleting a PC.
+func playerDeleteFilter(id, userID string, isDM bool) bson.M {
 	filter := bson.M{"_id": id}
 	if !isDM {
 		filter["linkedUserId"] = userID
+		filter["kind"] = string(model.PlayerKindCompanion)
 	}
-	res, err := s.col.DeleteOne(ctx, filter)
+	return filter
+}
+
+// Delete removes a player. Non-DM callers can only delete their own companion.
+func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
+	res, err := s.col.DeleteOne(ctx, playerDeleteFilter(id, userID, isDM))
 	return res.DeletedCount > 0, err
 }
 
