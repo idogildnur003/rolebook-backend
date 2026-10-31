@@ -159,7 +159,11 @@ func (s *PlayerStore) RemoveLimitedUse(ctx context.Context, playerID, id string)
 
 // SpendLimitedUse spends one use. The last use of a one-time (non-resetting)
 // entry removes it (removed == true, item == nil); a resettable entry stays at 0.
-func (s *PlayerStore) SpendLimitedUse(ctx context.Context, playerID, id string) (item *model.LimitedUse, removed bool, err error) {
+func (s *PlayerStore) SpendLimitedUse(ctx context.Context, playerID, id string) (*model.LimitedUse, bool, error) {
+	return s.spendLimitedUse(ctx, playerID, id, true)
+}
+
+func (s *PlayerStore) spendLimitedUse(ctx context.Context, playerID, id string, retry bool) (item *model.LimitedUse, removed bool, err error) {
 	res, err := s.col.UpdateOne(ctx,
 		bson.M{"_id": playerID, "limitedUses": bson.M{"$elemMatch": bson.M{"id": id, "resets": false, "remaining": 1}}},
 		bson.M{
@@ -197,6 +201,11 @@ func (s *PlayerStore) SpendLimitedUse(ctx context.Context, playerID, id string) 
 	if cur == nil {
 		return nil, false, ErrLimitedUseNotFound
 	}
+	if cur.Remaining > 0 && retry {
+		// A concurrent change (e.g. a restore or a resets flip) made both
+		// attempts miss although uses remain: retry the sequence once.
+		return s.spendLimitedUse(ctx, playerID, id, false)
+	}
 	return nil, false, ErrNoUsesLeft
 }
 
@@ -212,7 +221,7 @@ func (s *PlayerStore) RestoreLimitedUse(ctx context.Context, playerID, id string
 
 // ResetLimitedUse refills a resettable entry to Max (compare-and-set, one retry).
 func (s *PlayerStore) ResetLimitedUse(ctx context.Context, playerID, id string) (*model.LimitedUse, error) {
-	return s.casLimitedUse(ctx, playerID, id, func(cur *model.LimitedUse) (int, error) {
+	return s.casLimitedUseWith(ctx, playerID, id, bson.M{"resets": true}, func(cur *model.LimitedUse) (int, error) {
 		if !cur.Resets {
 			return 0, ErrNotResettable
 		}
@@ -223,6 +232,11 @@ func (s *PlayerStore) ResetLimitedUse(ctx context.Context, playerID, id string) 
 // casLimitedUse reads the element, lets next pick the new remaining value, and
 // writes it only if remaining and max are unchanged. Retries once on a miss.
 func (s *PlayerStore) casLimitedUse(ctx context.Context, playerID, id string, next func(*model.LimitedUse) (int, error)) (*model.LimitedUse, error) {
+	return s.casLimitedUseWith(ctx, playerID, id, nil, next)
+}
+
+// casLimitedUseWith is casLimitedUse with extra conditions on the matched element.
+func (s *PlayerStore) casLimitedUseWith(ctx context.Context, playerID, id string, extra bson.M, next func(*model.LimitedUse) (int, error)) (*model.LimitedUse, error) {
 	for attempt := 0; attempt < 2; attempt++ {
 		cur, err := s.getLimitedUse(ctx, playerID, id)
 		if err != nil {
@@ -235,10 +249,12 @@ func (s *PlayerStore) casLimitedUse(ctx context.Context, playerID, id string, ne
 		if err != nil {
 			return nil, err
 		}
+		match := bson.M{"id": id, "remaining": cur.Remaining, "max": cur.Max}
+		for k, v := range extra {
+			match[k] = v
+		}
 		item, err := s.updateLimitedUse(ctx,
-			bson.M{"_id": playerID, "limitedUses": bson.M{"$elemMatch": bson.M{
-				"id": id, "remaining": cur.Remaining, "max": cur.Max,
-			}}},
+			bson.M{"_id": playerID, "limitedUses": bson.M{"$elemMatch": match}},
 			bson.M{"$set": bson.M{"limitedUses.$.remaining": remaining}}, id)
 		if err != nil {
 			return nil, err

@@ -23,6 +23,7 @@ values:
     enabled: true
   - key: itemId
     value: ''
+    enabled: true
   - key: limitedUseId
     value: ''
     enabled: true
