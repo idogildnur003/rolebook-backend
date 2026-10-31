@@ -23,6 +23,8 @@ values:
     enabled: true
   - key: itemId
     value: ''
+  - key: limitedUseId
+    value: ''
     enabled: true
   - key: spellId
     value: ''

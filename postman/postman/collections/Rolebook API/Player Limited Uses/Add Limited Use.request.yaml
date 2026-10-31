@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/players/{{playerId}}/limited-uses"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Bardic Inspiration",
+      "max": 3,
+      "resets": true,
+      "note": "d8"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status 201", () => pm.response.to.have.status(201));
+      const json = pm.response.json();
+      pm.environment.set("limitedUseId", json.id);
+    language: text/javascript
+order: 2000
