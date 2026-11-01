@@ -55,6 +55,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	spellHandler := handler.NewSpellHandler(playerStore, campaignStore, arsenalCatalog, customSpellStore)
 	inventoryHandler := handler.NewInventoryHandler(playerStore, campaignStore, arsenalCatalog, customEquipmentStore)
 	coinsHandler := handler.NewCoinsHandler(playerStore, campaignStore)
+	limitedUsesHandler := handler.NewLimitedUsesHandler(playerStore, campaignStore)
 	arsenalHandler := handler.NewArsenalHandler(arsenalCatalog, catalogImageStore, avatars)
 	customEquipmentHandler := handler.NewCustomEquipmentHandler(customEquipmentStore, playerStore, campaignStore, avatars, contentNoteStore)
 	customSpellHandler := handler.NewCustomSpellHandler(customSpellStore, playerStore, campaignStore, avatars, contentNoteStore)
@@ -165,6 +166,15 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 				r.Get("/coins", coinsHandler.Get)
 				r.Patch("/coins", coinsHandler.Adjust)
 				r.Post("/coins/convert", coinsHandler.Convert)
+
+				// Limited uses
+				r.Get("/limited-uses", limitedUsesHandler.List)
+				r.Post("/limited-uses", limitedUsesHandler.Create)
+				r.Patch("/limited-uses/{limitedUseId}", limitedUsesHandler.Update)
+				r.Delete("/limited-uses/{limitedUseId}", limitedUsesHandler.Delete)
+				r.Post("/limited-uses/{limitedUseId}/use", limitedUsesHandler.Use)
+				r.Post("/limited-uses/{limitedUseId}/restore", limitedUsesHandler.Restore)
+				r.Post("/limited-uses/{limitedUseId}/reset", limitedUsesHandler.Reset)
 
 				// Spell slots
 				r.Put("/spell-slots", spellHandler.UpdateSpellSlots)

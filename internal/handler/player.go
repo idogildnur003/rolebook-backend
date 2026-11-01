@@ -20,8 +20,8 @@ import (
 )
 
 // protectedPlayerKeys are the lowercased top-level keys a generic player PATCH
-// must never set: identity/ownership fields (including kind and ownerPlayerId)
-// and coins.
+// must never set: identity/ownership fields (including kind and ownerPlayerId),
+// coins and limitedUses.
 var protectedPlayerKeys = map[string]bool{
 	"campaignid":    true,
 	"linkeduserid":  true,
@@ -30,10 +30,11 @@ var protectedPlayerKeys = map[string]bool{
 	"kind":          true,
 	"ownerplayerid": true,
 	"coins":         true,
+	"limiteduses":   true,
 }
 
 // stripProtectedPlayerFields removes keys a generic player PATCH must never set
-// (see protectedPlayerKeys), including dotted sub-paths such as "coins.gp".
+// (see protectedPlayerKeys), including dotted sub-paths such as "coins.gp" or "limitedUses.0".
 // Matching is case-insensitive: the driver's struct decoder falls back to a
 // case-insensitive field match, so "Kind"/"COINS.gp" would otherwise reach the
 // stored document and decode as the protected field.

@@ -628,6 +628,53 @@ Every success response has the same shape:
 
 ---
 
+## Player Limited Uses
+
+Requires Bearer `{{token}}`. A character's limited-use abilities (e.g. Bardic Inspiration, Wild Shape) are embedded in the player document (`limitedUses`) and only change through these endpoints; `limitedUses` keys sent to `PATCH /players/{{playerId}}` are stripped. Each entry is `{ id, name, note, max, remaining, resets }`. A character holds at most 50 entries. On create `remaining = max`; lowering `max` clamps `remaining`, raising it keeps `remaining`. Spending the last use of a one-time entry (`resets: false`, `remaining: 1`) removes it.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/players/{{playerId}}/limited-uses` | Campaign DM or linked user | List entries (`[]` when none) | 200 |
+| POST | `/players/{{playerId}}/limited-uses` | Campaign DM or linked user | Add an entry; returns it with a server-issued `id` | 201 |
+| PATCH | `/players/{{playerId}}/limited-uses/{{limitedUseId}}` | Campaign DM or linked user | Update `name`, `note`, `max` and/or `resets`; returns the entry | 200 |
+| DELETE | `/players/{{playerId}}/limited-uses/{{limitedUseId}}` | Campaign DM or linked user | Delete an entry | 204 |
+| POST | `/players/{{playerId}}/limited-uses/{{limitedUseId}}/use` | Campaign DM or linked user | Spend one use | 200 |
+| POST | `/players/{{playerId}}/limited-uses/{{limitedUseId}}/restore` | Campaign DM or linked user | Restore one use | 200 |
+| POST | `/players/{{playerId}}/limited-uses/{{limitedUseId}}/reset` | Campaign DM or linked user | Reset a resettable entry to `max` | 200 |
+
+**POST body** (`name` 1-60 chars trimmed, `max` integer 1-99, `resets` boolean required; `note` optional, up to 200 chars trimmed):
+```json
+{ "name": "Bardic Inspiration", "max": 3, "resets": true, "note": "d8" }
+```
+Response (201):
+```json
+{ "id": "6576110c-91ef-4fa4-8348-4355c5434dd3", "name": "Bardic Inspiration", "note": "d8", "max": 3, "remaining": 3, "resets": true }
+```
+
+**PATCH body** (any of `name`, `note`, `max`, `resets`, same rules as create; at least one required). Responds with the updated entry.
+```json
+{ "max": 2 }
+```
+
+**`/use` response.** `item` is `null` and `removed` is `true` when a one-time entry was spent and removed:
+```json
+{ "item": { "id": "6576110c-91ef-4fa4-8348-4355c5434dd3", "name": "Bardic Inspiration", "note": "d8", "max": 3, "remaining": 2, "resets": true }, "removed": false }
+```
+
+`/restore` and `/reset` respond with the updated entry. `/reset` only applies to entries with `resets: true`.
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `BAD_REQUEST` | Malformed body, invalid or missing field, empty PATCH |
+| 400 | `LIMIT_REACHED` | The character already has 50 entries |
+| 400 | `NOT_RESETTABLE` | `/reset` on an entry with `resets: false` |
+| 403 | `FORBIDDEN` | Not the campaign DM or the linked user |
+| 404 | `NOT_FOUND` | Player not found |
+| 404 | `LIMITED_USE_NOT_FOUND` | No entry with that id on this player |
+| 409 | `NO_USES_LEFT` | `/use` with `remaining` at 0 |
+| 409 | `ALREADY_FULL` | `/restore` with `remaining` already at `max` |
+| 409 | `LIMITED_USE_CHANGED` | A concurrent change made `/restore` or `/reset` fail after one retry; retry the request |
+
 ## Companions
 
 Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kind: "companion"`, `ownerPlayerId` (the owning PC) and `linkedUserId` (the owner's user). Each PC has at most one pet. Companions are excluded from `GET /campaigns/{{campaignId}}/player` and the default `GET /campaigns/{{campaignId}}/players` list; once created they are read and edited through the generic `/players/{{playerId}}` endpoints (`kind` and `ownerPlayerId` are stripped from PATCH).
