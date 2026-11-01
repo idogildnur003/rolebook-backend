@@ -675,6 +675,30 @@ Response (201):
 | 409 | `ALREADY_FULL` | `/restore` with `remaining` already at `max` |
 | 409 | `LIMITED_USE_CHANGED` | A concurrent change made `/restore` or `/reset` fail after one retry; retry the request |
 
+## Companions
+
+Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kind: "companion"`, `ownerPlayerId` (the owning PC) and `linkedUserId` (the owner's user). Each PC has at most one pet. Companions are excluded from `GET /campaigns/{{campaignId}}/player` and the default `GET /campaigns/{{campaignId}}/players` list; once created they are read and edited through the generic `/players/{{playerId}}` endpoints (`kind` and `ownerPlayerId` are stripped from PATCH).
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| POST | `/campaigns/{{campaignId}}/companions` | Player with a PC, or campaign DM | Create a companion -> sets `companionId` | 201 |
+| GET | `/campaigns/{{campaignId}}/companions` | Any campaign member | List companions. DM: every pet in the campaign. Player: `[]` or `[theirPet]`. Avatars resolved | 200 |
+
+**POST body:**
+```json
+{ "name": "Ash", "creatureType": "Wolf", "ownerPlayerId": "<PC id, DM only>" }
+```
+`name` is required (trimmed, non-empty); `creatureType` is optional. A player always owns their own pet and `ownerPlayerId` is ignored. A DM must pass `ownerPlayerId` of a `pc` in the same campaign; the pet still belongs to that PC's user.
+
+| Status | Code | When |
+|---|---|---|
+| 400 | `BAD_REQUEST` | Malformed body, empty name, or (DM) missing / non-PC / other-campaign `ownerPlayerId` |
+| 403 | `FORBIDDEN` | Caller is a non-DM without a PC in this campaign |
+| 404 | `NOT_FOUND` | Campaign not found or caller not a member |
+| 409 | `COMPANION_EXISTS` | The owner PC already has a companion |
+
+**Delete exception:** `DELETE /players/{{playerId}}` is normally DM-only, but a player may delete their own companion (204). Deleting a PC also deletes its companion.
+
 ---
 
 ## Custom Equipment

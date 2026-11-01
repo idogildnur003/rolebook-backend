@@ -41,6 +41,7 @@ type EquipmentAssignments struct {
 // PlayerKind classifies a Player record.
 // "pc" — a real player character.
 // "dm" — a DM stub Player (one per campaign), the anchor for per-member features.
+// "companion" — a player's pet, owned via ownerPlayerId and not a member.
 // Future: "npc" | "enemy" | "boss" — game entities, intentionally not members.
 type PlayerKind string
 
@@ -49,7 +50,23 @@ const (
 	PlayerKindDM    PlayerKind = "dm"
 	PlayerKindNPC   PlayerKind = "npc"
 	PlayerKindEnemy PlayerKind = "enemy"
+
+	PlayerKindCompanion PlayerKind = "companion"
 )
+
+// CompanionTrait is a named passive trait on a companion's stat block.
+type CompanionTrait struct {
+	Name        string `bson:"name"        json:"name"`
+	Description string `bson:"description" json:"description"`
+}
+
+// CompanionAction is a named action on a companion's stat block.
+type CompanionAction struct {
+	Name        string `bson:"name"                  json:"name"`
+	AttackBonus *int   `bson:"attackBonus,omitempty" json:"attackBonus,omitempty"`
+	Damage      string `bson:"damage"                json:"damage"`
+	Description string `bson:"description"           json:"description"`
+}
 
 // IsDMCreatableKind reports whether kind is one a DM may create directly
 // (an unlinked, DM-owned character). PC and DM records are created through
@@ -132,6 +149,15 @@ type Player struct {
 	// LimitedUses — trackable per-rest abilities (name, note, max, remaining).
 	LimitedUses LimitedUseList `bson:"limitedUses" json:"limitedUses"`
 
+	// Companion-only fields (kind == "companion"); omitted for other kinds.
+	OwnerPlayerID string            `bson:"ownerPlayerId,omitempty" json:"ownerPlayerId,omitempty"`
+	CreatureType  string            `bson:"creatureType,omitempty"  json:"creatureType,omitempty"`
+	OtherSpeeds   string            `bson:"otherSpeeds,omitempty"   json:"otherSpeeds,omitempty"`
+	Senses        string            `bson:"senses,omitempty"        json:"senses,omitempty"`
+	Languages     string            `bson:"languages,omitempty"     json:"languages,omitempty"`
+	Traits        []CompanionTrait  `bson:"traits,omitempty"        json:"traits,omitempty"`
+	Actions       []CompanionAction `bson:"actions,omitempty"       json:"actions,omitempty"`
+
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
 
@@ -213,5 +239,15 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 		UpdatedAt: time.Now().UTC(),
 	}
 	p.Kind = string(kind)
+	return p
+}
+
+// DefaultCompanion returns a new level-1 companion Player owned by ownerPlayerID.
+func DefaultCompanion(id, campaignID, linkedUserID, ownerPlayerID, name, creatureType string) *Player {
+	p := DefaultPlayer(id, campaignID, linkedUserID, name, 1, PlayerKindCompanion)
+	p.OwnerPlayerID = ownerPlayerID
+	p.CreatureType = creatureType
+	p.Traits = []CompanionTrait{}
+	p.Actions = []CompanionAction{}
 	return p
 }

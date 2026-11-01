@@ -143,6 +143,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 			r.Get("/campaigns/{campaignId}/roster", playerHandler.Roster)
 			r.Post("/players", playerHandler.Create)
 			r.Post("/campaigns/{campaignId}/players", playerHandler.CreateNPC)
+			r.Get("/campaigns/{campaignId}/companions", playerHandler.ListCompanions)
+			r.Post("/campaigns/{campaignId}/companions", playerHandler.CreateCompanion)
 			r.Route("/players/{playerId}", func(r chi.Router) {
 				r.Get("/", playerHandler.Get)
 				r.Patch("/", playerHandler.Update)

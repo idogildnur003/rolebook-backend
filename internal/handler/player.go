@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 	"unicode"
@@ -18,24 +19,108 @@ import (
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
-// stripProtectedPlayerFields removes keys a generic player PATCH must never set:
-// identity/ownership fields, coins (including dotted "coins.<denom>" paths), and
-// limitedUses (including dotted "limitedUses.<n>..." paths).
+// protectedPlayerKeys are the lowercased top-level keys a generic player PATCH
+// must never set: identity/ownership fields (including kind and ownerPlayerId),
+// coins and limitedUses.
+var protectedPlayerKeys = map[string]bool{
+	"campaignid":    true,
+	"linkeduserid":  true,
+	"_id":           true,
+	"id":            true,
+	"kind":          true,
+	"ownerplayerid": true,
+	"coins":         true,
+	"limiteduses":   true,
+}
+
+// stripProtectedPlayerFields removes keys a generic player PATCH must never set
+// (see protectedPlayerKeys), including dotted sub-paths such as "coins.gp" or "limitedUses.0".
+// Matching is case-insensitive: the driver's struct decoder falls back to a
+// case-insensitive field match, so "Kind"/"COINS.gp" would otherwise reach the
+// stored document and decode as the protected field.
 func stripProtectedPlayerFields(req map[string]any) {
-	delete(req, "campaignId")
-	delete(req, "linkedUserId")
-	delete(req, "_id")
-	delete(req, "id")
-	// Coins is matched case-insensitively: the driver's struct decoder falls
-	// back to a lowercase field match, so "Coins"/"COINS.gp" would otherwise
-	// reach the stored document. limitedUses gets the same treatment.
 	for key := range req {
-		lk := strings.ToLower(key)
-		if lk == "coins" || strings.HasPrefix(lk, "coins.") ||
-			lk == "limiteduses" || strings.HasPrefix(lk, "limiteduses.") {
+		root, _, _ := strings.Cut(strings.ToLower(key), ".")
+		if protectedPlayerKeys[root] {
 			delete(req, key)
 		}
 	}
+}
+
+// validateCompanionFields checks the shape of companion stat-block fields in a
+// PATCH body. Fields that are absent are not checked.
+func validateCompanionFields(req map[string]any) error {
+	if v, ok := req["traits"]; ok {
+		items, ok := v.([]any)
+		if !ok {
+			return errors.New("traits must be an array")
+		}
+		for _, it := range items {
+			m, ok := it.(map[string]any)
+			if !ok {
+				return errors.New("each trait must be an object")
+			}
+			if name, ok := m["name"].(string); !ok || name == "" {
+				return errors.New("trait name must be a non-empty string")
+			}
+			if _, ok := m["description"].(string); !ok {
+				return errors.New("trait description must be a string")
+			}
+		}
+	}
+	if v, ok := req["actions"]; ok {
+		items, ok := v.([]any)
+		if !ok {
+			return errors.New("actions must be an array")
+		}
+		for _, it := range items {
+			m, ok := it.(map[string]any)
+			if !ok {
+				return errors.New("each action must be an object")
+			}
+			if name, ok := m["name"].(string); !ok || name == "" {
+				return errors.New("action name must be a non-empty string")
+			}
+			if ab, present := m["attackBonus"]; present && ab != nil {
+				f, ok := ab.(float64)
+				if !ok || f != math.Trunc(f) {
+					return errors.New("action attackBonus must be a whole number or null")
+				}
+			}
+			if _, ok := m["damage"].(string); !ok {
+				return errors.New("action damage must be a string")
+			}
+			if _, ok := m["description"].(string); !ok {
+				return errors.New("action description must be a string")
+			}
+		}
+	}
+	for _, key := range []string{"creatureType", "otherSpeeds", "senses", "languages"} {
+		if v, ok := req[key]; ok {
+			if _, ok := v.(string); !ok {
+				return errors.New(key + " must be a string")
+			}
+		}
+	}
+	return nil
+}
+
+// canDeletePlayer reports whether the caller may delete p: the campaign DM, or
+// the owner (linked user) of a companion.
+func canDeletePlayer(isDM bool, p *model.Player, userID string) bool {
+	if isDM {
+		return true
+	}
+	return p.Kind == string(model.PlayerKindCompanion) && p.LinkedUserID == userID
+}
+
+// cascadeOnDelete returns the owner player ID whose companions must be deleted
+// along with p, or "" when nothing cascades.
+func cascadeOnDelete(p *model.Player) (deleteCompanionsOfOwner string) {
+	if p.Kind == string(model.PlayerKindPC) {
+		return p.ID
+	}
+	return ""
 }
 
 // displayNameFromEmail derives a human-readable display name from an email address.
@@ -285,7 +370,7 @@ func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
 
 // Update handles PATCH /api/players/:playerId.
 // DM of the player's campaign or the player's linked user can update.
-// Protected fields (campaignId, linkedUserId) are stripped before applying.
+// Protected fields (campaignId, linkedUserId, kind, ownerPlayerId, coins) are stripped before applying.
 func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 
@@ -304,6 +389,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Strip protected fields (identity/ownership, and coins, which only change
 	// through the atomic /coins endpoints).
 	stripProtectedPlayerFields(req)
+
+	if err := validateCompanionFields(req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
+		return
+	}
 
 	// Validate death save bounds
 	if v, ok := req["deathSaveSuccesses"]; ok {
@@ -362,7 +452,9 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-// Delete handles DELETE /api/players/:playerId (campaign DM only).
+// Delete handles DELETE /api/players/:playerId.
+// Allowed for the campaign DM, or the owner of a companion. Deleting a PC also
+// deletes its companions.
 func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
 
@@ -370,13 +462,13 @@ func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if access == nil {
 		return
 	}
-	if !access.IsDM {
+	userID := middleware.UserIDFromContext(r.Context())
+	if !canDeletePlayer(access.IsDM, access.Player, userID) {
 		writeError(w, http.StatusForbidden, "forbidden", "FORBIDDEN")
 		return
 	}
 
-	userID := middleware.UserIDFromContext(r.Context())
-	found, err := h.players.Delete(r.Context(), playerID, userID, true)
+	found, err := h.players.Delete(r.Context(), playerID, userID, access.IsDM)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
@@ -384,6 +476,11 @@ func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if !found {
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
+	}
+	if ownerID := cascadeOnDelete(access.Player); ownerID != "" {
+		if err := h.players.DeleteCompanionsByOwner(r.Context(), ownerID); err != nil {
+			log.Printf("player %s: delete companions: %v", playerID, err)
+		}
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

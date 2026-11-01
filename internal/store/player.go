@@ -30,6 +30,13 @@ func NewPlayerStore(db *DB) *PlayerStore {
 	_, _ = col.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
 		{Keys: bson.D{{Key: "campaignId", Value: 1}}},
 		{Keys: bson.D{{Key: "linkedUserId", Value: 1}}},
+		{
+			Keys: bson.D{{Key: "ownerPlayerId", Value: 1}},
+			Options: options.Index().
+				SetName("uniq_companion_owner").
+				SetUnique(true).
+				SetPartialFilterExpression(bson.M{"kind": string(model.PlayerKindCompanion)}),
+		},
 	})
 	return &PlayerStore{col: col}
 }
@@ -58,18 +65,41 @@ func (s *PlayerStore) Get(ctx context.Context, id, userID string, isDM bool) (*m
 	return &p, nil
 }
 
-// ListForCampaign returns players in a campaign.
-// DM: all players. Non-DM: only the player whose linkedUserId matches.
-// If kind is non-empty, restricts to players with that kind (e.g. PlayerKindPC).
-func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool, kind model.PlayerKind) ([]model.Player, error) {
+// notCompanion matches any kind except a companion (pet).
+func notCompanion() bson.M {
+	return bson.M{"$ne": string(model.PlayerKindCompanion)}
+}
+
+// playerListFilter builds the ListForCampaign filter. Non-DMs are limited to
+// their own players. An explicit kind wins; otherwise companions are excluded.
+func playerListFilter(campaignID, userID string, isDM bool, kind model.PlayerKind) bson.M {
 	filter := bson.M{"campaignId": campaignID}
 	if !isDM {
 		filter["linkedUserId"] = userID
 	}
 	if kind != "" {
 		filter["kind"] = kind
+	} else {
+		filter["kind"] = notCompanion()
 	}
-	cursor, err := s.col.Find(ctx, filter)
+	return filter
+}
+
+// companionListFilter builds the filter for listing companions in a campaign.
+func companionListFilter(campaignID, userID string, isDM bool) bson.M {
+	filter := bson.M{"campaignId": campaignID, "kind": string(model.PlayerKindCompanion)}
+	if !isDM {
+		filter["linkedUserId"] = userID
+	}
+	return filter
+}
+
+// ListForCampaign returns players in a campaign.
+// DM: all players. Non-DM: only the player whose linkedUserId matches.
+// If kind is non-empty, restricts to players with that kind (e.g. PlayerKindPC);
+// otherwise companions (pets) are excluded.
+func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID string, isDM bool, kind model.PlayerKind) ([]model.Player, error) {
+	cursor, err := s.col.Find(ctx, playerListFilter(campaignID, userID, isDM, kind))
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +111,50 @@ func (s *PlayerStore) ListForCampaign(ctx context.Context, campaignID, userID st
 		players = []model.Player{}
 	}
 	return players, nil
+}
+
+// ListCompanions returns companions in a campaign. DM: all. Non-DM: only the
+// caller's own. Never returns nil.
+func (s *PlayerStore) ListCompanions(ctx context.Context, campaignID, userID string, isDM bool) ([]model.Player, error) {
+	cursor, err := s.col.Find(ctx, companionListFilter(campaignID, userID, isDM))
+	if err != nil {
+		return nil, err
+	}
+	var players []model.Player
+	if err := cursor.All(ctx, &players); err != nil {
+		return nil, err
+	}
+	if players == nil {
+		players = []model.Player{}
+	}
+	return players, nil
+}
+
+// FindCompanionByOwner returns the companion owned by the given player, or
+// (nil, nil) if the player has no pet.
+func (s *PlayerStore) FindCompanionByOwner(ctx context.Context, campaignID, ownerPlayerID string) (*model.Player, error) {
+	var p model.Player
+	err := s.col.FindOne(ctx, bson.M{
+		"campaignId":    campaignID,
+		"kind":          string(model.PlayerKindCompanion),
+		"ownerPlayerId": ownerPlayerID,
+	}).Decode(&p)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// DeleteCompanionsByOwner removes every companion owned by the given player.
+func (s *PlayerStore) DeleteCompanionsByOwner(ctx context.Context, ownerPlayerID string) error {
+	_, err := s.col.DeleteMany(ctx, bson.M{
+		"kind":          string(model.PlayerKindCompanion),
+		"ownerPlayerId": ownerPlayerID,
+	})
+	return err
 }
 
 // Update applies a partial $set update and returns the updated player.
@@ -108,13 +182,22 @@ func (s *PlayerStore) Update(ctx context.Context, id, userID string, isDM bool, 
 	return &p, nil
 }
 
-// Delete removes a player.
-func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
+// playerDeleteFilter builds the DeleteOne filter. The DM deletes by ID; any
+// other caller may only delete a companion they own, enforced against the
+// stored kind and linkedUserId so a spoofed decoded value can never authorize
+// deleting a PC.
+func playerDeleteFilter(id, userID string, isDM bool) bson.M {
 	filter := bson.M{"_id": id}
 	if !isDM {
 		filter["linkedUserId"] = userID
+		filter["kind"] = string(model.PlayerKindCompanion)
 	}
-	res, err := s.col.DeleteOne(ctx, filter)
+	return filter
+}
+
+// Delete removes a player. Non-DM callers can only delete their own companion.
+func (s *PlayerStore) Delete(ctx context.Context, id, userID string, isDM bool) (bool, error) {
+	res, err := s.col.DeleteOne(ctx, playerDeleteFilter(id, userID, isDM))
 	return res.DeletedCount > 0, err
 }
 
@@ -150,7 +233,7 @@ func (s *PlayerStore) IDsForCampaign(ctx context.Context, campaignID string) ([]
 func (s *PlayerStore) CampaignIDsForUser(ctx context.Context, userID string) ([]string, error) {
 	cursor, err := s.col.Find(
 		ctx,
-		bson.M{"linkedUserId": userID},
+		bson.M{"linkedUserId": userID, "kind": notCompanion()},
 		options.Find().SetProjection(bson.M{"campaignId": 1}),
 	)
 	if err != nil {
@@ -171,7 +254,7 @@ func (s *PlayerStore) CampaignIDsForUser(ctx context.Context, userID string) ([]
 
 // UserHasPlayerInCampaign returns true if the user has a character in the given campaign.
 func (s *PlayerStore) UserHasPlayerInCampaign(ctx context.Context, userID, campaignID string) (bool, error) {
-	count, err := s.col.CountDocuments(ctx, bson.M{"campaignId": campaignID, "linkedUserId": userID})
+	count, err := s.col.CountDocuments(ctx, bson.M{"campaignId": campaignID, "linkedUserId": userID, "kind": notCompanion()})
 	return count > 0, err
 }
 
@@ -331,7 +414,7 @@ type PlayerInventorySummary struct {
 // player in a campaign. Used to compute which players hold each custom item.
 func (s *PlayerStore) ListInventorySummaries(ctx context.Context, campaignID string) ([]PlayerInventorySummary, error) {
 	cursor, err := s.col.Find(ctx,
-		bson.M{"campaignId": campaignID},
+		bson.M{"campaignId": campaignID, "kind": notCompanion()},
 		options.Find().SetProjection(bson.M{"name": 1, "linkedUserId": 1, "inventory": 1}),
 	)
 	if err != nil {
@@ -359,7 +442,7 @@ type PlayerSpellSummary struct {
 // a campaign. Used to compute which players know each custom spell.
 func (s *PlayerStore) ListSpellSummaries(ctx context.Context, campaignID string) ([]PlayerSpellSummary, error) {
 	cursor, err := s.col.Find(ctx,
-		bson.M{"campaignId": campaignID},
+		bson.M{"campaignId": campaignID, "kind": notCompanion()},
 		options.Find().SetProjection(bson.M{"name": 1, "linkedUserId": 1, "spells": 1}),
 	)
 	if err != nil {
