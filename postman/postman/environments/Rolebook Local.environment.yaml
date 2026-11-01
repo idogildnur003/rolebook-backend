@@ -16,6 +16,8 @@ values:
     value: ''
   - key: itemId
     value: ''
+  - key: limitedUseId
+    value: ''
   - key: spellId
     value: ''
   - key: arsenalSpellId

@@ -19,7 +19,8 @@ import (
 )
 
 // stripProtectedPlayerFields removes keys a generic player PATCH must never set:
-// identity/ownership fields, and coins (including dotted "coins.<denom>" paths).
+// identity/ownership fields, coins (including dotted "coins.<denom>" paths), and
+// limitedUses (including dotted "limitedUses.<n>..." paths).
 func stripProtectedPlayerFields(req map[string]any) {
 	delete(req, "campaignId")
 	delete(req, "linkedUserId")
@@ -27,10 +28,11 @@ func stripProtectedPlayerFields(req map[string]any) {
 	delete(req, "id")
 	// Coins is matched case-insensitively: the driver's struct decoder falls
 	// back to a lowercase field match, so "Coins"/"COINS.gp" would otherwise
-	// reach the stored document.
+	// reach the stored document. limitedUses gets the same treatment.
 	for key := range req {
 		lk := strings.ToLower(key)
-		if lk == "coins" || strings.HasPrefix(lk, "coins.") {
+		if lk == "coins" || strings.HasPrefix(lk, "coins.") ||
+			lk == "limiteduses" || strings.HasPrefix(lk, "limiteduses.") {
 			delete(req, key)
 		}
 	}
