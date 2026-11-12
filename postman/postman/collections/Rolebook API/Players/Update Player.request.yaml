@@ -37,6 +37,15 @@ body:
       "proficientSkills": ["Stealth", "Perception", "Survival"],
       "expertiseSkills": ["Stealth"],
       "featuresAndFeats": ["Favored Enemy", "Natural Explorer", "Dread Ambusher"],
+      "hitDie": "d10",
+      "hitDiceMax": 5,
+      "hitDiceSpent": 2,
+      "spellcastingAbility": "WIS",
+      "armorTraining": ["light", "medium", "shields"],
+      "weaponProficiencies": "Simple weapons, martial weapons",
+      "toolProficiencies": "Herbalism kit",
+      "languages": "Common, Elvish, Sylvan",
+      "appearance": "Tall and lean, with moss-green eyes.",
       "conditions": {}
     }
 scripts:

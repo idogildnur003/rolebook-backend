@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -46,6 +47,82 @@ func stripProtectedPlayerFields(req map[string]any) {
 			delete(req, key)
 		}
 	}
+}
+
+// validateSheetNoteFields checks the notes-only sheet fields in a PATCH body.
+// Absent keys are not checked. storedHitDiceMax is the player's current
+// hitDiceMax, used when the request does not also change it.
+func validateSheetNoteFields(req map[string]any, storedHitDiceMax int) error {
+	if v, ok := req["hitDie"]; ok && v != nil {
+		s, ok := v.(string)
+		if !ok || (s != "d6" && s != "d8" && s != "d10" && s != "d12") {
+			return errors.New("hitDie must be one of d6, d8, d10, d12 or null")
+		}
+	}
+	wholeInt := func(v any) (int, bool) {
+		if f, ok := v.(float64); ok && f != math.Trunc(f) {
+			return 0, false
+		}
+		return toInt(v)
+	}
+	effectiveMax := storedHitDiceMax
+	if v, ok := req["hitDiceMax"]; ok {
+		n, ok := wholeInt(v)
+		if !ok || n < 0 || n > model.HitDiceMaxCap {
+			return fmt.Errorf("hitDiceMax must be a whole number 0-%d", model.HitDiceMaxCap)
+		}
+		effectiveMax = n
+	}
+	if v, ok := req["hitDiceSpent"]; ok {
+		n, ok := wholeInt(v)
+		if !ok || n < 0 || n > effectiveMax {
+			return errors.New("hitDiceSpent must be 0-hitDiceMax")
+		}
+	}
+	if v, ok := req["spellcastingAbility"]; ok && v != nil {
+		s, ok := v.(string)
+		if !ok || (s != "INT" && s != "WIS" && s != "CHA") {
+			return errors.New("spellcastingAbility must be one of INT, WIS, CHA or null")
+		}
+	}
+	if v, ok := req["armorTraining"]; ok {
+		items, ok := v.([]any)
+		if !ok {
+			return errors.New("armorTraining must be an array")
+		}
+		seen := map[string]bool{}
+		for _, it := range items {
+			s, ok := it.(string)
+			if !ok || (s != "light" && s != "medium" && s != "heavy" && s != "shields") {
+				return errors.New("armorTraining entries must be light, medium, heavy or shields")
+			}
+			if seen[s] {
+				return errors.New("armorTraining entries must be distinct")
+			}
+			seen[s] = true
+		}
+	}
+	for _, key := range []string{"weaponProficiencies", "toolProficiencies", "languages"} {
+		if v, ok := req[key]; ok {
+			s, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("%s must be a string", key)
+			}
+			if utf8.RuneCountInString(s) > model.SheetNoteTextMax {
+				return fmt.Errorf("%s must be at most %d characters", key, model.SheetNoteTextMax)
+			}
+		}
+	}
+	if v, ok := req["appearance"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return errors.New("appearance must be a string")
+		}
+		if utf8.RuneCountInString(s) > model.AppearanceTextMax {
+			return fmt.Errorf("appearance must be at most %d characters", model.AppearanceTextMax)
+		}
+	}
+	return nil
 }
 
 // validateCompanionFields checks the shape of companion stat-block fields in a
@@ -415,6 +492,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 	stripProtectedPlayerFields(req)
 
 	if err := validateCompanionFields(req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
+		return
+	}
+
+	if err := validateSheetNoteFields(req, access.Player.HitDiceMax); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error(), "BAD_REQUEST")
 		return
 	}
