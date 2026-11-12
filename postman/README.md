@@ -696,6 +696,16 @@ Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kin
 | 403 | `FORBIDDEN` | Caller is a non-DM without a PC in this campaign |
 | 404 | `NOT_FOUND` | Campaign not found or caller not a member |
 
+**Companion fields** (set through `PATCH /players/{{playerId}}`; all optional):
+
+| Field | Type | Notes |
+|---|---|---|
+| `companionType` | string | `""` (custom), `"land"`, `"sea"` or `"sky"` (Primal Companion) |
+| `flySpeed`, `climbSpeed`, `swimSpeed` | int | 0-120 ft; 0 means none. Walking speed stays `speed` |
+| `creatureType`, `senses`, `languages`, `otherSpeeds` | string | Free text |
+| `traits` | array | `{ name, description }` |
+| `actions` | array | `{ name, range?, attackBonus?, damage, description }`; `attackBonus` is a whole number or null |
+
 **Delete exception:** `DELETE /players/{{playerId}}` is normally DM-only, but a player may delete their own companion (204). Deleting a PC also deletes all of its companions.
 
 ---

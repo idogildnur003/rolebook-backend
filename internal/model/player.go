@@ -63,9 +63,27 @@ type CompanionTrait struct {
 // CompanionAction is a named action on a companion's stat block.
 type CompanionAction struct {
 	Name        string `bson:"name"                  json:"name"`
+	Range       string `bson:"range,omitempty"       json:"range,omitempty"`
 	AttackBonus *int   `bson:"attackBonus,omitempty" json:"attackBonus,omitempty"`
 	Damage      string `bson:"damage"                json:"damage"`
 	Description string `bson:"description"           json:"description"`
+}
+
+// Companion types: the three Primal Companion stat blocks (Tasha's Cauldron of
+// Everything Beast Master). Empty means a custom creature.
+const (
+	CompanionTypeLand = "land"
+	CompanionTypeSea  = "sea"
+	CompanionTypeSky  = "sky"
+)
+
+// IsCompanionType reports whether t is a valid companion type ("" = custom).
+func IsCompanionType(t string) bool {
+	switch t {
+	case "", CompanionTypeLand, CompanionTypeSea, CompanionTypeSky:
+		return true
+	}
+	return false
 }
 
 // IsDMCreatableKind reports whether kind is one a DM may create directly
@@ -152,6 +170,10 @@ type Player struct {
 	// Companion-only fields (kind == "companion"); omitted for other kinds.
 	OwnerPlayerID string            `bson:"ownerPlayerId,omitempty" json:"ownerPlayerId,omitempty"`
 	CreatureType  string            `bson:"creatureType,omitempty"  json:"creatureType,omitempty"`
+	CompanionType string            `bson:"companionType,omitempty" json:"companionType,omitempty"`
+	FlySpeed      int               `bson:"flySpeed,omitempty"      json:"flySpeed,omitempty"`
+	ClimbSpeed    int               `bson:"climbSpeed,omitempty"    json:"climbSpeed,omitempty"`
+	SwimSpeed     int               `bson:"swimSpeed,omitempty"     json:"swimSpeed,omitempty"`
 	OtherSpeeds   string            `bson:"otherSpeeds,omitempty"   json:"otherSpeeds,omitempty"`
 	Senses        string            `bson:"senses,omitempty"        json:"senses,omitempty"`
 	Languages     string            `bson:"languages,omitempty"     json:"languages,omitempty"`
