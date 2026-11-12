@@ -50,8 +50,18 @@ func TestValidateCompanionFields(t *testing.T) {
 		{"actions": []any{map[string]any{"name": "Bite", "attackBonus": float64(4), "damage": "2d4+2", "description": ""}}},
 		{"actions": []any{map[string]any{"name": "Howl", "attackBonus": nil, "damage": "", "description": "scare"}}},
 		{"name": "Ash"},
+		{"actions": []any{map[string]any{"name": "Beast's Strike", "range": "Melee 5 ft", "attackBonus": float64(4), "damage": "1d8+4", "description": ""}}},
+		{"companionType": "land"}, {"companionType": "sea"}, {"companionType": "sky"}, {"companionType": ""},
+		{"flySpeed": float64(60), "climbSpeed": float64(0), "swimSpeed": float64(120)},
 	}
 	bad := []map[string]any{
+		{"actions": []any{map[string]any{"name": "Bite", "range": 5, "damage": "", "description": ""}}},
+		{"companionType": "air"},
+		{"companionType": 1},
+		{"flySpeed": float64(-5)},
+		{"climbSpeed": 30.5},
+		{"swimSpeed": "60"},
+		{"flySpeed": float64(121)},
 		{"traits": "Pack Tactics"},
 		{"traits": []any{map[string]any{"name": 5, "description": ""}}},
 		{"traits": []any{map[string]any{"name": "", "description": "x"}}},

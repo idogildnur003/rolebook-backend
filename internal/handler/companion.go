@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/elad/rolebook-backend/internal/model"
 )
@@ -27,13 +26,9 @@ func resolveCompanionOwner(m *campaignMembership, reqOwnerPlayerID string, owner
 	return reqOwnerPlayerID, 0, ""
 }
 
-// isDuplicateKey reports whether err is a MongoDB duplicate-key error.
-func isDuplicateKey(err error) bool {
-	return mongo.IsDuplicateKeyError(err)
-}
-
 // CreateCompanion handles POST /api/campaigns/:campaignId/companions.
-// A player creates their own pet; the DM creates one for a named PC.
+// A player creates a pet for their own PC; the DM creates one for a named PC.
+// A PC may own any number of pets.
 func (h *PlayerHandler) CreateCompanion(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignId")
 
@@ -95,22 +90,8 @@ func (h *PlayerHandler) CreateCompanion(w http.ResponseWriter, r *http.Request) 
 		owner = p
 	}
 
-	existing, err := h.players.FindCompanionByOwner(ctx, campaignID, ownerPlayerID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
-		return
-	}
-	if existing != nil {
-		writeError(w, http.StatusConflict, "companion already exists", "COMPANION_EXISTS")
-		return
-	}
-
 	pet := model.DefaultCompanion(uuid.NewString(), campaignID, owner.LinkedUserID, ownerPlayerID, name, strings.TrimSpace(req.CreatureType))
 	if err := h.players.Create(ctx, pet); err != nil {
-		if isDuplicateKey(err) {
-			writeError(w, http.StatusConflict, "companion already exists", "COMPANION_EXISTS")
-			return
-		}
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}

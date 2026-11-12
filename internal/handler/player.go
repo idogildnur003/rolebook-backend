@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
@@ -87,6 +88,11 @@ func validateCompanionFields(req map[string]any) error {
 					return errors.New("action attackBonus must be a whole number or null")
 				}
 			}
+			if r, present := m["range"]; present {
+				if _, ok := r.(string); !ok {
+					return errors.New("action range must be a string")
+				}
+			}
 			if _, ok := m["damage"].(string); !ok {
 				return errors.New("action damage must be a string")
 			}
@@ -102,8 +108,26 @@ func validateCompanionFields(req map[string]any) error {
 			}
 		}
 	}
+	if v, ok := req["companionType"]; ok {
+		t, ok := v.(string)
+		if !ok || !model.IsCompanionType(t) {
+			return errors.New(`companionType must be "", "land", "sea" or "sky"`)
+		}
+	}
+	for _, key := range []string{"flySpeed", "climbSpeed", "swimSpeed"} {
+		if v, ok := req[key]; ok {
+			f, ok := v.(float64)
+			if !ok || f != math.Trunc(f) || f < 0 || f > maxCompanionSpeed {
+				return fmt.Errorf("%s must be a whole number from 0 to %d", key, maxCompanionSpeed)
+			}
+		}
+	}
 	return nil
 }
+
+// maxCompanionSpeed caps fly/climb/swim speeds (feet), matching the app's
+// walking-speed editor.
+const maxCompanionSpeed = 120
 
 // canDeletePlayer reports whether the caller may delete p: the campaign DM, or
 // the owner (linked user) of a companion.

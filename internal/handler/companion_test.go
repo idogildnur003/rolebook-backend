@@ -1,11 +1,6 @@
 package handler
 
-import (
-	"errors"
-	"testing"
-
-	"go.mongodb.org/mongo-driver/v2/mongo"
-)
+import "testing"
 
 func TestResolveCompanionOwner(t *testing.T) {
 	player := &campaignMembership{IsMember: true, UserID: "u1", PlayerID: "p1"}
@@ -24,15 +19,5 @@ func TestResolveCompanionOwner(t *testing.T) {
 	}
 	if id, st, _ := resolveCompanionOwner(dm, "p1", true); id != "p1" || st != 0 {
 		t.Fatalf("dm ok → %q %d", id, st)
-	}
-}
-
-func TestIsDuplicateKey(t *testing.T) {
-	if isDuplicateKey(errors.New("boom")) {
-		t.Fatal("plain error is not duplicate key")
-	}
-	dup := mongo.WriteException{WriteErrors: []mongo.WriteError{{Code: 11000}}}
-	if !isDuplicateKey(dup) {
-		t.Fatal("11000 must be duplicate key")
 	}
 }
