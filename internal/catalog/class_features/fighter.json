@@ -1,0 +1,329 @@
+[
+  {
+    "id": "cf-fighter-fighting-style",
+    "name": "Fighting Style",
+    "class": "Fighter",
+    "level": 1,
+    "description": "You gain a Fighting Style feat of your choice. Whenever you gain a Fighter level, you can replace it with a different Fighting Style feat.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-second-wind",
+    "name": "Second Wind",
+    "class": "Fighter",
+    "level": 1,
+    "description": "As a Bonus Action, you regain Hit Points equal to 1d10 plus your Fighter level. You have 2 uses (3 at level 4, 4 at level 10), regaining one on a Short Rest and all on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-weapon-mastery",
+    "name": "Weapon Mastery",
+    "class": "Fighter",
+    "level": 1,
+    "description": "You can use the mastery properties of three kinds of Simple or Martial weapons of your choice. After a Long Rest you can swap one of those choices. The number of kinds rises to 4 at level 4, 5 at level 10, and 6 at level 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-action-surge",
+    "name": "Action Surge",
+    "class": "Fighter",
+    "level": 2,
+    "description": "On your turn, you can take one additional action, other than the Magic action. You can do this once per Short or Long Rest. From level 17 you have two uses between rests, but only one per turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-tactical-mind",
+    "name": "Tactical Mind",
+    "class": "Fighter",
+    "level": 2,
+    "description": "When you fail an ability check, you can spend a use of Second Wind. You don't regain Hit Points; you roll 1d10 and add it to the check, possibly turning it into a success. If the check still fails, the use isn't spent.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-fighter-subclass",
+    "name": "Fighter Subclass",
+    "class": "Fighter",
+    "level": 3,
+    "description": "You choose a subclass: Battle Master, Champion, Eldritch Knight, or Psi Warrior. You gain its features at levels 3, 7, 10, 15, and 18.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Fighter",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 6, 8, 12, 14, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-extra-attack",
+    "name": "Extra Attack",
+    "class": "Fighter",
+    "level": 5,
+    "description": "You can attack twice, not once, whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-tactical-shift",
+    "name": "Tactical Shift",
+    "class": "Fighter",
+    "level": 5,
+    "description": "Whenever you use Second Wind as a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-indomitable",
+    "name": "Indomitable",
+    "class": "Fighter",
+    "level": 9,
+    "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll. You have 1 use per Long Rest, 2 at level 13, and 3 at level 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-tactical-master",
+    "name": "Tactical Master",
+    "class": "Fighter",
+    "level": 9,
+    "description": "When you attack with a weapon whose mastery property you can use, you can replace that property with Push, Sap, or Slow for that attack.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-two-extra-attacks",
+    "name": "Two Extra Attacks",
+    "class": "Fighter",
+    "level": 11,
+    "description": "You can attack three times whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-studied-attacks",
+    "name": "Studied Attacks",
+    "class": "Fighter",
+    "level": 13,
+    "description": "If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-epic-boon",
+    "name": "Epic Boon",
+    "class": "Fighter",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Combat Prowess is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-three-extra-attacks",
+    "name": "Three Extra Attacks",
+    "class": "Fighter",
+    "level": 20,
+    "description": "You can attack four times whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-combat-superiority",
+    "name": "Combat Superiority",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 3,
+    "description": "Maneuvers: you learn three maneuvers, and two more at each of levels 7, 10, and 15; at those levels you can also replace one you know. You can use only one maneuver per attack. The maneuvers are Ambush, Bait and Switch, Commander's Strike, Commanding Presence, Disarming Attack, Distracting Strike, Evasive Footwork, Feinting Attack, Goading Attack, Lunging Attack, Maneuvering Attack, Menacing Attack, Parry, Precision Attack, Pushing Attack, Rally, Riposte, Sweeping Attack, Tactical Assessment, and Trip Attack.\nSuperiority Dice: you have four d8s that fuel your maneuvers and are spent when used. You regain them all on a Short or Long Rest. You gain a fifth die at level 7 and a sixth at level 15.\nSaving throws: the DC for your maneuvers is 8 plus your Strength or Dexterity modifier (your choice) and your Proficiency Bonus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-student-of-war",
+    "name": "Student of War",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 3,
+    "description": "You gain proficiency with one kind of Artisan's Tools of your choice and in one skill from the Fighter skill list.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-know-your-enemy",
+    "name": "Know Your Enemy",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 7,
+    "description": "As a Bonus Action, you can study a creature you can see within 30 feet and learn whether it has any Immunities, Resistances, or Vulnerabilities, and what they are. You can do this once per Long Rest, or again by spending one Superiority Die (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-improved-combat-superiority",
+    "name": "Improved Combat Superiority",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 10,
+    "description": "Your Superiority Dice become d10s.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-relentless",
+    "name": "Relentless",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 15,
+    "description": "Once per turn, when you use a maneuver, you can roll 1d8 and use that number in place of spending a Superiority Die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-battle-master-ultimate-combat-superiority",
+    "name": "Ultimate Combat Superiority",
+    "class": "Fighter",
+    "subclass": "Battle Master",
+    "level": 18,
+    "description": "Your Superiority Dice become d12s.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-improved-critical",
+    "name": "Improved Critical",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 3,
+    "description": "Your attack rolls with weapons and Unarmed Strikes score a Critical Hit on a roll of 19 or 20 on the d20.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-remarkable-athlete",
+    "name": "Remarkable Athlete",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 3,
+    "description": "You have Advantage on Initiative rolls and Strength (Athletics) checks. Also, right after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-additional-fighting-style",
+    "name": "Additional Fighting Style",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 7,
+    "description": "You gain another Fighting Style feat of your choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-heroic-warrior",
+    "name": "Heroic Warrior",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 10,
+    "description": "During combat, you can give yourself Heroic Inspiration whenever you start your turn without it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-superior-critical",
+    "name": "Superior Critical",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 15,
+    "description": "Your attack rolls with weapons and Unarmed Strikes score a Critical Hit on a roll of 18 to 20 on the d20.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-champion-survivor",
+    "name": "Survivor",
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 18,
+    "description": "Defy Death: you have Advantage on Death Saving Throws, and a roll of 18 to 20 on one counts as rolling a 20.\nHeroic Rally: at the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-spellcasting",
+    "name": "Spellcasting",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 3,
+    "description": "You cast Wizard spells using Intelligence. You know 2 cantrips (3 at level 10) and prepare a small number of Wizard spells, with spell slots that reach level 4 by Fighter level 19. You can replace one prepared spell when you gain a Fighter level, and you can use an Arcane Focus as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-war-bond",
+    "name": "War Bond",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 3,
+    "description": "Over a 1-hour ritual, which can be done during a Short Rest, you bond with one weapon. You can't be disarmed of it unless you are Incapacitated, and if it is on the same plane of existence you can summon it to your hand as a Bonus Action. You can have up to two bonded weapons but summon only one at a time; bonding a third means breaking one of the other bonds.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-war-magic",
+    "name": "War Magic",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 7,
+    "description": "When you take the Attack action on your turn, you can replace one of the attacks with a casting of one of your Wizard cantrips that has a casting time of an action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-eldritch-strike",
+    "name": "Eldritch Strike",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 10,
+    "description": "When you hit a creature with a weapon attack, it has Disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-arcane-charge",
+    "name": "Arcane Charge",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 15,
+    "description": "When you use Action Surge, you can teleport up to 30 feet to an unoccupied space you can see, before or after the additional action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-eldritch-knight-improved-war-magic",
+    "name": "Improved War Magic",
+    "class": "Fighter",
+    "subclass": "Eldritch Knight",
+    "level": 18,
+    "description": "When you take the Attack action on your turn, you can replace two of the attacks with a casting of one of your level 1 or level 2 Wizard spells that has a casting time of an action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-psi-warrior-psionic-power",
+    "name": "Psionic Power",
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "level": 3,
+    "description": "You have a pool of Psionic Energy Dice: four d6s at level 3, six d8s at level 5, eight at level 9, d10s at level 11, ten at level 13, and twelve d12s at level 17. You regain one die on a Short Rest and all of them on a Long Rest. They fuel these powers:\nProtective Field: when you or another creature you can see within 30 feet takes damage, you can use your Reaction and spend one die to reduce the damage by the roll plus your Intelligence modifier (minimum reduction of 1).\nPsionic Strike: once on each of your turns, right after you hit a target within 30 feet with a weapon attack and deal damage, you can spend one die to deal extra Force damage equal to the roll plus your Intelligence modifier.\nTelekinetic Movement: as a Magic action, you move one loose object that is Large or smaller, or one willing creature other than yourself, up to 30 feet to an unoccupied space within 30 feet of you. You can do this once per Short or Long Rest for free, or again by spending one die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-psi-warrior-telekinetic-adept",
+    "name": "Telekinetic Adept",
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "level": 7,
+    "description": "Psi-Powered Leap: as a Bonus Action, you gain a Fly Speed equal to twice your Speed until the end of the current turn. You can do this once per Short or Long Rest for free, or again by spending one Psionic Energy Die.\nTelekinetic Thrust: when you deal damage with Psionic Strike, you can make the target attempt a Strength saving throw (DC 8 plus your Intelligence modifier and Proficiency Bonus). On a failure, you knock it Prone or move it up to 10 feet horizontally.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-psi-warrior-guarded-mind",
+    "name": "Guarded Mind",
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "level": 10,
+    "description": "You have Resistance to Psychic damage. Also, if you start your turn Charmed or Frightened, you can spend a Psionic Energy Die (no action required) to end every effect on you that is causing those conditions.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-psi-warrior-bulwark-of-force",
+    "name": "Bulwark of Force",
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "level": 15,
+    "description": "As a Bonus Action, choose creatures you can see within 30 feet, which can include you, up to your Intelligence modifier (minimum 1). Each has Half Cover for 1 minute or until you are Incapacitated. You can do this once per Long Rest for free, or again by spending one Psionic Energy Die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-fighter-psi-warrior-telekinetic-master",
+    "name": "Telekinetic Master",
+    "class": "Fighter",
+    "subclass": "Psi Warrior",
+    "level": 18,
+    "description": "You always have Telekinesis prepared and can cast it without a spell slot or components, using Intelligence. On each of your turns while you concentrate on it, including the turn you cast it, you can make one weapon attack as a Bonus Action. You can cast it this way once per Long Rest for free, or again by spending one Psionic Energy Die.",
+    "source": "PHB 2024"
+  }
+]

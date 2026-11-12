@@ -189,6 +189,14 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 				r.Get("/", arsenalHandler.ListEquipment)
 				r.Get("/{equipmentId}", arsenalHandler.GetEquipment)
 			})
+			r.Route("/arsenal/feats", func(r chi.Router) {
+				r.Get("/", arsenalHandler.ListFeats)
+				r.Get("/{featId}", arsenalHandler.GetFeat)
+			})
+			r.Route("/arsenal/class-features", func(r chi.Router) {
+				r.Get("/", arsenalHandler.ListClassFeatures)
+				r.Get("/{featureId}", arsenalHandler.GetClassFeature)
+			})
 
 			// Admin-only: arsenal catalog images (env allowlist)
 			r.Group(func(r chi.Router) {

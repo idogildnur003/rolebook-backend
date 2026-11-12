@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/arsenal/class-features?page=1&limit=100&class=Barbarian&subclass=Path of the Berserker"
+method: GET
+queryParams:
+  page: "1"
+  limit: "100"
+  class: Barbarian
+  subclass: Path of the Berserker
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 7000

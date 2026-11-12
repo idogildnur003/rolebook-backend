@@ -1,0 +1,286 @@
+[
+  {
+    "id": "cf-druid-spellcasting",
+    "name": "Spellcasting",
+    "class": "Druid",
+    "level": 1,
+    "description": "You cast Druid spells using Wisdom. You know 2 cantrips (3 at level 4, 4 at level 10) and prepare spells from the Druid list, which you can change when you finish a Long Rest. You can use a Druidic Focus as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-druidic",
+    "name": "Druidic",
+    "class": "Druid",
+    "level": 1,
+    "description": "You know Druidic, the secret language of Druids, and you always have Speak with Animals prepared. You can leave hidden messages in Druidic. Anyone who knows the language spots them automatically; others need a DC 15 Intelligence (Investigation) check to notice a message and can't read it without magic.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-primal-order",
+    "name": "Primal Order",
+    "class": "Druid",
+    "level": 1,
+    "description": "Choose one role:\nMagician: you learn one extra Druid cantrip, and you add your Wisdom modifier (minimum +1) to Intelligence (Arcana) and Intelligence (Nature) checks.\nWarden: you gain proficiency with Martial weapons and training with Medium armor.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-wild-shape",
+    "name": "Wild Shape",
+    "class": "Druid",
+    "level": 2,
+    "description": "As a Bonus Action, you take the form of a Beast you have learned. You have 2 uses (3 at level 6, 4 at level 17), regaining one on a Short Rest and all on a Long Rest. The form lasts for a number of hours equal to half your Druid level, and ends early if you use Wild Shape again, are Incapacitated, die, or leave it as a Bonus Action.\nKnown forms: you start with four forms of Challenge Rating 1/4 or lower with no Fly Speed. At level 4 you know six forms up to CR 1/2. At level 8 you know eight forms up to CR 1, and forms with a Fly Speed are allowed. You can replace one known form when you finish a Long Rest.\nWhile transformed: you gain Temporary Hit Points equal to your Druid level. You use the Beast's stat block but keep your creature type, Hit Points, Hit Point Dice, Intelligence, Wisdom, and Charisma scores, class features, languages, and feats. You keep your skill and saving throw proficiencies and gain the Beast's, using whichever bonus is higher. You can't cast spells, but transforming doesn't break Concentration. Your equipment falls to the ground, merges into the form, or is worn by it, as you choose.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-wild-companion",
+    "name": "Wild Companion",
+    "class": "Druid",
+    "level": 2,
+    "description": "As a Magic action, you can spend a spell slot or a use of Wild Shape to cast Find Familiar without Material components. The familiar is a Fey and disappears when you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-druid-subclass",
+    "name": "Druid Subclass",
+    "class": "Druid",
+    "level": 3,
+    "description": "You choose a subclass: Circle of the Land, Circle of the Moon, Circle of the Sea, or Circle of the Stars. You gain its features at levels 3, 6, 10, and 14.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Druid",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-wild-resurgence",
+    "name": "Wild Resurgence",
+    "class": "Druid",
+    "level": 5,
+    "description": "Once on each of your turns, if you have no uses of Wild Shape left, you can spend a spell slot (no action required) to gain one use. Also, you can spend one use of Wild Shape (no action required) to gain a level 1 spell slot; you can't do that again until you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-elemental-fury",
+    "name": "Elemental Fury",
+    "class": "Druid",
+    "level": 7,
+    "description": "Choose one option:\nPotent Spellcasting: you add your Wisdom modifier to the damage of any Druid cantrip.\nPrimal Strike: once on each of your turns, when you hit a creature with a weapon attack roll or a Beast form's attack in Wild Shape, it takes an extra 1d8 Cold, Fire, Lightning, or Thunder damage (your choice).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-improved-elemental-fury",
+    "name": "Improved Elemental Fury",
+    "class": "Druid",
+    "level": 15,
+    "description": "Your Elemental Fury option grows stronger:\nPotent Spellcasting: when you cast a Druid cantrip with a range of 10 feet or more, its range increases by 300 feet.\nPrimal Strike: the extra damage becomes 2d8.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-beast-spells",
+    "name": "Beast Spells",
+    "class": "Druid",
+    "level": 18,
+    "description": "You can cast spells while in a Wild Shape form, except spells with a Material component that has a listed cost or that is consumed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-epic-boon",
+    "name": "Epic Boon",
+    "class": "Druid",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Dimensional Travel is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-archdruid",
+    "name": "Archdruid",
+    "class": "Druid",
+    "level": 20,
+    "description": "Evergreen Wild Shape: when you roll Initiative with no uses of Wild Shape left, you regain one use.\nNature Magician: you can convert unspent uses of Wild Shape into a single spell slot (no action required). Each use contributes 2 spell levels; for example, two uses make a level 4 slot. You can do this once per Long Rest.\nLongevity: for every ten years that pass, your body ages only one year.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-land-circle-of-the-land-spells",
+    "name": "Circle of the Land Spells",
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "level": 3,
+    "description": "Whenever you finish a Long Rest, choose a type of land. You have that land's spells prepared for your Druid level and lower.\nArid: level 3 Blur, Burning Hands, Fire Bolt; level 5 Fireball; level 7 Blight; level 9 Wall of Stone.\nPolar: level 3 Fog Cloud, Hold Person, Ray of Frost; level 5 Sleet Storm; level 7 Ice Storm; level 9 Cone of Cold.\nTemperate: level 3 Misty Step, Shocking Grasp, Sleep; level 5 Lightning Bolt; level 7 Freedom of Movement; level 9 Tree Stride.\nTropical: level 3 Acid Splash, Ray of Sickness, Web; level 5 Stinking Cloud; level 7 Polymorph; level 9 Insect Plague.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-land-lands-aid",
+    "name": "Land's Aid",
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "level": 3,
+    "description": "As a Magic action, spend a use of Wild Shape and choose a point within 60 feet. In a 10-foot-radius Sphere around it, each creature of your choice makes a Constitution saving throw against your spell save DC, taking 2d6 Necrotic damage on a failure or half on a success. One creature of your choice in the area regains 2d6 Hit Points. Both amounts become 3d6 at level 10 and 4d6 at level 14.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-land-natural-recovery",
+    "name": "Natural Recovery",
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "level": 6,
+    "description": "You can cast one level 1 or higher spell prepared from your Circle Spells without a spell slot; you can't do so again until you finish a Long Rest. Also, when you finish a Short Rest, you can recover spell slots whose combined level is at most half your Druid level (rounded up), none of them level 6 or higher. You can't do that again until you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-land-natures-ward",
+    "name": "Nature's Ward",
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "level": 10,
+    "description": "You are immune to the Poisoned condition, and you have Resistance to a damage type tied to your current land choice: Arid, Fire; Polar, Cold; Temperate, Lightning; Tropical, Poison.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-land-natures-sanctuary",
+    "name": "Nature's Sanctuary",
+    "class": "Druid",
+    "subclass": "Circle of the Land",
+    "level": 14,
+    "description": "As a Magic action, spend a use of Wild Shape to fill a 15-foot Cube on the ground within 120 feet with spectral trees and vines. They last 1 minute or until you are Incapacitated or die. You and your allies have Half Cover while in the area, and your allies there gain the Resistance from your Nature's Ward. As a Bonus Action, you can move the Cube up to 60 feet to ground within 120 feet of you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-moon-circle-forms",
+    "name": "Circle Forms",
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 3,
+    "description": "Your Wild Shape is stronger in these ways:\nChallenge Rating: the highest CR for your forms is your Druid level divided by 3 (rounded down).\nArmor Class: in a form, your AC is 13 plus your Wisdom modifier if that is higher than the Beast's AC.\nTemporary Hit Points: you gain Temporary Hit Points equal to three times your Druid level in place of the usual amount.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-moon-circle-of-the-moon-spells",
+    "name": "Circle of the Moon Spells",
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Druid level, and you can cast them while in a Wild Shape form. Level 3: Cure Wounds, Moonbeam, Starry Wisp. Level 5: Conjure Animals. Level 7: Fount of Moonlight. Level 9: Mass Cure Wounds.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-moon-improved-circle-forms",
+    "name": "Improved Circle Forms",
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 6,
+    "description": "Lunar Radiance: each attack you make in a Wild Shape form can deal its normal damage type or Radiant damage, chosen each time you hit.\nIncreased Toughness: you add your Wisdom modifier to your Constitution saving throws.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-moon-moonlight-step",
+    "name": "Moonlight Step",
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 10,
+    "description": "As a Bonus Action, you teleport up to 30 feet to an unoccupied space you can see, and you have Advantage on the next attack roll you make before the end of this turn. You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest. You can also regain a use by spending a level 2 or higher spell slot (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-moon-lunar-form",
+    "name": "Lunar Form",
+    "class": "Druid",
+    "subclass": "Circle of the Moon",
+    "level": 14,
+    "description": "Improved Lunar Radiance: once per turn, you can deal an extra 2d10 Radiant damage to a target you hit with a Wild Shape form's attack.\nShared Moonlight: whenever you use Moonlight Step, you can also teleport one willing creature that is within 10 feet of you to an unoccupied space within 10 feet of your destination.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-sea-circle-of-the-sea-spells",
+    "name": "Circle of the Sea Spells",
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Druid level. Level 3: Fog Cloud, Gust of Wind, Ray of Frost, Shatter, Thunderwave. Level 5: Lightning Bolt, Water Breathing. Level 7: Control Water, Ice Storm. Level 9: Conjure Elemental, Hold Monster.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-sea-wrath-of-the-sea",
+    "name": "Wrath of the Sea",
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "level": 3,
+    "description": "As a Bonus Action, spend a use of Wild Shape to surround yourself with a 5-foot Emanation of ocean spray for 10 minutes. It ends early if you dismiss it (no action required), create it again, or are Incapacitated. When you create it, and as a Bonus Action on later turns, you can choose another creature you can see in the Emanation. It must succeed on a Constitution saving throw against your spell save DC or take Cold damage and, if it is Large or smaller, be pushed up to 15 feet away from you. The damage is a number of d6s equal to your Wisdom modifier (minimum one die).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-sea-aquatic-affinity",
+    "name": "Aquatic Affinity",
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "level": 6,
+    "description": "The Emanation from Wrath of the Sea grows to 10 feet, and you gain a Swim Speed equal to your Speed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-sea-stormborn",
+    "name": "Stormborn",
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "level": 10,
+    "description": "While Wrath of the Sea is active, you have a Fly Speed equal to your Speed and Resistance to Cold, Lightning, and Thunder damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-sea-oceanic-gift",
+    "name": "Oceanic Gift",
+    "class": "Druid",
+    "subclass": "Circle of the Sea",
+    "level": 14,
+    "description": "You can create the Wrath of the Sea Emanation around one willing creature within 60 feet in place of yourself. That creature gains all its benefits and uses your spell save DC and Wisdom modifier. You can create it around both of you by spending two uses of Wild Shape.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-stars-star-map",
+    "name": "Star Map",
+    "class": "Druid",
+    "subclass": "Circle of the Stars",
+    "level": 3,
+    "description": "You have a star chart that serves as a Spellcasting Focus. While holding it, you have Guidance and Guiding Bolt prepared, and you can cast Guiding Bolt without a spell slot a number of times equal to your Wisdom modifier (minimum 1), regaining those uses on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-stars-starry-form",
+    "name": "Starry Form",
+    "class": "Druid",
+    "subclass": "Circle of the Stars",
+    "level": 3,
+    "description": "As a Bonus Action, you can spend a use of Wild Shape to take a starry form in place of a Beast form. It lasts 10 minutes and ends early if you dismiss it (no action required), are Incapacitated, or die. You shed Bright Light for 10 feet and Dim Light for 10 feet beyond, and you choose one constellation:\nArcher: when you take the form, and as a Bonus Action on later turns, you can make a ranged spell attack against a creature within 60 feet, dealing Radiant damage equal to 1d8 plus your Wisdom modifier.\nChalice: whenever you cast a spell with a spell slot that restores Hit Points, you or another creature within 30 feet regains Hit Points equal to 1d8 plus your Wisdom modifier.\nDragon: when you make an Intelligence or Wisdom check, or a Constitution saving throw to keep Concentration, you can treat a d20 roll of 9 or lower as a 10.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-stars-cosmic-omen",
+    "name": "Cosmic Omen",
+    "class": "Druid",
+    "subclass": "Circle of the Stars",
+    "level": 6,
+    "description": "When you finish a Long Rest, consult your Star Map and roll a die. Until your next Long Rest you gain a Reaction based on the result, usable a number of times equal to your Wisdom modifier (minimum 1):\nWeal (even): when a creature you can see within 30 feet is about to make a D20 Test, roll 1d6 and add it to the total.\nWoe (odd): when a creature you can see within 30 feet is about to make a D20 Test, roll 1d6 and subtract it from the total.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-stars-twinkling-constellations",
+    "name": "Twinkling Constellations",
+    "class": "Druid",
+    "subclass": "Circle of the Stars",
+    "level": 10,
+    "description": "The Archer and Chalice rolls become 2d8. While the Dragon is active, you have a Fly Speed of 20 feet and can hover. At the start of each of your turns in Starry Form, you can change which constellation is active.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-druid-circle-of-the-stars-full-of-stars",
+    "name": "Full of Stars",
+    "class": "Druid",
+    "subclass": "Circle of the Stars",
+    "level": 14,
+    "description": "While in your Starry Form, you have Resistance to Bludgeoning, Piercing, and Slashing damage.",
+    "source": "PHB 2024"
+  }
+]

@@ -1,0 +1,242 @@
+[
+  {
+    "id": "cf-bard-bardic-inspiration",
+    "name": "Bardic Inspiration",
+    "class": "Bard",
+    "level": 1,
+    "description": "As a Bonus Action, you can inspire another creature within 60 feet who can see or hear you. It gains one Bardic Inspiration die (a d6) and can hold only one at a time. Once within the next hour, when it fails a D20 Test, it can roll the die and add the result, possibly turning the failure into a success. You have a number of uses equal to your Charisma modifier (minimum 1) and regain them on a Long Rest. The die becomes a d8 at level 5, a d10 at level 10, and a d12 at level 15.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-spellcasting",
+    "name": "Spellcasting",
+    "class": "Bard",
+    "level": 1,
+    "description": "You cast Bard spells using Charisma. You know 2 cantrips (3 at level 4, 4 at level 10) and prepare a list of spells that grows as you level; when you gain a Bard level you can replace one prepared spell and one cantrip. You can use a Musical Instrument as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-expertise",
+    "name": "Expertise",
+    "class": "Bard",
+    "level": 2,
+    "description": "You gain Expertise in two skills you are proficient in. At level 9 you gain Expertise in two more.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-jack-of-all-trades",
+    "name": "Jack of All Trades",
+    "class": "Bard",
+    "level": 2,
+    "description": "You add half your Proficiency Bonus (rounded down) to any ability check that uses a skill you aren't proficient in and that doesn't already include your Proficiency Bonus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-bard-subclass",
+    "name": "Bard Subclass",
+    "class": "Bard",
+    "level": 3,
+    "description": "You choose a subclass: College of Dance, College of Glamour, College of Lore, or College of Valor. You gain its features at levels 3, 6, and 14.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Bard",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-font-of-inspiration",
+    "name": "Font of Inspiration",
+    "class": "Bard",
+    "level": 5,
+    "description": "You regain all uses of Bardic Inspiration when you finish a Short or Long Rest. You can also spend a spell slot (no action required) to regain one use.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-countercharm",
+    "name": "Countercharm",
+    "class": "Bard",
+    "level": 7,
+    "description": "When you or a creature within 30 feet of you fails a saving throw against an effect that applies the Charmed or Frightened condition, you can use your Reaction to have the save rerolled with Advantage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-magical-secrets",
+    "name": "Magical Secrets",
+    "class": "Bard",
+    "level": 10,
+    "description": "Whenever your number of prepared spells increases at a Bard level, the new spells can come from the Bard, Cleric, Druid, or Wizard lists. The same applies whenever you replace a prepared spell.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-superior-inspiration",
+    "name": "Superior Inspiration",
+    "class": "Bard",
+    "level": 18,
+    "description": "When you roll Initiative, you regain uses of Bardic Inspiration until you have two, if you have fewer.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-epic-boon",
+    "name": "Epic Boon",
+    "class": "Bard",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Spell Recall is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-words-of-creation",
+    "name": "Words of Creation",
+    "class": "Bard",
+    "level": 20,
+    "description": "You always have Power Word Heal and Power Word Kill prepared. When you cast either, you can target a second creature within 10 feet of the first.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-dance-dazzling-footwork",
+    "name": "Dazzling Footwork",
+    "class": "Bard",
+    "subclass": "College of Dance",
+    "level": 3,
+    "description": "While you aren't wearing armor or wielding a Shield:\nDance Virtuoso: you have Advantage on Charisma (Performance) checks that involve dancing.\nUnarmored Defense: your base Armor Class is 10 plus your Dexterity and Charisma modifiers.\nAgile Strikes: when you spend a use of Bardic Inspiration as part of an action, Bonus Action, or Reaction, you can make one Unarmed Strike as part of it.\nBardic Damage: you can use Dexterity for Unarmed Strike attack rolls, and your Unarmed Strikes can deal Bludgeoning damage equal to a roll of your Bardic Inspiration die plus your Dexterity modifier. This doesn't spend the die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-dance-inspiring-movement",
+    "name": "Inspiring Movement",
+    "class": "Bard",
+    "subclass": "College of Dance",
+    "level": 6,
+    "description": "When an enemy you can see ends its turn within 5 feet of you, you can use your Reaction and spend one use of Bardic Inspiration to move up to half your Speed. One ally of your choice within 30 feet can also move up to half their Speed using their Reaction. None of this movement provokes Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-dance-tandem-footwork",
+    "name": "Tandem Footwork",
+    "class": "Bard",
+    "subclass": "College of Dance",
+    "level": 6,
+    "description": "When you roll Initiative, you can spend one use of Bardic Inspiration if you aren't Incapacitated. Roll the die; you and each ally within 30 feet who can see or hear you add the result to your Initiative.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-dance-leading-evasion",
+    "name": "Leading Evasion",
+    "class": "Bard",
+    "subclass": "College of Dance",
+    "level": 14,
+    "description": "When you are subjected to an effect that allows a Dexterity saving throw for half damage, you take no damage on a success and half on a failure. Creatures within 5 feet of you making the same save share this benefit for that save. You can't use this while Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-glamour-beguiling-magic",
+    "name": "Beguiling Magic",
+    "class": "Bard",
+    "subclass": "College of Glamour",
+    "level": 3,
+    "description": "You always have Charm Person and Mirror Image prepared. Also, right after you cast an Enchantment or Illusion spell with a spell slot, you can make a creature you can see within 60 feet attempt a Wisdom saving throw against your spell save DC. On a failure it is Charmed or Frightened (your choice) for 1 minute, repeating the save at the end of each of its turns. You can do this once per Long Rest, or again by spending one use of Bardic Inspiration (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-glamour-mantle-of-inspiration",
+    "name": "Mantle of Inspiration",
+    "class": "Bard",
+    "subclass": "College of Glamour",
+    "level": 3,
+    "description": "As a Bonus Action, you can spend a use of Bardic Inspiration and roll the die. Choose a number of other creatures within 60 feet, up to your Charisma modifier (minimum 1). Each gains Temporary Hit Points equal to twice the roll and can use its Reaction to move up to its Speed without provoking Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-glamour-mantle-of-majesty",
+    "name": "Mantle of Majesty",
+    "class": "Bard",
+    "subclass": "College of Glamour",
+    "level": 6,
+    "description": "You always have Command prepared. As a Bonus Action, you can cast Command without a spell slot and take on an otherworldly appearance for 1 minute or until your Concentration ends. During that time you can cast Command as a Bonus Action without a slot, and any creature Charmed by you automatically fails its save against it. You can use this once per Long Rest, or again by spending a level 3 or higher spell slot (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-glamour-unbreakable-majesty",
+    "name": "Unbreakable Majesty",
+    "class": "Bard",
+    "subclass": "College of Glamour",
+    "level": 14,
+    "description": "As a Bonus Action, you take on a majestic presence for 1 minute or until you are Incapacitated. The first time on a turn that a creature hits you with an attack roll, it must succeed on a Charisma saving throw against your spell save DC or the attack misses. You can use this once per Short or Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-lore-bonus-proficiencies",
+    "name": "Bonus Proficiencies",
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 3,
+    "description": "You gain proficiency in three skills of your choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-lore-cutting-words",
+    "name": "Cutting Words",
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 3,
+    "description": "When a creature you can see within 60 feet makes a damage roll or succeeds on an ability check or attack roll, you can use your Reaction and spend one use of Bardic Inspiration. Roll the die and subtract it from the creature's roll, reducing the damage or possibly turning the success into a failure.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-lore-magical-discoveries",
+    "name": "Magical Discoveries",
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 6,
+    "description": "You learn two spells of your choice from the Cleric, Druid, or Wizard lists, in any combination. Each must be a cantrip or a spell of a level you have slots for. They are always prepared, and you can replace one each time you gain a Bard level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-lore-peerless-skill",
+    "name": "Peerless Skill",
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 14,
+    "description": "When you fail an ability check or miss with an attack roll, you can spend one use of Bardic Inspiration, roll the die, and add it to the d20, possibly turning the result into a success. If it still fails, the use isn't spent.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-valor-combat-inspiration",
+    "name": "Combat Inspiration",
+    "class": "Bard",
+    "subclass": "College of Valor",
+    "level": 3,
+    "description": "A creature holding one of your Bardic Inspiration dice can also use it in one of these ways:\nDefense: when hit by an attack roll, it can use its Reaction to roll the die and add the result to its Armor Class against that attack, possibly causing a miss.\nOffense: right after it hits a target with an attack roll, it can roll the die and add the result to the attack's damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-valor-martial-training",
+    "name": "Martial Training",
+    "class": "Bard",
+    "subclass": "College of Valor",
+    "level": 3,
+    "description": "You gain proficiency with Martial weapons and training with Medium armor and Shields. You can use a Simple or Martial weapon as a Spellcasting Focus for your Bard spells.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-valor-extra-attack",
+    "name": "Extra Attack",
+    "class": "Bard",
+    "subclass": "College of Valor",
+    "level": 6,
+    "description": "You can attack twice whenever you take the Attack action on your turn. You can replace one of those attacks with a casting of one of your cantrips that has a casting time of an action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-bard-college-of-valor-battle-magic",
+    "name": "Battle Magic",
+    "class": "Bard",
+    "subclass": "College of Valor",
+    "level": 14,
+    "description": "After you cast a spell that has a casting time of an action, you can make one attack with a weapon as a Bonus Action.",
+    "source": "PHB 2024"
+  }
+]

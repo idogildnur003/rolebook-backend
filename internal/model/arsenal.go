@@ -50,3 +50,35 @@ type Equipment struct {
 	Cost           *float64 `json:"cost,omitempty"`
 	Currency       string   `json:"currency,omitempty"`
 }
+
+// FeatBenefit is one named benefit of a feat.
+type FeatBenefit struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+// Feat is a reference feat in the arsenal catalog.
+// Category is one of: origin, general, fighting-style, epic-boon.
+type Feat struct {
+	ID             string        `json:"id"`
+	Name           string        `json:"name"`
+	Category       string        `json:"category"`
+	Prerequisite   string        `json:"prerequisite,omitempty"`
+	Repeatable     bool          `json:"repeatable"`
+	RepeatableNote string        `json:"repeatableNote,omitempty"`
+	Benefits       []FeatBenefit `json:"benefits"`
+	Source         string        `json:"source,omitempty"`
+}
+
+// ClassFeature is a reference class or subclass feature in the arsenal catalog.
+// Subclass is empty for features of the base class. Level is the class level
+// at which the feature is gained.
+type ClassFeature struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Class       string `json:"class"`
+	Subclass    string `json:"subclass,omitempty"`
+	Level       int    `json:"level"`
+	Description string `json:"description"`
+	Source      string `json:"source,omitempty"`
+}

@@ -1,0 +1,270 @@
+[
+  {
+    "id": "cf-cleric-spellcasting",
+    "name": "Spellcasting",
+    "class": "Cleric",
+    "level": 1,
+    "description": "You cast Cleric spells using Wisdom. You know 3 cantrips (4 at level 4, 5 at level 10) and prepare spells from the Cleric list, which you can change when you finish a Long Rest. You can use a Holy Symbol as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-divine-order",
+    "name": "Divine Order",
+    "class": "Cleric",
+    "level": 1,
+    "description": "Choose one role:\nProtector: you gain proficiency with Martial weapons and training with Heavy armor.\nThaumaturge: you learn one extra Cleric cantrip, and you add your Wisdom modifier (minimum +1) to Intelligence (Arcana) and Intelligence (Religion) checks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-channel-divinity",
+    "name": "Channel Divinity",
+    "class": "Cleric",
+    "level": 2,
+    "description": "You can channel divine energy 2 times, regaining one use on a Short Rest and all uses on a Long Rest. You have 3 uses at level 6 and 4 at level 18. Each use powers one effect:\nDivine Spark: as a Magic action, point your Holy Symbol at a creature within 30 feet and roll 1d8 plus your Wisdom modifier. Either restore that many Hit Points to it, or force it to make a Constitution saving throw, taking that much Necrotic or Radiant damage on a failure and half on a success. The roll becomes 2d8 at level 7, 3d8 at level 13, and 4d8 at level 18.\nTurn Undead: as a Magic action, each Undead of your choice within 30 feet makes a Wisdom saving throw. On a failure it is Frightened and Incapacitated for 1 minute and must move away from you. The effect ends early if the creature takes damage, you are Incapacitated, or you die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-cleric-subclass",
+    "name": "Cleric Subclass",
+    "class": "Cleric",
+    "level": 3,
+    "description": "You choose a subclass: Life Domain, Light Domain, Trickery Domain, or War Domain. You gain its features at levels 3, 6, and 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Cleric",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-sear-undead",
+    "name": "Sear Undead",
+    "class": "Cleric",
+    "level": 5,
+    "description": "When you use Turn Undead, roll a number of d8s equal to your Wisdom modifier (minimum one die). Each Undead that fails its save takes Radiant damage equal to the total. This damage doesn't end the turn effect.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-blessed-strikes",
+    "name": "Blessed Strikes",
+    "class": "Cleric",
+    "level": 7,
+    "description": "Choose one option:\nDivine Strike: once on each of your turns, when you hit a creature with a weapon attack roll, it takes an extra 1d8 Necrotic or Radiant damage.\nPotent Spellcasting: you add your Wisdom modifier to the damage of any Cleric cantrip.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-divine-intervention",
+    "name": "Divine Intervention",
+    "class": "Cleric",
+    "level": 10,
+    "description": "As a Magic action, choose any Cleric spell of level 5 or lower that isn't cast as a Reaction and cast it without a spell slot or Material components. You can do this once per Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-improved-blessed-strikes",
+    "name": "Improved Blessed Strikes",
+    "class": "Cleric",
+    "level": 14,
+    "description": "Your Blessed Strikes option grows stronger:\nDivine Strike: the extra damage becomes 2d8.\nPotent Spellcasting: when you deal damage with a Cleric cantrip, you can give yourself or another creature within 60 feet Temporary Hit Points equal to twice your Wisdom modifier.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-epic-boon",
+    "name": "Epic Boon",
+    "class": "Cleric",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Fate is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-greater-divine-intervention",
+    "name": "Greater Divine Intervention",
+    "class": "Cleric",
+    "level": 20,
+    "description": "When you use Divine Intervention, you can choose Wish as the spell. If you do, you can't use Divine Intervention again until you finish 2d4 Long Rests.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-life-domain-disciple-of-life",
+    "name": "Disciple of Life",
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3,
+    "description": "When a spell you cast with a spell slot restores Hit Points to a creature, that creature regains extra Hit Points on the turn you cast it equal to 2 plus the slot's level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-life-domain-life-domain-spells",
+    "name": "Life Domain Spells",
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Cleric level. Level 3: Aid, Bless, Cure Wounds, Lesser Restoration. Level 5: Mass Healing Word, Revivify. Level 7: Aura of Life, Death Ward. Level 9: Greater Restoration, Mass Cure Wounds.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-life-domain-preserve-life",
+    "name": "Preserve Life",
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3,
+    "description": "As a Magic action, spend a use of Channel Divinity to restore a total of Hit Points equal to five times your Cleric level. Divide them among Bloodied creatures of your choice within 30 feet (you can include yourself). This can't raise a creature above half its Hit Point maximum.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-life-domain-blessed-healer",
+    "name": "Blessed Healer",
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 6,
+    "description": "When a spell you cast with a spell slot restores Hit Points to another creature, you regain Hit Points equal to 2 plus the slot's level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-life-domain-supreme-healing",
+    "name": "Supreme Healing",
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 17,
+    "description": "When you would roll dice to restore Hit Points with a spell or Channel Divinity, you use the highest possible number on each die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-light-domain-light-domain-spells",
+    "name": "Light Domain Spells",
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Cleric level. Level 3: Burning Hands, Faerie Fire, Scorching Ray, See Invisibility. Level 5: Daylight, Fireball. Level 7: Arcane Eye, Wall of Fire. Level 9: Flame Strike, Scrying.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-light-domain-radiance-of-the-dawn",
+    "name": "Radiance of the Dawn",
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "level": 3,
+    "description": "As a Magic action, spend a use of Channel Divinity to emit a 30-foot Emanation of sunlight. Magical Darkness created by spells in that area is dispelled, and each creature of your choice there makes a Constitution saving throw, taking Radiant damage equal to 2d10 plus your Cleric level on a failure, or half on a success.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-light-domain-warding-flare",
+    "name": "Warding Flare",
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "level": 3,
+    "description": "When a creature you can see within 30 feet makes an attack roll, you can use your Reaction to impose Disadvantage on it. You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-light-domain-improved-warding-flare",
+    "name": "Improved Warding Flare",
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "level": 6,
+    "description": "You regain all uses of Warding Flare on a Short or Long Rest. Whenever you use it, you can also give the target of the triggering attack Temporary Hit Points equal to 2d6 plus your Wisdom modifier.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-light-domain-corona-of-light",
+    "name": "Corona of Light",
+    "class": "Cleric",
+    "subclass": "Light Domain",
+    "level": 17,
+    "description": "As a Magic action, you surround yourself with sunlight for 1 minute or until you dismiss it (no action required). You shed Bright Light for 60 feet and Dim Light for 30 feet beyond. Enemies in the Bright Light have Disadvantage on saving throws against your Radiance of the Dawn and against any spell that deals Fire or Radiant damage. You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-trickery-domain-blessing-of-the-trickster",
+    "name": "Blessing of the Trickster",
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "level": 3,
+    "description": "As a Magic action, choose yourself or a willing creature within 30 feet to have Advantage on Dexterity (Stealth) checks. The blessing lasts until you finish a Long Rest or use this feature again.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-trickery-domain-invoke-duplicity",
+    "name": "Invoke Duplicity",
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "level": 3,
+    "description": "As a Bonus Action, spend a use of Channel Divinity to create a perfect visual illusion of yourself in an unoccupied space you can see within 30 feet. It is intangible and lasts 1 minute, ending early if you dismiss it as a Bonus Action or become Incapacitated. While it lasts:\nCast Spells: you can cast spells as though you were in the illusion's space, using your own senses.\nDistract: when you and the illusion are both within 5 feet of a creature that can see the illusion, you have Advantage on attack rolls against that creature.\nMove: as a Bonus Action, you can move the illusion up to 30 feet to a space you can see within 120 feet of you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-trickery-domain-trickery-domain-spells",
+    "name": "Trickery Domain Spells",
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Cleric level. Level 3: Charm Person, Disguise Self, Invisibility, Pass without Trace. Level 5: Hypnotic Pattern, Nondetection. Level 7: Confusion, Dimension Door. Level 9: Dominate Person, Modify Memory.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-trickery-domain-tricksters-transposition",
+    "name": "Trickster's Transposition",
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "level": 6,
+    "description": "Whenever you take the Bonus Action to create or move the illusion from Invoke Duplicity, you can teleport, swapping places with the illusion.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-trickery-domain-improved-duplicity",
+    "name": "Improved Duplicity",
+    "class": "Cleric",
+    "subclass": "Trickery Domain",
+    "level": 17,
+    "description": "Shared Distraction: when you and your allies make attack rolls against a creature within 5 feet of your illusion, the rolls have Advantage.\nHealing Illusion: when the illusion ends, you or a creature of your choice within 5 feet of it regains Hit Points equal to your Cleric level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-war-domain-guided-strike",
+    "name": "Guided Strike",
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "level": 3,
+    "description": "When you or a creature within 30 feet of you misses with an attack roll, you can spend a use of Channel Divinity to give that roll a +10 bonus, possibly turning it into a hit. Doing this for another creature's attack takes your Reaction.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-war-domain-war-domain-spells",
+    "name": "War Domain Spells",
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Cleric level. Level 3: Guiding Bolt, Magic Weapon, Shield of Faith, Spiritual Weapon. Level 5: Crusader's Mantle, Spirit Guardians. Level 7: Fire Shield, Freedom of Movement. Level 9: Hold Monster, Steel Wind Strike.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-war-domain-war-priest",
+    "name": "War Priest",
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "level": 3,
+    "description": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Short or Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-war-domain-war-gods-blessing",
+    "name": "War God's Blessing",
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "level": 6,
+    "description": "You can spend a use of Channel Divinity to cast Shield of Faith or Spiritual Weapon without a spell slot. Cast this way, the spell needs no Concentration and lasts 1 minute, ending early if you cast it again, are Incapacitated, or die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-cleric-war-domain-avatar-of-battle",
+    "name": "Avatar of Battle",
+    "class": "Cleric",
+    "subclass": "War Domain",
+    "level": 17,
+    "description": "You have Resistance to Bludgeoning, Piercing, and Slashing damage.",
+    "source": "PHB 2024"
+  }
+]

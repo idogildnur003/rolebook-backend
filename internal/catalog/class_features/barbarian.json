@@ -1,0 +1,316 @@
+[
+  {
+    "id": "cf-barbarian-rage",
+    "name": "Rage",
+    "class": "Barbarian",
+    "level": 1,
+    "description": "As a Bonus Action you can enter a Rage, provided you aren't wearing Heavy armor. You have 2 uses at level 1, 3 at level 3, 4 at level 6, 5 at level 12, and 6 at level 17. You regain one use on a Short Rest and all uses on a Long Rest.\nWhile raging: you have Resistance to Bludgeoning, Piercing, and Slashing damage; attacks that use Strength (weapon or Unarmed Strike) deal bonus Rage Damage (+2, rising to +3 at level 9 and +4 at level 16); you have Advantage on Strength checks and Strength saving throws; and you can't cast spells or keep Concentration.\nThe Rage lasts until the end of your next turn. You extend it for another round by making an attack roll against an enemy, forcing an enemy to make a saving throw, or spending a Bonus Action. It can last up to 10 minutes and ends early if you put on Heavy armor or become Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-unarmored-defense",
+    "name": "Unarmored Defense",
+    "class": "Barbarian",
+    "level": 1,
+    "description": "While you wear no armor, your base Armor Class is 10 plus your Dexterity and Constitution modifiers. You can still use a Shield.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-weapon-mastery",
+    "name": "Weapon Mastery",
+    "class": "Barbarian",
+    "level": 1,
+    "description": "You can use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice. After a Long Rest you can swap one of those choices. The number of kinds rises to 3 at level 4 and 4 at level 10.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-danger-sense",
+    "name": "Danger Sense",
+    "class": "Barbarian",
+    "level": 2,
+    "description": "You have Advantage on Dexterity saving throws unless you are Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-reckless-attack",
+    "name": "Reckless Attack",
+    "class": "Barbarian",
+    "level": 2,
+    "description": "When you make your first attack roll on your turn, you can attack recklessly. You gain Advantage on attack rolls that use Strength until the start of your next turn, but attack rolls against you also have Advantage during that time.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-barbarian-subclass",
+    "name": "Barbarian Subclass",
+    "class": "Barbarian",
+    "level": 3,
+    "description": "You choose a subclass: Path of the Berserker, Path of the Wild Heart, Path of the World Tree, or Path of the Zealot. You gain its features at levels 3, 6, 10, and 14.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-primal-knowledge",
+    "name": "Primal Knowledge",
+    "class": "Barbarian",
+    "level": 3,
+    "description": "You gain proficiency in one more skill from the Barbarian skill list. Also, while your Rage is active, you can make Acrobatics, Intimidation, Perception, Stealth, and Survival checks as Strength checks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Barbarian",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-extra-attack",
+    "name": "Extra Attack",
+    "class": "Barbarian",
+    "level": 5,
+    "description": "You can attack twice, not once, whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-fast-movement",
+    "name": "Fast Movement",
+    "class": "Barbarian",
+    "level": 5,
+    "description": "Your Speed increases by 10 feet while you aren't wearing Heavy armor.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-feral-instinct",
+    "name": "Feral Instinct",
+    "class": "Barbarian",
+    "level": 7,
+    "description": "You have Advantage on Initiative rolls.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-instinctive-pounce",
+    "name": "Instinctive Pounce",
+    "class": "Barbarian",
+    "level": 7,
+    "description": "As part of the Bonus Action you take to enter your Rage, you can move up to half your Speed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-brutal-strike",
+    "name": "Brutal Strike",
+    "class": "Barbarian",
+    "level": 9,
+    "description": "If you use Reckless Attack, you can give up Advantage on one Strength-based attack roll of your choice on your turn, as long as that roll doesn't have Disadvantage. If it hits, the target takes an extra 1d10 damage of the attack's type and you apply one effect:\nForceful Blow: the target is pushed 15 feet straight away from you, and you can then move up to half your Speed straight toward it without provoking Opportunity Attacks.\nHamstring Blow: the target's Speed is reduced by 15 feet until the start of your next turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-relentless-rage",
+    "name": "Relentless Rage",
+    "class": "Barbarian",
+    "level": 11,
+    "description": "If you drop to 0 Hit Points while your Rage is active and aren't killed outright, you can make a DC 10 Constitution saving throw. On a success, your Hit Points become twice your Barbarian level. The DC rises by 5 each time you use this, and resets to 10 when you finish a Short or Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-improved-brutal-strike",
+    "name": "Improved Brutal Strike",
+    "class": "Barbarian",
+    "level": 13,
+    "description": "You gain two more Brutal Strike effects:\nStaggering Blow: the target has Disadvantage on the next saving throw it makes and can't make Opportunity Attacks until the start of your next turn.\nSundering Blow: before the start of your next turn, the next attack roll another creature makes against the target gains a +5 bonus.\nAt level 17, Brutal Strike's extra damage becomes 2d10 and you can apply two different effects with each use.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-persistent-rage",
+    "name": "Persistent Rage",
+    "class": "Barbarian",
+    "level": 15,
+    "description": "When you roll Initiative, you can regain all your spent uses of Rage; you can't do this again until you finish a Long Rest. Also, your Rage now lasts the full 10 minutes without needing to be extended. It ends early only if you fall Unconscious or put on Heavy armor.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-indomitable-might",
+    "name": "Indomitable Might",
+    "class": "Barbarian",
+    "level": 18,
+    "description": "If your total for a Strength check or Strength saving throw is lower than your Strength score, you can use the score in place of the total.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-epic-boon",
+    "name": "Epic Boon",
+    "class": "Barbarian",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Irresistible Offense is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-primal-champion",
+    "name": "Primal Champion",
+    "class": "Barbarian",
+    "level": 20,
+    "description": "Your Strength and Constitution scores each increase by 4, to a maximum of 25.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-berserker-frenzy",
+    "name": "Frenzy",
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 3,
+    "description": "If you use Reckless Attack while your Rage is active, the first target you hit on your turn with a Strength-based attack takes extra damage. Roll a number of d6s equal to your Rage Damage bonus; the extra damage is the same type as the attack.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-berserker-mindless-rage",
+    "name": "Mindless Rage",
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 6,
+    "description": "You are immune to the Charmed and Frightened conditions while your Rage is active. If you have either condition when you enter your Rage, it ends.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-berserker-retaliation",
+    "name": "Retaliation",
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 10,
+    "description": "When a creature within 5 feet of you damages you, you can use your Reaction to make one melee attack against it with a weapon or an Unarmed Strike.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-berserker-intimidating-presence",
+    "name": "Intimidating Presence",
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 14,
+    "description": "As a Bonus Action, you can terrify creatures of your choice in a 30-foot Emanation. Each must succeed on a Wisdom saving throw (DC 8 plus your Strength modifier and Proficiency Bonus) or be Frightened for 1 minute. A Frightened creature repeats the save at the end of each of its turns. You can use this once per Long Rest, or again by spending a use of your Rage (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-wild-heart-animal-speaker",
+    "name": "Animal Speaker",
+    "class": "Barbarian",
+    "subclass": "Path of the Wild Heart",
+    "level": 3,
+    "description": "You can cast Beast Sense and Speak with Animals, but only as Rituals. Wisdom is your spellcasting ability for them.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-wild-heart-rage-of-the-wilds",
+    "name": "Rage of the Wilds",
+    "class": "Barbarian",
+    "subclass": "Path of the Wild Heart",
+    "level": 3,
+    "description": "Each time you enter your Rage, choose one option:\nBear: you have Resistance to every damage type except Force, Necrotic, Psychic, and Radiant.\nEagle: when you enter the Rage you can take the Disengage and Dash actions as part of that Bonus Action, and while it lasts you can take a Bonus Action to do both again.\nWolf: your allies have Advantage on attack rolls against any of your enemies within 5 feet of you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-wild-heart-aspect-of-the-wilds",
+    "name": "Aspect of the Wilds",
+    "class": "Barbarian",
+    "subclass": "Path of the Wild Heart",
+    "level": 6,
+    "description": "Choose one option; you can change it when you finish a Long Rest:\nOwl: you gain Darkvision out to 60 feet, or 60 more feet if you already have it.\nPanther: you gain a Climb Speed equal to your Speed.\nSalmon: you gain a Swim Speed equal to your Speed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-wild-heart-nature-speaker",
+    "name": "Nature Speaker",
+    "class": "Barbarian",
+    "subclass": "Path of the Wild Heart",
+    "level": 10,
+    "description": "You can cast Commune with Nature, but only as a Ritual. Wisdom is your spellcasting ability for it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-wild-heart-power-of-the-wilds",
+    "name": "Power of the Wilds",
+    "class": "Barbarian",
+    "subclass": "Path of the Wild Heart",
+    "level": 14,
+    "description": "Each time you enter your Rage, choose one option:\nFalcon: you gain a Fly Speed equal to your Speed while you wear no armor.\nLion: enemies within 5 feet of you have Disadvantage on attack rolls against targets other than you or another Barbarian using this option.\nRam: when you hit a Large or smaller creature with a melee attack, you can knock it Prone.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-world-tree-vitality-of-the-tree",
+    "name": "Vitality of the Tree",
+    "class": "Barbarian",
+    "subclass": "Path of the World Tree",
+    "level": 3,
+    "description": "Vitality Surge: when you enter your Rage, you gain Temporary Hit Points equal to your Barbarian level.\nLife-Giving Force: at the start of each of your turns while raging, you can choose another creature within 10 feet to gain Temporary Hit Points. Roll a number of d6s equal to your Rage Damage bonus to set the amount. Any of these that remain vanish when your Rage ends.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-world-tree-branches-of-the-tree",
+    "name": "Branches of the Tree",
+    "class": "Barbarian",
+    "subclass": "Path of the World Tree",
+    "level": 6,
+    "description": "While your Rage is active, when a creature you can see starts its turn within 30 feet of you, you can use your Reaction to make it attempt a Strength saving throw (DC 8 plus your Strength modifier and Proficiency Bonus). On a failure it is teleported to an unoccupied space within 5 feet of you, or the nearest free space. You can then reduce its Speed to 0 until the end of the current turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-world-tree-battering-roots",
+    "name": "Battering Roots",
+    "class": "Barbarian",
+    "subclass": "Path of the World Tree",
+    "level": 10,
+    "description": "During your turn, your reach is 10 feet longer with any Melee weapon that has the Heavy or Versatile property. When you hit with such a weapon on your turn, you can apply the Push or Topple mastery property in addition to a different mastery property you're using with it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-world-tree-travel-along-the-tree",
+    "name": "Travel along the Tree",
+    "class": "Barbarian",
+    "subclass": "Path of the World Tree",
+    "level": 14,
+    "description": "When you enter your Rage, and as a Bonus Action while it lasts, you can teleport up to 60 feet to an unoccupied space you can see. Once per Rage, you can extend the range to 150 feet and bring up to six willing creatures who are within 10 feet of you; each arrives in a free space within 10 feet of your destination.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-zealot-divine-fury",
+    "name": "Divine Fury",
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "level": 3,
+    "description": "On each of your turns while your Rage is active, the first creature you hit with a weapon or Unarmed Strike takes extra damage equal to 1d6 plus half your Barbarian level (rounded down). You choose Necrotic or Radiant each time.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-zealot-warrior-of-the-gods",
+    "name": "Warrior of the Gods",
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "level": 3,
+    "description": "You have a pool of four d12s. As a Bonus Action, you can spend any number of them, roll them, and regain Hit Points equal to the total. The pool refills when you finish a Long Rest. It grows to five dice at level 6, six at level 12, and seven at level 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-zealot-fanatical-focus",
+    "name": "Fanatical Focus",
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "level": 6,
+    "description": "Once per active Rage, if you fail a saving throw, you can reroll it with a bonus equal to your Rage Damage bonus. You must use the new roll.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-zealot-zealous-presence",
+    "name": "Zealous Presence",
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "level": 10,
+    "description": "As a Bonus Action, you let out a battle cry. Up to ten other creatures of your choice within 60 feet gain Advantage on attack rolls and saving throws until the start of your next turn. You can use this once per Long Rest, or again by spending a use of your Rage (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-barbarian-path-of-the-zealot-rage-of-the-gods",
+    "name": "Rage of the Gods",
+    "class": "Barbarian",
+    "subclass": "Path of the Zealot",
+    "level": 14,
+    "description": "When you enter your Rage, you can take on the form of a divine warrior for 1 minute or until you drop to 0 Hit Points. You can do this once per Long Rest. In this form:\nFlight: you have a Fly Speed equal to your Speed and can hover.\nResistance: you have Resistance to Necrotic, Psychic, and Radiant damage.\nRevivification: when a creature within 30 feet would drop to 0 Hit Points, you can use your Reaction and spend a use of Rage to set its Hit Points to your Barbarian level instead.",
+    "source": "PHB 2024"
+  }
+]

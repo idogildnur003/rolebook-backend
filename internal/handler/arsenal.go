@@ -86,6 +86,39 @@ func (h *ArsenalHandler) GetSpell(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, out)
 }
 
+func (h *ArsenalHandler) ListFeats(w http.ResponseWriter, r *http.Request) {
+	page, limit := parsePagination(r)
+	category := strings.TrimSpace(r.URL.Query().Get("category"))
+	data, total := h.catalog.ListFeats(category, page, limit)
+	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
+}
+
+func (h *ArsenalHandler) GetFeat(w http.ResponseWriter, r *http.Request) {
+	feat := h.catalog.GetFeat(chi.URLParam(r, "featId"))
+	if feat == nil {
+		writeError(w, http.StatusNotFound, "feat not found", "NOT_FOUND")
+		return
+	}
+	writeJSON(w, http.StatusOK, feat)
+}
+
+func (h *ArsenalHandler) ListClassFeatures(w http.ResponseWriter, r *http.Request) {
+	page, limit := parsePagination(r)
+	class := strings.TrimSpace(r.URL.Query().Get("class"))
+	subclass := strings.TrimSpace(r.URL.Query().Get("subclass"))
+	data, total := h.catalog.ListClassFeatures(class, subclass, page, limit)
+	writeJSON(w, http.StatusOK, map[string]any{"data": data, "page": page, "limit": limit, "total": total})
+}
+
+func (h *ArsenalHandler) GetClassFeature(w http.ResponseWriter, r *http.Request) {
+	feature := h.catalog.GetClassFeature(chi.URLParam(r, "featureId"))
+	if feature == nil {
+		writeError(w, http.StatusNotFound, "class feature not found", "NOT_FOUND")
+		return
+	}
+	writeJSON(w, http.StatusOK, feature)
+}
+
 func (h *ArsenalHandler) ListEquipment(w http.ResponseWriter, r *http.Request) {
 	page, limit := parsePagination(r)
 	data, total := h.catalog.ListEquipment(page, limit)
