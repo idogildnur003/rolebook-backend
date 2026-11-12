@@ -1,0 +1,327 @@
+[
+  {
+    "id": "cf-ranger-spellcasting",
+    "name": "Spellcasting",
+    "class": "Ranger",
+    "level": 1,
+    "description": "You cast Ranger spells using Wisdom. You prepare spells from the Ranger list and can replace one of them when you finish a Long Rest. You can use a Druidic Focus as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-favored-enemy",
+    "name": "Favored Enemy",
+    "class": "Ranger",
+    "level": 1,
+    "description": "You always have Hunter's Mark prepared. You can cast it twice without a spell slot, regaining those uses when you finish a Long Rest. The number of free castings becomes 3 at level 5, 4 at level 9, 5 at level 13, and 6 at level 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-weapon-mastery",
+    "name": "Weapon Mastery",
+    "class": "Ranger",
+    "level": 1,
+    "description": "You can use the mastery properties of two kinds of weapons of your choice that you are proficient with. After a Long Rest you can change those choices.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-deft-explorer",
+    "name": "Deft Explorer",
+    "class": "Ranger",
+    "level": 2,
+    "description": "Expertise: you gain Expertise in one skill you are proficient in.\nLanguages: you learn two languages of your choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fighting-style",
+    "name": "Fighting Style",
+    "class": "Ranger",
+    "level": 2,
+    "description": "You gain a Fighting Style feat of your choice. If you prefer, you can take Druidic Warrior instead: you learn two Druid cantrips (Guidance and Starry Wisp are suggested), which count as Ranger spells and use Wisdom. You can replace one of them when you gain a Ranger level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-ranger-subclass",
+    "name": "Ranger Subclass",
+    "class": "Ranger",
+    "level": 3,
+    "description": "You choose a subclass: Beast Master, Fey Wanderer, Gloom Stalker, or Hunter. You gain its features at levels 3, 7, 11, and 15.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Ranger",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-extra-attack",
+    "name": "Extra Attack",
+    "class": "Ranger",
+    "level": 5,
+    "description": "You can attack twice, not once, whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-roving",
+    "name": "Roving",
+    "class": "Ranger",
+    "level": 6,
+    "description": "Your Speed increases by 10 feet while you aren't wearing Heavy armor. You also gain a Climb Speed and a Swim Speed equal to your Speed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-expertise",
+    "name": "Expertise",
+    "class": "Ranger",
+    "level": 9,
+    "description": "You gain Expertise in two more skills you are proficient in.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-tireless",
+    "name": "Tireless",
+    "class": "Ranger",
+    "level": 10,
+    "description": "Temporary Hit Points: as a Magic action, you can give yourself Temporary Hit Points equal to 1d8 plus your Wisdom modifier (minimum of 1). You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest.\nDecrease Exhaustion: whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-relentless-hunter",
+    "name": "Relentless Hunter",
+    "class": "Ranger",
+    "level": 13,
+    "description": "Taking damage can't break your Concentration on Hunter's Mark.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-natures-veil",
+    "name": "Nature's Veil",
+    "class": "Ranger",
+    "level": 14,
+    "description": "As a Bonus Action, you become Invisible until the end of your next turn. You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-precise-hunter",
+    "name": "Precise Hunter",
+    "class": "Ranger",
+    "level": 17,
+    "description": "You have Advantage on attack rolls against the creature currently marked by your Hunter's Mark.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-feral-senses",
+    "name": "Feral Senses",
+    "class": "Ranger",
+    "level": 18,
+    "description": "You have Blindsight with a range of 30 feet.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-epic-boon",
+    "name": "Epic Boon",
+    "class": "Ranger",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Dimensional Travel is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-foe-slayer",
+    "name": "Foe Slayer",
+    "class": "Ranger",
+    "level": 20,
+    "description": "The damage die of your Hunter's Mark is a d10 in place of a d6.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-beast-master-primal-companion",
+    "name": "Primal Companion",
+    "class": "Ranger",
+    "subclass": "Beast Master",
+    "level": 3,
+    "description": "You magically summon a primal beast, choosing the Beast of the Land, Beast of the Sea, or Beast of the Sky stat block. It is friendly to you and your allies and obeys you. In combat it acts during your turn. It can move and use its Reaction on its own, but it takes the Dodge action unless you spend a Bonus Action to command it to take another action. You can also give up one of your attacks when you take the Attack action to have it use its Beast's Strike. If you are Incapacitated, it acts on its own.\nIf the beast has died within the last hour, you can take a Magic action to touch it and spend a spell slot; it returns to life after 1 minute with all its Hit Points. When you finish a Long Rest you can summon a different beast, and the beast vanishes if you die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-beast-master-exceptional-training",
+    "name": "Exceptional Training",
+    "class": "Ranger",
+    "subclass": "Beast Master",
+    "level": 7,
+    "description": "When you take a Bonus Action to command your beast, you can also have it take the Dash, Disengage, Dodge, or Help action using its Bonus Action. Also, whenever it hits with an attack roll and deals damage, it can deal Force damage or its normal damage type.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-beast-master-bestial-fury",
+    "name": "Bestial Fury",
+    "class": "Ranger",
+    "subclass": "Beast Master",
+    "level": 11,
+    "description": "When you command your beast to use Beast's Strike, it can make the attack twice. Also, the first time each turn it hits a creature under your Hunter's Mark, it deals extra Force damage equal to that spell's bonus damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-beast-master-share-spells",
+    "name": "Share Spells",
+    "class": "Ranger",
+    "subclass": "Beast Master",
+    "level": 15,
+    "description": "When you cast a spell that targets yourself, you can also affect your beast with it if the beast is within 30 feet of you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-dreadful-strikes",
+    "name": "Dreadful Strikes",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 3,
+    "description": "When you hit a creature with a weapon, you can deal an extra 1d4 Psychic damage to it. A creature can take this damage only once per turn. The die becomes a d6 at level 11.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-fey-wanderer-spells",
+    "name": "Fey Wanderer Spells",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Ranger level. Level 3: Charm Person. Level 5: Misty Step. Level 9: Summon Fey. Level 13: Dimension Door. Level 17: Mislead.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-otherworldly-glamour",
+    "name": "Otherworldly Glamour",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 3,
+    "description": "Whenever you make a Charisma check, you add your Wisdom modifier (minimum +1). You also gain proficiency in Deception, Performance, or Persuasion.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-beguiling-twist",
+    "name": "Beguiling Twist",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 7,
+    "description": "You have Advantage on saving throws made to avoid or end the Charmed or Frightened condition. Also, whenever you or a creature you can see within 120 feet succeeds on such a save, you can use your Reaction to force a different creature you can see within 120 feet to make a Wisdom saving throw against your spell save DC. On a failure, it is Charmed or Frightened (your choice) for 1 minute, repeating the save at the end of each of its turns.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-fey-reinforcements",
+    "name": "Fey Reinforcements",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 11,
+    "description": "You can cast Summon Fey without a Material component, and once per Long Rest without a spell slot. Whenever you start casting it, you can make it need no Concentration; if you do, it lasts 1 minute for that casting.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-fey-wanderer-misty-wanderer",
+    "name": "Misty Wanderer",
+    "class": "Ranger",
+    "subclass": "Fey Wanderer",
+    "level": 15,
+    "description": "You can cast Misty Step without a spell slot a number of times equal to your Wisdom modifier (minimum 1), regaining those uses on a Long Rest. Whenever you cast it, you can bring one willing creature that is within 5 feet of you; it arrives in an unoccupied space within 5 feet of your destination.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-dread-ambusher",
+    "name": "Dread Ambusher",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 3,
+    "description": "Ambusher's Leap: at the start of your first turn in each combat, your Speed increases by 10 feet until the end of that turn.\nDreadful Strike: when you hit a creature with a weapon attack, you can deal an extra 2d6 Psychic damage. You can do this once per turn, a number of times equal to your Wisdom modifier (minimum 1), regaining all uses on a Long Rest.\nInitiative Bonus: you add your Wisdom modifier to your Initiative rolls.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-gloom-stalker-spells",
+    "name": "Gloom Stalker Spells",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 3,
+    "description": "You always have these spells prepared once you reach the listed Ranger level. Level 3: Disguise Self. Level 5: Rope Trick. Level 9: Fear. Level 13: Greater Invisibility. Level 17: Seeming.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-umbral-sight",
+    "name": "Umbral Sight",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 3,
+    "description": "You gain Darkvision out to 60 feet, or 60 more feet if you already have it. Also, while you are entirely in Darkness, you are Invisible to any creature that relies on Darkvision to see you there.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-iron-mind",
+    "name": "Iron Mind",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 7,
+    "description": "You gain proficiency in Wisdom saving throws. If you already have it, you gain proficiency in Intelligence or Charisma saving throws instead.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-stalkers-flurry",
+    "name": "Stalker's Flurry",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 11,
+    "description": "The extra damage of Dreadful Strike becomes 2d8. Also, when you use Dreadful Strike you can add one effect:\nSudden Strike: you make another attack with the same weapon against a different creature that is within 5 feet of the original target and within the weapon's range.\nMass Fear: the target and each creature within 10 feet of it must succeed on a Wisdom saving throw against your spell save DC or be Frightened until the start of your next turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-gloom-stalker-shadowy-dodge",
+    "name": "Shadowy Dodge",
+    "class": "Ranger",
+    "subclass": "Gloom Stalker",
+    "level": 15,
+    "description": "When a creature makes an attack roll against you, you can use your Reaction to impose Disadvantage on it. Whether the attack hits or misses, you can then teleport up to 30 feet to an unoccupied space you can see.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-hunter-hunters-lore",
+    "name": "Hunter's Lore",
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 3,
+    "description": "While a creature is marked by your Hunter's Mark, you know whether it has any Immunities, Resistances, or Vulnerabilities, and what they are.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-hunter-hunters-prey",
+    "name": "Hunter's Prey",
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 3,
+    "description": "Choose one option; you can change it when you finish a Short or Long Rest:\nColossus Slayer: once per turn, when you hit a creature with a weapon, it takes an extra 1d8 damage if it is missing any of its Hit Points.\nHorde Breaker: once on each of your turns, when you attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, within the weapon's range, and that you haven't attacked this turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-hunter-defensive-tactics",
+    "name": "Defensive Tactics",
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 7,
+    "description": "Choose one option; you can change it when you finish a Short or Long Rest:\nEscape the Horde: Opportunity Attacks against you have Disadvantage.\nMultiattack Defense: when a creature hits you with an attack roll, it has Disadvantage on all other attack rolls against you this turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-hunter-superior-hunters-prey",
+    "name": "Superior Hunter's Prey",
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 11,
+    "description": "Once per turn, when you deal damage to the creature marked by your Hunter's Mark, you can also deal that spell's extra damage to a different creature you can see within 30 feet of the first.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-ranger-hunter-superior-hunters-defense",
+    "name": "Superior Hunter's Defense",
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 15,
+    "description": "When you take damage, you can use your Reaction to gain Resistance to that damage and to any other damage of the same type until the end of the current turn.",
+    "source": "PHB 2024"
+  }
+]

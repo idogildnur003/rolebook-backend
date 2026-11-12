@@ -1,0 +1,326 @@
+[
+  {
+    "id": "cf-rogue-expertise",
+    "name": "Expertise",
+    "class": "Rogue",
+    "level": 1,
+    "description": "You gain Expertise in two skills you are proficient in. At level 6 you gain Expertise in two more.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-sneak-attack",
+    "name": "Sneak Attack",
+    "class": "Rogue",
+    "level": 1,
+    "description": "Once per turn, you can deal an extra 1d6 damage to one creature you hit with an attack roll, if you have Advantage on the roll and the attack uses a Finesse or Ranged weapon. You don't need Advantage if at least one of your allies is within 5 feet of the target, that ally isn't Incapacitated, and you don't have Disadvantage on the roll. The extra damage is the same type as the weapon's. It grows by 1d6 at every odd Rogue level, reaching 10d6 at level 19.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thieves-cant",
+    "name": "Thieves' Cant",
+    "class": "Rogue",
+    "level": 1,
+    "description": "You know Thieves' Cant, a mix of jargon and code that hides messages in ordinary talk, and one other language of your choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-weapon-mastery",
+    "name": "Weapon Mastery",
+    "class": "Rogue",
+    "level": 1,
+    "description": "You can use the mastery properties of two kinds of weapons of your choice that you are proficient with. After a Long Rest you can change those choices.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-cunning-action",
+    "name": "Cunning Action",
+    "class": "Rogue",
+    "level": 2,
+    "description": "On your turn, you can take the Dash, Disengage, or Hide action as a Bonus Action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-rogue-subclass",
+    "name": "Rogue Subclass",
+    "class": "Rogue",
+    "level": 3,
+    "description": "You choose a subclass: Arcane Trickster, Assassin, Soulknife, or Thief. You gain its features at levels 3, 9, 13, and 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-steady-aim",
+    "name": "Steady Aim",
+    "class": "Rogue",
+    "level": 3,
+    "description": "As a Bonus Action, you give yourself Advantage on your next attack roll this turn. You can do this only if you haven't moved this turn, and afterward your Speed is 0 until the end of the turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Rogue",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 10, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-cunning-strike",
+    "name": "Cunning Strike",
+    "class": "Rogue",
+    "level": 5,
+    "description": "When you deal Sneak Attack damage, you can add one effect by giving up some of the Sneak Attack dice before you roll them. Saving throws against these effects use DC 8 plus your Dexterity modifier and Proficiency Bonus.\nPoison (cost 1d6): the target must succeed on a Constitution saving throw or be Poisoned for 1 minute, repeating the save at the end of each of its turns. You must have a Poisoner's Kit on you.\nTrip (cost 1d6): if the target is Large or smaller, it must succeed on a Dexterity saving throw or be knocked Prone.\nWithdraw (cost 1d6): right after the attack, you move up to half your Speed without provoking Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-uncanny-dodge",
+    "name": "Uncanny Dodge",
+    "class": "Rogue",
+    "level": 5,
+    "description": "When an attacker you can see hits you with an attack roll, you can use your Reaction to halve the attack's damage against you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-evasion",
+    "name": "Evasion",
+    "class": "Rogue",
+    "level": 7,
+    "description": "When you are subjected to an effect that allows a Dexterity saving throw for half damage, you take no damage on a success and half on a failure. You can't use this while Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-reliable-talent",
+    "name": "Reliable Talent",
+    "class": "Rogue",
+    "level": 7,
+    "description": "Whenever you make an ability check using a skill or tool you are proficient with, you can treat a d20 roll of 9 or lower as a 10.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-improved-cunning-strike",
+    "name": "Improved Cunning Strike",
+    "class": "Rogue",
+    "level": 11,
+    "description": "You can apply up to two Cunning Strike effects when you deal Sneak Attack damage, paying the die cost of each.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-devious-strikes",
+    "name": "Devious Strikes",
+    "class": "Rogue",
+    "level": 14,
+    "description": "You gain more Cunning Strike effects:\nDaze (cost 2d6): the target must succeed on a Constitution saving throw, or on its next turn it can do only one of these: move, take an action, or take a Bonus Action.\nKnock Out (cost 6d6): the target must succeed on a Constitution saving throw or fall Unconscious for 1 minute or until it takes damage. It repeats the save at the end of each of its turns.\nObscure (cost 3d6): the target must succeed on a Dexterity saving throw or be Blinded until the end of its next turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-slippery-mind",
+    "name": "Slippery Mind",
+    "class": "Rogue",
+    "level": 15,
+    "description": "You gain proficiency in Wisdom and Charisma saving throws.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-elusive",
+    "name": "Elusive",
+    "class": "Rogue",
+    "level": 18,
+    "description": "No attack roll can have Advantage against you unless you are Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-epic-boon",
+    "name": "Epic Boon",
+    "class": "Rogue",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of the Night Spirit is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-stroke-of-luck",
+    "name": "Stroke of Luck",
+    "class": "Rogue",
+    "level": 20,
+    "description": "If you fail a D20 Test, you can turn the roll into a 20. You can do this once per Short or Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-arcane-trickster-spellcasting",
+    "name": "Spellcasting",
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "level": 3,
+    "description": "You cast Wizard spells using Intelligence. You know Mage Hand and two other Wizard cantrips, plus one more at level 10, and prepare a small number of Wizard spells, with spell slots that reach level 4 by Rogue level 19. You can replace one prepared spell when you gain a Rogue level, and you can use an Arcane Focus as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-arcane-trickster-mage-hand-legerdemain",
+    "name": "Mage Hand Legerdemain",
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "level": 3,
+    "description": "You can cast Mage Hand as a Bonus Action and make the hand Invisible. You can control the hand as a Bonus Action, and you can make Dexterity (Sleight of Hand) checks through it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-arcane-trickster-magical-ambush",
+    "name": "Magical Ambush",
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "level": 9,
+    "description": "If you have the Invisible condition when you cast a spell on a creature, it has Disadvantage on any saving throw it makes against that spell on the same turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-arcane-trickster-versatile-trickster",
+    "name": "Versatile Trickster",
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "level": 13,
+    "description": "When you use the Trip option of Cunning Strike on a creature, you can also use it on another creature within 5 feet of the spectral hand from your Mage Hand.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-arcane-trickster-spell-thief",
+    "name": "Spell Thief",
+    "class": "Rogue",
+    "subclass": "Arcane Trickster",
+    "level": 17,
+    "description": "Right after a creature casts a spell that targets you or includes you in its area, you can use your Reaction to force it to make an Intelligence saving throw against your spell save DC. On a failure, you negate the spell's effect on you, and if the spell is at least level 1 and of a level you can cast, you steal it: for the next 8 hours you have it prepared and the creature can't cast it. You can do this once per Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-assassin-assassinate",
+    "name": "Assassinate",
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "level": 3,
+    "description": "Initiative: you have Advantage on Initiative rolls.\nSurprising Strikes: during the first round of each combat, you have Advantage on attack rolls against any creature that hasn't taken a turn yet. If your Sneak Attack hits any target during that round, the target takes extra damage of the weapon's type equal to your Rogue level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-assassin-assassins-tools",
+    "name": "Assassin's Tools",
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "level": 3,
+    "description": "You gain a Disguise Kit and a Poisoner's Kit, and proficiency with both.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-assassin-infiltration-expertise",
+    "name": "Infiltration Expertise",
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "level": 9,
+    "description": "Masterful Mimicry: after studying a person's speech or handwriting for at least 1 hour, you can mimic it unerringly.\nRoving Aim: using Steady Aim no longer reduces your Speed to 0.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-assassin-envenom-weapons",
+    "name": "Envenom Weapons",
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "level": 13,
+    "description": "When you use the Poison option of Cunning Strike, the target also takes 2d6 Poison damage whenever it fails the saving throw. This damage ignores Resistance to Poison damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-assassin-death-strike",
+    "name": "Death Strike",
+    "class": "Rogue",
+    "subclass": "Assassin",
+    "level": 17,
+    "description": "When you hit with your Sneak Attack during the first round of a combat, the target must succeed on a Constitution saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take double the attack's damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-soulknife-psionic-power",
+    "name": "Psionic Power",
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "level": 3,
+    "description": "You have a pool of Psionic Energy Dice: four d6s at level 3, six d8s at level 5, eight at level 9, d10s at level 11, ten at level 13, and twelve d12s at level 17. You regain one die on a Short Rest and all of them on a Long Rest. They fuel these powers:\nPsi-Bolstered Knack: if you fail an ability check using a skill or tool you are proficient with, you can roll one die and add it to the check. The die is spent only if that turns the failure into a success.\nPsychic Whispers: as a Magic action, choose creatures you can see, up to your Proficiency Bonus, and roll one die. For a number of hours equal to the roll, they can speak telepathically with you while within 1 mile. The first use after each Long Rest is free; later uses spend the die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-soulknife-psychic-blades",
+    "name": "Psychic Blades",
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "level": 3,
+    "description": "Whenever you take the Attack action or make an Opportunity Attack, you can manifest a blade of psychic energy in a free hand and attack with it. It is a Simple Melee weapon with the Finesse and Thrown properties (range 60/120 feet) and the Vex mastery property, and it deals 1d6 Psychic damage plus your ability modifier. It vanishes right after it hits or misses and leaves no mark. After attacking with it as part of the Attack action, you can make a Bonus Action attack with a second blade if your other hand is free; its damage die is a d4.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-soulknife-soul-blades",
+    "name": "Soul Blades",
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "level": 9,
+    "description": "Homing Strikes: if you miss with a Psychic Blade attack roll, you can roll one Psionic Energy Die and add it to the roll. The die is spent only if that makes the attack hit.\nPsychic Teleportation: as a Bonus Action, you manifest a blade, spend one Psionic Energy Die and roll it, and throw the blade at an unoccupied space you can see within a number of feet equal to ten times the roll. You teleport to that space.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-soulknife-psychic-veil",
+    "name": "Psychic Veil",
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "level": 13,
+    "description": "As a Magic action, you become Invisible for 1 hour or until you dismiss the effect (no action required). It ends early right after you deal damage to a creature or force a creature to make a saving throw. You can do this once per Long Rest for free, or again by spending one Psionic Energy Die.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-soulknife-rend-mind",
+    "name": "Rend Mind",
+    "class": "Rogue",
+    "subclass": "Soulknife",
+    "level": 17,
+    "description": "When you deal Sneak Attack damage with your Psychic Blades, you can force the target to make a Wisdom saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus). On a failure, it is Stunned for 1 minute, repeating the save at the end of each of its turns. You can do this once per Long Rest for free, or again by spending three Psionic Energy Dice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thief-fast-hands",
+    "name": "Fast Hands",
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 3,
+    "description": "As a Bonus Action, you can do one of these:\nSleight of Hand: make a Dexterity (Sleight of Hand) check to pick a lock or disarm a trap with Thieves' Tools, or to pick a pocket.\nUse an Object: take the Utilize action, or take the Magic action to use a magic item that requires that action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thief-second-story-work",
+    "name": "Second-Story Work",
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 3,
+    "description": "Climber: you gain a Climb Speed equal to your Speed.\nJumper: you can work out your jump distance using Dexterity in place of Strength.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thief-supreme-sneak",
+    "name": "Supreme Sneak",
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 9,
+    "description": "You gain this Cunning Strike option:\nStealth Attack (cost 1d6): if you have the Invisible condition from the Hide action, this attack doesn't end it, as long as you end the turn behind Three-Quarters Cover or Total Cover.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thief-use-magic-device",
+    "name": "Use Magic Device",
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 13,
+    "description": "Attunement: you can attune to up to four magic items at once.\nCharges: whenever you use a magic item property that spends charges, roll 1d6. On a 6, the property works without spending the charges.\nScrolls: you can use any Spell Scroll, with Intelligence as your spellcasting ability. A cantrip or level 1 spell works reliably. For a higher-level spell you make an Intelligence (Arcana) check against DC 10 plus the spell's level; on a success you cast it, and on a failure the scroll crumbles.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-rogue-thief-thiefs-reflexes",
+    "name": "Thief's Reflexes",
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 17,
+    "description": "You take two turns during the first round of any combat: the first at your normal Initiative and the second at your Initiative minus 10.",
+    "source": "PHB 2024"
+  }
+]

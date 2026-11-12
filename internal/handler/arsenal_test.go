@@ -209,3 +209,125 @@ func TestSetEquipmentImage_WrongPrefix400(t *testing.T) {
 }
 
 func stringReader(s string) *strings.Reader { return strings.NewReader(s) }
+
+func TestListFeats_FiltersByCategory(t *testing.T) {
+	h, _ := newArsenalHandlerForTest(t, &fakeCatalogImages{})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/arsenal/feats?category=origin&limit=100", nil)
+	rr := httptest.NewRecorder()
+	h.ListFeats(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	var body struct {
+		Data  []model.Feat `json:"data"`
+		Total int64        `json:"total"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.Total != 10 || len(body.Data) != 10 {
+		t.Fatalf("origin feats: total %d, page %d, want 10", body.Total, len(body.Data))
+	}
+	for _, f := range body.Data {
+		if f.Category != "origin" {
+			t.Errorf("feat %q has category %q", f.ID, f.Category)
+		}
+	}
+	// "repeatable" is always present so clients need no undefined check.
+	if !strings.Contains(rr.Body.String(), `"repeatable":false`) {
+		t.Error(`expected "repeatable":false in the payload`)
+	}
+}
+
+func TestGetFeat(t *testing.T) {
+	h, _ := newArsenalHandlerForTest(t, &fakeCatalogImages{})
+
+	get := func(id string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/arsenal/feats/"+id, nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("featId", id)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		h.GetFeat(rr, req)
+		return rr
+	}
+
+	rr := get("feat-war-caster")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	var feat model.Feat
+	if err := json.Unmarshal(rr.Body.Bytes(), &feat); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if feat.Name != "War Caster" || feat.Category != "general" || len(feat.Benefits) != 4 {
+		t.Fatalf("unexpected feat: %+v", feat)
+	}
+	if rr := get("feat-nope"); rr.Code != http.StatusNotFound {
+		t.Fatalf("unknown feat status = %d, want 404", rr.Code)
+	}
+}
+
+func TestListClassFeatures_FiltersByClassAndSubclass(t *testing.T) {
+	h, _ := newArsenalHandlerForTest(t, &fakeCatalogImages{})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/arsenal/class-features?class=Wizard&subclass=Evoker&limit=100", nil)
+	rr := httptest.NewRecorder()
+	h.ListClassFeatures(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	var body struct {
+		Data []model.ClassFeature `json:"data"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	evoker := 0
+	for _, f := range body.Data {
+		if f.Class != "Wizard" {
+			t.Errorf("leaked class %q", f.Class)
+		}
+		if f.Subclass != "" && f.Subclass != "Evoker" {
+			t.Errorf("leaked subclass %q", f.Subclass)
+		}
+		if f.Subclass == "Evoker" {
+			evoker++
+		}
+	}
+	if evoker != 5 {
+		t.Errorf("Evoker features = %d, want 5", evoker)
+	}
+}
+
+func TestGetClassFeature(t *testing.T) {
+	h, _ := newArsenalHandlerForTest(t, &fakeCatalogImages{})
+
+	get := func(id string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/api/arsenal/class-features/"+id, nil)
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("featureId", id)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+		rr := httptest.NewRecorder()
+		h.GetClassFeature(rr, req)
+		return rr
+	}
+
+	rr := get("cf-rogue-sneak-attack")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rr.Code)
+	}
+	var f model.ClassFeature
+	if err := json.Unmarshal(rr.Body.Bytes(), &f); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if f.Name != "Sneak Attack" || f.Class != "Rogue" || f.Level != 1 {
+		t.Fatalf("unexpected feature: %+v", f)
+	}
+	if rr := get("cf-nope"); rr.Code != http.StatusNotFound {
+		t.Fatalf("unknown feature status = %d, want 404", rr.Code)
+	}
+}

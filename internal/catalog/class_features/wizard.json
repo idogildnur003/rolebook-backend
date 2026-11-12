@@ -1,0 +1,262 @@
+[
+  {
+    "id": "cf-wizard-spellcasting",
+    "name": "Spellcasting",
+    "class": "Wizard",
+    "level": 1,
+    "description": "You cast Wizard spells using Intelligence. You know 3 cantrips (4 at level 4, 5 at level 10) and can replace one when you finish a Long Rest. Your spellbook starts with six level 1 Wizard spells; you add two free spells each time you gain a Wizard level, and you can copy in spells you find at a cost of 2 hours and 50 GP per spell level. After a Long Rest you choose which spells from the book to prepare. You can use an Arcane Focus or your spellbook as a Spellcasting Focus.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-ritual-adept",
+    "name": "Ritual Adept",
+    "class": "Wizard",
+    "level": 1,
+    "description": "You can cast any spell in your spellbook as a Ritual if it has the Ritual tag. The spell doesn't need to be prepared, but you must read from the book to cast it this way.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-arcane-recovery",
+    "name": "Arcane Recovery",
+    "class": "Wizard",
+    "level": 1,
+    "description": "When you finish a Short Rest, you can recover spent spell slots whose combined level is at most half your Wizard level (rounded up), none of them level 6 or higher. You can't do this again until you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-scholar",
+    "name": "Scholar",
+    "class": "Wizard",
+    "level": 2,
+    "description": "Choose one of these skills in which you are proficient: Arcana, History, Investigation, Medicine, Nature, or Religion. You gain Expertise in it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-wizard-subclass",
+    "name": "Wizard Subclass",
+    "class": "Wizard",
+    "level": 3,
+    "description": "You choose a subclass: Abjurer, Diviner, Evoker, or Illusionist. You gain its features at levels 3, 6, 10, and 14.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Wizard",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-memorize-spell",
+    "name": "Memorize Spell",
+    "class": "Wizard",
+    "level": 5,
+    "description": "Whenever you finish a Short Rest, you can study your spellbook and replace one of your prepared level 1 or higher Wizard spells with another spell from the book.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-spell-mastery",
+    "name": "Spell Mastery",
+    "class": "Wizard",
+    "level": 18,
+    "description": "Choose one level 1 spell and one level 2 spell in your spellbook that have a casting time of an action. You always have them prepared and can cast them at their lowest level without a spell slot. When you finish a Long Rest, you can study your spellbook and replace one of them with another eligible spell of the same level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-epic-boon",
+    "name": "Epic Boon",
+    "class": "Wizard",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Spell Recall is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-signature-spells",
+    "name": "Signature Spells",
+    "class": "Wizard",
+    "level": 20,
+    "description": "Choose two level 3 spells in your spellbook. You always have them prepared, and you can cast each once at level 3 without a spell slot, regaining those uses on a Short or Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-abjurer-abjuration-savant",
+    "name": "Abjuration Savant",
+    "class": "Wizard",
+    "subclass": "Abjurer",
+    "level": 3,
+    "description": "Choose two Abjuration Wizard spells of level 2 or lower and add them to your spellbook for free. Whenever you gain access to a new level of spell slots in this class, you can add one more Abjuration Wizard spell for free.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-abjurer-arcane-ward",
+    "name": "Arcane Ward",
+    "class": "Wizard",
+    "subclass": "Abjurer",
+    "level": 3,
+    "description": "When you cast an Abjuration spell with a spell slot, you can create a magical ward on yourself that lasts until you finish a Long Rest. Its Hit Point maximum is twice your Wizard level plus your Intelligence modifier. Whenever you take damage, the ward takes it first, after your own Resistances and Vulnerabilities are applied; any damage left over after the ward reaches 0 goes to you. At 0 Hit Points the ward stops absorbing damage but its magic remains. It regains Hit Points equal to twice the slot's level whenever you cast an Abjuration spell with a spell slot, or when you spend a spell slot on it as a Bonus Action. Once you create the ward, you can't create it again until you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-abjurer-projected-ward",
+    "name": "Projected Ward",
+    "class": "Wizard",
+    "subclass": "Abjurer",
+    "level": 6,
+    "description": "When a creature you can see within 30 feet takes damage, you can use your Reaction to have your Arcane Ward absorb it. If the ward drops to 0 Hit Points, the creature takes the rest. The creature's Resistances and Vulnerabilities are applied before the ward absorbs the damage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-abjurer-spell-breaker",
+    "name": "Spell Breaker",
+    "class": "Wizard",
+    "subclass": "Abjurer",
+    "level": 10,
+    "description": "You always have Counterspell and Dispel Magic prepared. You can cast Dispel Magic as a Bonus Action and add your Proficiency Bonus to its ability check. When you cast either spell with a spell slot, the slot isn't spent if the spell fails to stop a spell.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-abjurer-spell-resistance",
+    "name": "Spell Resistance",
+    "class": "Wizard",
+    "subclass": "Abjurer",
+    "level": 14,
+    "description": "You have Advantage on saving throws against spells, and Resistance to the damage of spells.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-diviner-divination-savant",
+    "name": "Divination Savant",
+    "class": "Wizard",
+    "subclass": "Diviner",
+    "level": 3,
+    "description": "Choose two Divination Wizard spells of level 2 or lower and add them to your spellbook for free. Whenever you gain access to a new level of spell slots in this class, you can add one more Divination Wizard spell for free.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-diviner-portent",
+    "name": "Portent",
+    "class": "Wizard",
+    "subclass": "Diviner",
+    "level": 3,
+    "description": "When you finish a Long Rest, roll two d20s and record the numbers. You can replace any D20 Test made by you or a creature you can see with one of these rolls. You must decide before the roll is made, and you can do this only once per turn. Each recorded roll can be used once, and unused rolls are lost when you finish a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-diviner-expert-divination",
+    "name": "Expert Divination",
+    "class": "Wizard",
+    "subclass": "Diviner",
+    "level": 6,
+    "description": "When you cast a Divination spell using a level 2 or higher spell slot, you regain one spent spell slot. That slot must be of a lower level than the one you used and can't be higher than level 5.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-diviner-the-third-eye",
+    "name": "The Third Eye",
+    "class": "Wizard",
+    "subclass": "Diviner",
+    "level": 10,
+    "description": "As a Bonus Action, choose one benefit, which lasts until you are Incapacitated or finish a Short or Long Rest. You can't use this again until you finish a Short or Long Rest.\nDarkvision: you gain Darkvision out to 120 feet.\nGreater Comprehension: you can read any language.\nSee Invisibility: you can cast See Invisibility without spending a spell slot.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-diviner-greater-portent",
+    "name": "Greater Portent",
+    "class": "Wizard",
+    "subclass": "Diviner",
+    "level": 14,
+    "description": "You roll three d20s for your Portent feature, not two.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-evoker-evocation-savant",
+    "name": "Evocation Savant",
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 3,
+    "description": "Choose two Evocation Wizard spells of level 2 or lower and add them to your spellbook for free. Whenever you gain access to a new level of spell slots in this class, you can add one more Evocation Wizard spell for free.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-evoker-potent-cantrip",
+    "name": "Potent Cantrip",
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 3,
+    "description": "When you cast a cantrip at a creature and miss with the attack roll, or the target succeeds on its saving throw, the target still takes half the cantrip's damage, if any, but suffers no other effect from it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-evoker-sculpt-spells",
+    "name": "Sculpt Spells",
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 6,
+    "description": "When you cast an Evocation spell that affects other creatures you can see, you can choose a number of them equal to 1 plus the spell's level. They automatically succeed on their saving throws against the spell and take no damage if they would normally take half on a success.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-evoker-empowered-evocation",
+    "name": "Empowered Evocation",
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 10,
+    "description": "Whenever you cast a Wizard spell from the Evocation school, you can add your Intelligence modifier to one damage roll of that spell.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-evoker-overchannel",
+    "name": "Overchannel",
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 14,
+    "description": "When you cast a damaging Wizard spell with a spell slot of level 1 to 5, you can deal maximum damage with it on the turn you cast it. The first use after a Long Rest has no cost. Each later use before your next Long Rest deals Necrotic damage to you right after the casting: 2d12 per level of the spell slot for the second use, with 1d12 more per level for each use after that. This damage ignores Resistance and Immunity.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-illusionist-illusion-savant",
+    "name": "Illusion Savant",
+    "class": "Wizard",
+    "subclass": "Illusionist",
+    "level": 3,
+    "description": "Choose two Illusion Wizard spells of level 2 or lower and add them to your spellbook for free. Whenever you gain access to a new level of spell slots in this class, you can add one more Illusion Wizard spell for free.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-illusionist-improved-illusions",
+    "name": "Improved Illusions",
+    "class": "Wizard",
+    "subclass": "Illusionist",
+    "level": 3,
+    "description": "You can cast Illusion spells without Verbal components, and an Illusion spell with a range of 10 feet or more has its range increased by 60 feet. You also know the Minor Illusion cantrip, which doesn't count against your number of cantrips; if you already know it, you learn a different Wizard cantrip. You can create both a sound and an image with one casting of Minor Illusion, and you can cast it as a Bonus Action.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-illusionist-phantasmal-creatures",
+    "name": "Phantasmal Creatures",
+    "class": "Wizard",
+    "subclass": "Illusionist",
+    "level": 6,
+    "description": "You always have Summon Beast and Summon Fey prepared. Whenever you cast either, you can change its school to Illusion, which makes the summoned creature look spectral. You can cast the Illusion version of each spell without a spell slot once per Long Rest, but a creature summoned that way appears with half its Hit Points.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-illusionist-illusory-self",
+    "name": "Illusory Self",
+    "class": "Wizard",
+    "subclass": "Illusionist",
+    "level": 10,
+    "description": "When a creature hits you with an attack roll, you can use your Reaction to put an illusory double of yourself in the way. The attack automatically misses, and the illusion fades. You can do this once per Short or Long Rest, or again by spending a level 2 or higher spell slot (no action required).",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-wizard-illusionist-illusory-reality",
+    "name": "Illusory Reality",
+    "class": "Wizard",
+    "subclass": "Illusionist",
+    "level": 14,
+    "description": "When you cast an Illusion spell with a spell slot, you can choose one inanimate, nonmagical object that is part of the illusion and make it real. You can do this as a Bonus Action on your turn while the spell is ongoing. The object stays real for 1 minute, during which it can't deal damage or impose any conditions.",
+    "source": "PHB 2024"
+  }
+]

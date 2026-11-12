@@ -801,6 +801,55 @@ Read-only reference catalog. Data is manually curated in the `arsenal` database.
 { "data": [{ "id": "abc-123", "name": "Chain Mail", "category": "armor", ... }], "page": 1, "limit": 20, "total": 15 }
 ```
 
+### Feats
+
+All 75 feats of the 2024 Player's Handbook, sorted by name. Rules text is paraphrased.
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/arsenal/feats?page=1&limit=100&category=origin` | List feats (paginated). `category` is optional: `origin`, `general`, `fighting-style`, `epic-boon` | 200 |
+| GET | `/arsenal/feats/feat-alert` | Get one feat | 200 / 404 |
+
+**Feat:**
+```json
+{
+  "id": "feat-magic-initiate",
+  "name": "Magic Initiate",
+  "category": "origin",
+  "prerequisite": "",
+  "repeatable": true,
+  "repeatableNote": "You can take this feat more than once, choosing a different spell list each time.",
+  "benefits": [{ "name": "Two Cantrips", "description": "..." }],
+  "source": "PHB 2024"
+}
+```
+
+`prerequisite` and `repeatableNote` are omitted when empty. `repeatable` is always present.
+
+### Class Features
+
+Features of the 12 classes and their 48 subclasses in the 2024 Player's Handbook. Sorted by class, then base class before subclasses, then level. Rules text is paraphrased.
+
+| Method | Path | Description | Status |
+|---|---|---|---|
+| GET | `/arsenal/class-features?page=1&limit=100&class=Barbarian&subclass=Path of the Berserker` | List class features (paginated). `class` is optional and narrows to one class (base class plus all its subclasses). `subclass` is optional and narrows further to the base class plus that subclass. Both ignore case | 200 |
+| GET | `/arsenal/class-features/cf-barbarian-rage` | Get one class feature | 200 / 404 |
+
+**Class feature:**
+```json
+{
+  "id": "cf-barbarian-path-of-the-berserker-frenzy",
+  "name": "Frenzy",
+  "class": "Barbarian",
+  "subclass": "Path of the Berserker",
+  "level": 3,
+  "description": "...",
+  "source": "PHB 2024"
+}
+```
+
+`subclass` is omitted for base class features. A feature gained at several levels (for example Ability Score Improvement) appears once, at its first level, and its description lists the later levels. `limit` is capped at 100; a class with one subclass fits in one page, a whole class with all four subclasses does not.
+
 ---
 
 ## Error Responses

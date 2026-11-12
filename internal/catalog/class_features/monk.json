@@ -1,0 +1,349 @@
+[
+  {
+    "id": "cf-monk-martial-arts",
+    "name": "Martial Arts",
+    "class": "Monk",
+    "level": 1,
+    "description": "These benefits apply while you are unarmed or wielding only Monk weapons (Simple Melee weapons, and Martial Melee weapons with the Light property) and aren't wearing armor or wielding a Shield:\nBonus Unarmed Strike: you can make an Unarmed Strike as a Bonus Action.\nMartial Arts Die: you can roll a d6 in place of the normal damage of your Unarmed Strike or Monk weapon. The die becomes a d8 at level 5, a d10 at level 11, and a d12 at level 17.\nDexterous Attacks: you can use Dexterity in place of Strength for the attack and damage rolls of your Unarmed Strikes and Monk weapons, and for the save DC of your Grapple and Shove options.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-unarmored-defense",
+    "name": "Unarmored Defense",
+    "class": "Monk",
+    "level": 1,
+    "description": "While you aren't wearing armor or wielding a Shield, your base Armor Class is 10 plus your Dexterity and Wisdom modifiers.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-monks-focus",
+    "name": "Monk's Focus",
+    "class": "Monk",
+    "level": 2,
+    "description": "You have a number of Focus Points equal to your Monk level, and you regain them all on a Short or Long Rest. When a feature of yours calls for a saving throw, the DC is 8 plus your Wisdom modifier and Proficiency Bonus. You start with three uses for them:\nFlurry of Blows: spend 1 Focus Point to make two Unarmed Strikes as a Bonus Action.\nPatient Defense: you can take the Disengage action as a Bonus Action. Or spend 1 Focus Point to take both the Disengage and Dodge actions as a Bonus Action.\nStep of the Wind: you can take the Dash action as a Bonus Action. Or spend 1 Focus Point to take both the Disengage and Dash actions as a Bonus Action, with your jump distance doubled for the turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-unarmored-movement",
+    "name": "Unarmored Movement",
+    "class": "Monk",
+    "level": 2,
+    "description": "Your Speed increases by 10 feet while you aren't wearing armor or wielding a Shield. The bonus becomes 15 feet at level 6, 20 feet at level 10, 25 feet at level 14, and 30 feet at level 18.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-uncanny-metabolism",
+    "name": "Uncanny Metabolism",
+    "class": "Monk",
+    "level": 2,
+    "description": "When you roll Initiative, you can regain all your spent Focus Points. When you do, roll your Martial Arts die and regain Hit Points equal to your Monk level plus the roll. You can do this once per Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-deflect-attacks",
+    "name": "Deflect Attacks",
+    "class": "Monk",
+    "level": 3,
+    "description": "When an attack roll hits you and deals Bludgeoning, Piercing, or Slashing damage, you can use your Reaction to reduce the damage by 1d10 plus your Dexterity modifier and Monk level. If that brings the damage to 0, you can spend 1 Focus Point to redirect the attack at a creature within 5 feet of you (for a melee attack) or within 60 feet and not behind Total Cover (for a ranged attack). It must succeed on a Dexterity saving throw or take damage equal to two rolls of your Martial Arts die plus your Dexterity modifier, of the same type as the attack.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-monk-subclass",
+    "name": "Monk Subclass",
+    "class": "Monk",
+    "level": 3,
+    "description": "You choose a subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand. You gain its features at levels 3, 6, 11, and 17.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-ability-score-improvement",
+    "name": "Ability Score Improvement",
+    "class": "Monk",
+    "level": 4,
+    "description": "You gain the Ability Score Improvement feat or another feat you qualify for. You gain this again at levels 8, 12, and 16.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-slow-fall",
+    "name": "Slow Fall",
+    "class": "Monk",
+    "level": 4,
+    "description": "When you fall, you can use your Reaction to reduce the falling damage by five times your Monk level.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-extra-attack",
+    "name": "Extra Attack",
+    "class": "Monk",
+    "level": 5,
+    "description": "You can attack twice, not once, whenever you take the Attack action on your turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-stunning-strike",
+    "name": "Stunning Strike",
+    "class": "Monk",
+    "level": 5,
+    "description": "Once per turn, when you hit a creature with a Monk weapon or an Unarmed Strike, you can spend 1 Focus Point to attempt a stunning strike. The target makes a Constitution saving throw. On a failure, it is Stunned until the start of your next turn. On a success, its Speed is halved until the start of your next turn and the next attack roll made against it before then has Advantage.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-empowered-strikes",
+    "name": "Empowered Strikes",
+    "class": "Monk",
+    "level": 6,
+    "description": "Whenever you deal damage with an Unarmed Strike, it can deal Force damage or its normal damage type, as you choose.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-evasion",
+    "name": "Evasion",
+    "class": "Monk",
+    "level": 7,
+    "description": "When you are subjected to an effect that allows a Dexterity saving throw for half damage, you take no damage on a success and half on a failure. You can't use this while Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-acrobatic-movement",
+    "name": "Acrobatic Movement",
+    "class": "Monk",
+    "level": 9,
+    "description": "While you aren't wearing armor or wielding a Shield, you can move along vertical surfaces and across liquids on your turn without falling during the movement.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-heightened-focus",
+    "name": "Heightened Focus",
+    "class": "Monk",
+    "level": 10,
+    "description": "Your Focus options improve:\nFlurry of Blows: spending the Focus Point gives you three Unarmed Strikes, not two.\nPatient Defense: when you spend a Focus Point on it, you gain Temporary Hit Points equal to two rolls of your Martial Arts die.\nStep of the Wind: when you spend a Focus Point on it, you can choose a willing Large or smaller creature within 5 feet and move it with you until the end of your turn. Its movement doesn't provoke Opportunity Attacks.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-self-restoration",
+    "name": "Self-Restoration",
+    "class": "Monk",
+    "level": 10,
+    "description": "At the end of each of your turns, you can remove one of these conditions from yourself: Charmed, Frightened, or Poisoned. Also, going without food and drink doesn't give you levels of Exhaustion.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-deflect-energy",
+    "name": "Deflect Energy",
+    "class": "Monk",
+    "level": 13,
+    "description": "You can use Deflect Attacks against attacks that deal any damage type, not only Bludgeoning, Piercing, or Slashing.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-disciplined-survivor",
+    "name": "Disciplined Survivor",
+    "class": "Monk",
+    "level": 14,
+    "description": "You gain proficiency in all saving throws. Also, whenever you fail a saving throw, you can spend 1 Focus Point to reroll it. You must use the new roll.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-perfect-focus",
+    "name": "Perfect Focus",
+    "class": "Monk",
+    "level": 15,
+    "description": "When you roll Initiative and don't use Uncanny Metabolism, you regain Focus Points until you have 4, if you have 3 or fewer.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-superior-defense",
+    "name": "Superior Defense",
+    "class": "Monk",
+    "level": 18,
+    "description": "At the start of your turn, you can spend 3 Focus Points to gain Resistance to all damage except Force for 1 minute or until you are Incapacitated.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-epic-boon",
+    "name": "Epic Boon",
+    "class": "Monk",
+    "level": 19,
+    "description": "You gain an Epic Boon feat or another feat you qualify for. Boon of Irresistible Offense is the suggested choice.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-body-and-mind",
+    "name": "Body and Mind",
+    "class": "Monk",
+    "level": 20,
+    "description": "Your Dexterity and Wisdom scores each increase by 4, to a maximum of 25.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-hand-of-harm",
+    "name": "Hand of Harm",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 3,
+    "description": "Once per turn, when you hit a creature with an Unarmed Strike and deal damage, you can spend 1 Focus Point to deal extra Necrotic damage equal to one roll of your Martial Arts die plus your Wisdom modifier.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-hand-of-healing",
+    "name": "Hand of Healing",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 3,
+    "description": "As a Magic action, you can spend 1 Focus Point and touch a creature to restore Hit Points equal to a roll of your Martial Arts die plus your Wisdom modifier. When you use Flurry of Blows, you can replace one of its Unarmed Strikes with a use of this feature without spending a Focus Point for the healing.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-implements-of-mercy",
+    "name": "Implements of Mercy",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 3,
+    "description": "You gain proficiency in the Insight and Medicine skills and with the Herbalism Kit.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-physicians-touch",
+    "name": "Physician's Touch",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 6,
+    "description": "Hand of Harm: you can also give the target the Poisoned condition until the end of your next turn.\nHand of Healing: you can also end one of these conditions on the creature you heal: Blinded, Deafened, Paralyzed, Poisoned, or Stunned.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-flurry-of-healing-and-harm",
+    "name": "Flurry of Healing and Harm",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 11,
+    "description": "When you use Flurry of Blows, you can replace each of its Unarmed Strikes with a use of Hand of Healing without spending Focus Points for the healing. Also, when you deal damage with an Unarmed Strike from Flurry of Blows, you can use Hand of Harm with it without spending a Focus Point, still only once per turn. You can use these benefits a total number of times equal to your Wisdom modifier (minimum 1), regaining them on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-mercy-hand-of-ultimate-mercy",
+    "name": "Hand of Ultimate Mercy",
+    "class": "Monk",
+    "subclass": "Warrior of Mercy",
+    "level": 17,
+    "description": "As a Magic action, you can touch the corpse of a creature that died within the past 24 hours and spend 5 Focus Points. It returns to life with Hit Points equal to 4d10 plus your Wisdom modifier. If it died with any of the Blinded, Deafened, Paralyzed, Poisoned, or Stunned conditions, they are removed. You can do this once per Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-shadow-shadow-arts",
+    "name": "Shadow Arts",
+    "class": "Monk",
+    "subclass": "Warrior of Shadow",
+    "level": 3,
+    "description": "Darkness: you can spend 1 Focus Point to cast Darkness without spell components. You can see within the spell's area, and while it lasts you can move the area up to 60 feet at the start of each of your turns.\nDarkvision: you gain Darkvision out to 60 feet, or 60 more feet if you already have it.\nShadowy Figments: you know the Minor Illusion cantrip, with Wisdom as your spellcasting ability for it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-shadow-shadow-step",
+    "name": "Shadow Step",
+    "class": "Monk",
+    "subclass": "Warrior of Shadow",
+    "level": 6,
+    "description": "While you are entirely in Dim Light or Darkness, you can use a Bonus Action to teleport up to 60 feet to an unoccupied space you can see that is also in Dim Light or Darkness. You then have Advantage on the next melee attack you make before the end of the turn.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-shadow-improved-shadow-step",
+    "name": "Improved Shadow Step",
+    "class": "Monk",
+    "subclass": "Warrior of Shadow",
+    "level": 11,
+    "description": "When you use Shadow Step, you can spend 1 Focus Point to ignore the requirement to start and end in Dim Light or Darkness. As part of the same Bonus Action, you can make an Unarmed Strike right after you teleport.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-shadow-cloak-of-shadows",
+    "name": "Cloak of Shadows",
+    "class": "Monk",
+    "subclass": "Warrior of Shadow",
+    "level": 17,
+    "description": "As a Magic action while you are entirely in Dim Light or Darkness, you can spend 3 Focus Points to wrap yourself in shadow for 1 minute, until you are Incapacitated, or until you end your turn in Bright Light. While it lasts:\nInvisibility: you have the Invisible condition.\nPartially Incorporeal: you can move through occupied spaces as if they were Difficult Terrain. If you end your turn in one, you are moved to the last unoccupied space you were in.\nShadow Flurry: you can use Flurry of Blows without spending Focus Points.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-elements-elemental-attunement",
+    "name": "Elemental Attunement",
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "level": 3,
+    "description": "At the start of your turn, you can spend 1 Focus Point to fill yourself with elemental energy for 10 minutes or until you are Incapacitated. While it lasts:\nReach: your reach is 10 feet longer when you make an Unarmed Strike.\nElemental Strikes: your Unarmed Strike can deal Acid, Cold, Fire, Lightning, or Thunder damage in place of its normal type. When it does, you can make the target attempt a Strength saving throw; on a failure, you move it up to 10 feet toward or away from you.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-elements-manipulate-elements",
+    "name": "Manipulate Elements",
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "level": 3,
+    "description": "You know the Elementalism cantrip, with Wisdom as your spellcasting ability for it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-elements-elemental-burst",
+    "name": "Elemental Burst",
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "level": 6,
+    "description": "As a Magic action, you can spend 2 Focus Points to make elemental energy burst in a 20-foot-radius Sphere centered on a point within 120 feet. Choose Acid, Cold, Fire, Lightning, or Thunder. Each creature in the Sphere makes a Dexterity saving throw, taking damage of that type equal to three rolls of your Martial Arts die on a failure, or half on a success.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-elements-stride-of-the-elements",
+    "name": "Stride of the Elements",
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "level": 11,
+    "description": "While your Elemental Attunement is active, you have a Fly Speed and a Swim Speed equal to your Speed.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-elements-elemental-epitome",
+    "name": "Elemental Epitome",
+    "class": "Monk",
+    "subclass": "Warrior of the Elements",
+    "level": 17,
+    "description": "While your Elemental Attunement is active:\nDamage Resistance: you have Resistance to one of Acid, Cold, Fire, Lightning, or Thunder damage, and can change the choice at the start of each of your turns.\nDestructive Stride: when you use Step of the Wind, your Speed increases by 20 feet until the end of the turn. During that time, a creature you pass within 5 feet of takes damage equal to one roll of your Martial Arts die, of your choice of those five types. A creature can take this damage only once per turn.\nEmpowered Strikes: once on each of your turns, you can deal extra damage to a target you hit with an Unarmed Strike, equal to one roll of your Martial Arts die and of the same type as the strike.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-open-hand-open-hand-technique",
+    "name": "Open Hand Technique",
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 3,
+    "description": "Whenever you hit a creature with an attack granted by Flurry of Blows, you can impose one effect:\nAddle: the target can't make Opportunity Attacks until the start of its next turn.\nPush: the target must succeed on a Strength saving throw or be pushed up to 15 feet away from you.\nTopple: the target must succeed on a Dexterity saving throw or be knocked Prone.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-open-hand-wholeness-of-body",
+    "name": "Wholeness of Body",
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 6,
+    "description": "As a Bonus Action, you roll your Martial Arts die and regain Hit Points equal to the roll plus your Wisdom modifier (minimum of 1 Hit Point). You have a number of uses equal to your Wisdom modifier (minimum 1) and regain them on a Long Rest.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-open-hand-fleet-step",
+    "name": "Fleet Step",
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 11,
+    "description": "When you take a Bonus Action other than Step of the Wind, you can also use Step of the Wind right after it.",
+    "source": "PHB 2024"
+  },
+  {
+    "id": "cf-monk-warrior-of-the-open-hand-quivering-palm",
+    "name": "Quivering Palm",
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 17,
+    "description": "When you hit a creature with an Unarmed Strike, you can spend 4 Focus Points to start harmless vibrations in its body that last for a number of days equal to your Monk level. You can have only one creature affected at a time. When you take the Attack action, you can give up one of the attacks to end the vibrations, as long as you and the target are on the same plane of existence. The target then makes a Constitution saving throw, taking 10d12 Force damage on a failure or half on a success. You can also end them harmlessly (no action required).",
+    "source": "PHB 2024"
+  }
+]

@@ -1,0 +1,12 @@
+$kind: http-request
+url: "{{baseUrl}}/arsenal/feats?page=1&limit=100&category=origin"
+method: GET
+queryParams:
+  page: "1"
+  limit: "100"
+  category: origin
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 5000
