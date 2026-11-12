@@ -54,6 +54,13 @@ const (
 	PlayerKindCompanion PlayerKind = "companion"
 )
 
+// Limits for the sheet note fields.
+const (
+	HitDiceMaxCap     = 20
+	SheetNoteTextMax  = 200
+	AppearanceTextMax = 2000
+)
+
 // CompanionTrait is a named passive trait on a companion's stat block.
 type CompanionTrait struct {
 	Name        string `bson:"name"        json:"name"`
@@ -167,18 +174,30 @@ type Player struct {
 	// LimitedUses — trackable per-rest abilities (name, note, max, remaining).
 	LimitedUses LimitedUseList `bson:"limitedUses" json:"limitedUses"`
 
+	// Sheet notes (2024 sheet): notes-only fields; the server never derives
+	// anything from them.
+	HitDie              *string  `bson:"hitDie"              json:"hitDie"`
+	HitDiceMax          int      `bson:"hitDiceMax"          json:"hitDiceMax"`
+	HitDiceSpent        int      `bson:"hitDiceSpent"        json:"hitDiceSpent"`
+	SpellcastingAbility *string  `bson:"spellcastingAbility" json:"spellcastingAbility"`
+	ArmorTraining       []string `bson:"armorTraining"       json:"armorTraining"`
+	WeaponProficiencies string   `bson:"weaponProficiencies" json:"weaponProficiencies"`
+	ToolProficiencies   string   `bson:"toolProficiencies"   json:"toolProficiencies"`
+	Appearance          string   `bson:"appearance"          json:"appearance"`
+
 	// Companion-only fields (kind == "companion"); omitted for other kinds.
-	OwnerPlayerID string            `bson:"ownerPlayerId,omitempty" json:"ownerPlayerId,omitempty"`
-	CreatureType  string            `bson:"creatureType,omitempty"  json:"creatureType,omitempty"`
-	CompanionType string            `bson:"companionType,omitempty" json:"companionType,omitempty"`
-	FlySpeed      int               `bson:"flySpeed,omitempty"      json:"flySpeed,omitempty"`
-	ClimbSpeed    int               `bson:"climbSpeed,omitempty"    json:"climbSpeed,omitempty"`
-	SwimSpeed     int               `bson:"swimSpeed,omitempty"     json:"swimSpeed,omitempty"`
-	OtherSpeeds   string            `bson:"otherSpeeds,omitempty"   json:"otherSpeeds,omitempty"`
-	Senses        string            `bson:"senses,omitempty"        json:"senses,omitempty"`
-	Languages     string            `bson:"languages,omitempty"     json:"languages,omitempty"`
-	Traits        []CompanionTrait  `bson:"traits,omitempty"        json:"traits,omitempty"`
-	Actions       []CompanionAction `bson:"actions,omitempty"       json:"actions,omitempty"`
+	OwnerPlayerID string `bson:"ownerPlayerId,omitempty" json:"ownerPlayerId,omitempty"`
+	CreatureType  string `bson:"creatureType,omitempty"  json:"creatureType,omitempty"`
+	CompanionType string `bson:"companionType,omitempty" json:"companionType,omitempty"`
+	FlySpeed      int    `bson:"flySpeed,omitempty"      json:"flySpeed,omitempty"`
+	ClimbSpeed    int    `bson:"climbSpeed,omitempty"    json:"climbSpeed,omitempty"`
+	SwimSpeed     int    `bson:"swimSpeed,omitempty"     json:"swimSpeed,omitempty"`
+	OtherSpeeds   string `bson:"otherSpeeds,omitempty"   json:"otherSpeeds,omitempty"`
+	Senses        string `bson:"senses,omitempty"        json:"senses,omitempty"`
+	// Languages is shared by all kinds (free text, omitted when empty).
+	Languages string            `bson:"languages,omitempty"     json:"languages,omitempty"`
+	Traits    []CompanionTrait  `bson:"traits,omitempty"        json:"traits,omitempty"`
+	Actions   []CompanionAction `bson:"actions,omitempty"       json:"actions,omitempty"`
 
 	UpdatedAt time.Time `bson:"updatedAt" json:"updatedAt"`
 }
@@ -242,6 +261,7 @@ func DefaultPlayer(id, campaignID, linkedUserID, name string, level int, kind Pl
 		ProficientSkills:          []string{},
 		ExpertiseSkills:           []string{},
 		FeaturesAndFeats:          []string{},
+		ArmorTraining:             []string{},
 		// All 9 spell slot levels pre-populated so client never sees null
 		SpellSlots: map[string]SpellSlot{
 			"1": {}, "2": {}, "3": {}, "4": {}, "5": {},
