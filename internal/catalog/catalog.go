@@ -135,15 +135,22 @@ func (c *ArsenalCatalog) loadClassFeatures() error {
 	return nil
 }
 
+// paginate returns one page of items plus the total count. A page or limit
+// below 1, or a page past the end, yields an empty page. The page check is
+// done by division so a huge page number cannot overflow into a negative
+// slice index.
 func paginate[T any](items []T, page, limit int64) ([]T, int64) {
 	total := int64(len(items))
+	if page < 1 || limit < 1 || page-1 > total/limit {
+		return []T{}, total
+	}
 	skip := (page - 1) * limit
 	if skip >= total {
 		return []T{}, total
 	}
-	end := skip + limit
-	if end > total {
-		end = total
+	end := total
+	if limit < total-skip {
+		end = skip + limit
 	}
 	return items[skip:end], total
 }
@@ -196,16 +203,7 @@ func (c *ArsenalCatalog) GetClassFeature(id string) *model.ClassFeature {
 
 // ListEquipment returns a paginated slice of equipment.
 func (c *ArsenalCatalog) ListEquipment(page, limit int64) ([]model.Equipment, int64) {
-	total := int64(len(c.equipment))
-	skip := (page - 1) * limit
-	if skip >= total {
-		return []model.Equipment{}, total
-	}
-	end := skip + limit
-	if end > total {
-		end = total
-	}
-	return c.equipment[skip:end], total
+	return paginate(c.equipment, page, limit)
 }
 
 // GetEquipment returns a single equipment item by ID, or nil if not found.
@@ -215,16 +213,7 @@ func (c *ArsenalCatalog) GetEquipment(id string) *model.Equipment {
 
 // ListSpells returns a paginated slice of spells.
 func (c *ArsenalCatalog) ListSpells(page, limit int64) ([]model.Spell, int64) {
-	total := int64(len(c.spells))
-	skip := (page - 1) * limit
-	if skip >= total {
-		return []model.Spell{}, total
-	}
-	end := skip + limit
-	if end > total {
-		end = total
-	}
-	return c.spells[skip:end], total
+	return paginate(c.spells, page, limit)
 }
 
 // GetSpell returns a single spell by ID, or nil if not found.

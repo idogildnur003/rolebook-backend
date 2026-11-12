@@ -163,3 +163,67 @@ func TestCatalog_ClassFeatures(t *testing.T) {
 		t.Error("unknown class feature should be nil")
 	}
 }
+
+func TestPaginate_Bounds(t *testing.T) {
+	items := []int{1, 2, 3, 4, 5}
+	const maxInt64 = int64(^uint64(0) >> 1)
+
+	cases := []struct {
+		name        string
+		page, limit int64
+		want        []int
+	}{
+		{"first page", 1, 2, []int{1, 2}},
+		{"last partial page", 3, 2, []int{5}},
+		{"page past the end", 4, 2, []int{}},
+		{"limit larger than the list", 1, 100, []int{1, 2, 3, 4, 5}},
+		{"zero page", 0, 2, []int{}},
+		{"negative page", -3, 2, []int{}},
+		{"zero limit", 1, 0, []int{}},
+		{"negative limit", 1, -1, []int{}},
+		{"page that would overflow", maxInt64, 100, []int{}},
+		{"page that wraps negative", maxInt64/100 + 2, 100, []int{}},
+		{"limit that would overflow", 2, maxInt64, []int{}},
+		{"huge limit on first page", 1, maxInt64, []int{1, 2, 3, 4, 5}},
+	}
+	for _, tc := range cases {
+		got, total := paginate(items, tc.page, tc.limit)
+		if total != 5 {
+			t.Errorf("%s: total = %d, want 5", tc.name, total)
+		}
+		if len(got) != len(tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+			continue
+		}
+		for i := range got {
+			if got[i] != tc.want[i] {
+				t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+				break
+			}
+		}
+	}
+
+	if got, total := paginate([]int{}, 1, 20); len(got) != 0 || total != 0 {
+		t.Errorf("empty list: got %v, total %d", got, total)
+	}
+}
+
+func TestCatalog_HugePageDoesNotPanic(t *testing.T) {
+	c, err := Load()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	const huge = int64(^uint64(0)>>1)/100 + 2
+	if data, _ := c.ListSpells(huge, 100); len(data) != 0 {
+		t.Errorf("spells: got %d items", len(data))
+	}
+	if data, _ := c.ListEquipment(huge, 100); len(data) != 0 {
+		t.Errorf("equipment: got %d items", len(data))
+	}
+	if data, _ := c.ListFeats("", huge, 100); len(data) != 0 {
+		t.Errorf("feats: got %d items", len(data))
+	}
+	if data, _ := c.ListClassFeatures("", "", huge, 100); len(data) != 0 {
+		t.Errorf("class features: got %d items", len(data))
+	}
+}
