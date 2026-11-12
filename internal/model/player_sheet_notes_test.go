@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"reflect"
 	"testing"
 )
@@ -37,5 +38,30 @@ func TestDefaultPlayer_SheetNoteDefaults(t *testing.T) {
 	}
 	if _, ok := m["languages"]; ok {
 		t.Error("languages should be omitted for a PC")
+	}
+}
+
+func TestPlayer_BSONRoundTripSheetNotes(t *testing.T) {
+	raw, err := bson.Marshal(bson.M{
+		"hitDiceMax":    float64(5),
+		"hitDiceSpent":  float64(2),
+		"hitDie":        "d8",
+		"armorTraining": []string{"light"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var p Player
+	if err := bson.Unmarshal(raw, &p); err != nil {
+		t.Fatal(err)
+	}
+	if p.HitDiceMax != 5 || p.HitDiceSpent != 2 {
+		t.Errorf("hit dice: got max=%d spent=%d, want 5/2", p.HitDiceMax, p.HitDiceSpent)
+	}
+	if p.HitDie == nil || *p.HitDie != "d8" {
+		t.Errorf("hitDie: got %v, want d8", p.HitDie)
+	}
+	if !reflect.DeepEqual(p.ArmorTraining, []string{"light"}) {
+		t.Errorf("armorTraining: got %v", p.ArmorTraining)
 	}
 }
