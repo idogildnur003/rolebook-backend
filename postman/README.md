@@ -677,12 +677,12 @@ Response (201):
 
 ## Companions
 
-Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kind: "companion"`, `ownerPlayerId` (the owning PC) and `linkedUserId` (the owner's user). Each PC has at most one pet. Companions are excluded from `GET /campaigns/{{campaignId}}/player` and the default `GET /campaigns/{{campaignId}}/players` list; once created they are read and edited through the generic `/players/{{playerId}}` endpoints (`kind` and `ownerPlayerId` are stripped from PATCH).
+Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kind: "companion"`, `ownerPlayerId` (the owning PC) and `linkedUserId` (the owner's user). A PC may own any number of pets. Companions are excluded from `GET /campaigns/{{campaignId}}/player` and the default `GET /campaigns/{{campaignId}}/players` list; once created they are read and edited through the generic `/players/{{playerId}}` endpoints (`kind` and `ownerPlayerId` are stripped from PATCH).
 
 | Method | Path | Access | Description | Status |
 |---|---|---|---|---|
 | POST | `/campaigns/{{campaignId}}/companions` | Player with a PC, or campaign DM | Create a companion -> sets `companionId` | 201 |
-| GET | `/campaigns/{{campaignId}}/companions` | Any campaign member | List companions. DM: every pet in the campaign. Player: `[]` or `[theirPet]`. Avatars resolved | 200 |
+| GET | `/campaigns/{{campaignId}}/companions` | Any campaign member | List companions. DM: every pet in the campaign. Player: only their own pets (`[]` when none). Avatars resolved | 200 |
 
 **POST body:**
 ```json
@@ -695,9 +695,8 @@ Requires Bearer `{{token}}`. A companion (pet) is a `players` document with `kin
 | 400 | `BAD_REQUEST` | Malformed body, empty name, or (DM) missing / non-PC / other-campaign `ownerPlayerId` |
 | 403 | `FORBIDDEN` | Caller is a non-DM without a PC in this campaign |
 | 404 | `NOT_FOUND` | Campaign not found or caller not a member |
-| 409 | `COMPANION_EXISTS` | The owner PC already has a companion |
 
-**Delete exception:** `DELETE /players/{{playerId}}` is normally DM-only, but a player may delete their own companion (204). Deleting a PC also deletes its companion.
+**Delete exception:** `DELETE /players/{{playerId}}` is normally DM-only, but a player may delete their own companion (204). Deleting a PC also deletes all of its companions.
 
 ---
 

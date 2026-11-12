@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -24,21 +25,36 @@ type PlayerStore struct {
 	col *mongo.Collection
 }
 
+// legacyCompanionOwnerIndex is the unique one-pet-per-character index earlier
+// releases created. A character may now own any number of pets, so it is
+// dropped at startup before the plain owner index is created on the same key.
+const legacyCompanionOwnerIndex = "uniq_companion_owner"
+
 // NewPlayerStore creates a PlayerStore and ensures required indexes.
 func NewPlayerStore(db *DB) *PlayerStore {
 	col := db.Collection("players")
-	_, _ = col.Indexes().CreateMany(context.Background(), []mongo.IndexModel{
+	ctx := context.Background()
+	if err := col.Indexes().DropOne(ctx, legacyCompanionOwnerIndex); err != nil && !isIndexNotFound(err) {
+		log.Printf("players: drop index %s: %v", legacyCompanionOwnerIndex, err)
+	}
+	_, _ = col.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		{Keys: bson.D{{Key: "campaignId", Value: 1}}},
 		{Keys: bson.D{{Key: "linkedUserId", Value: 1}}},
 		{
 			Keys: bson.D{{Key: "ownerPlayerId", Value: 1}},
 			Options: options.Index().
-				SetName("uniq_companion_owner").
-				SetUnique(true).
+				SetName("companion_owner").
 				SetPartialFilterExpression(bson.M{"kind": string(model.PlayerKindCompanion)}),
 		},
 	})
 	return &PlayerStore{col: col}
+}
+
+// isIndexNotFound reports whether err means there was no index (or no
+// collection) to drop: IndexNotFound (27) or NamespaceNotFound (26).
+func isIndexNotFound(err error) bool {
+	var ce mongo.CommandError
+	return errors.As(err, &ce) && (ce.Code == 27 || ce.Code == 26)
 }
 
 // Create inserts a new player.
@@ -128,24 +144,6 @@ func (s *PlayerStore) ListCompanions(ctx context.Context, campaignID, userID str
 		players = []model.Player{}
 	}
 	return players, nil
-}
-
-// FindCompanionByOwner returns the companion owned by the given player, or
-// (nil, nil) if the player has no pet.
-func (s *PlayerStore) FindCompanionByOwner(ctx context.Context, campaignID, ownerPlayerID string) (*model.Player, error) {
-	var p model.Player
-	err := s.col.FindOne(ctx, bson.M{
-		"campaignId":    campaignID,
-		"kind":          string(model.PlayerKindCompanion),
-		"ownerPlayerId": ownerPlayerID,
-	}).Decode(&p)
-	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &p, nil
 }
 
 // DeleteCompanionsByOwner removes every companion owned by the given player.
