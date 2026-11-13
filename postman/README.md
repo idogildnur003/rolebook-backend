@@ -523,9 +523,32 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
   "proficientSkills": ["Stealth", "Perception", "Survival"],
   "expertiseSkills": ["Stealth"],
   "featuresAndFeats": ["Favored Enemy", "Natural Explorer", "Dread Ambusher"],
-  "conditions": {}
+  "conditions": {},
+  "hitDie": "d10",
+  "hitDiceMax": 5,
+  "hitDiceSpent": 2,
+  "spellcastingAbility": "WIS",
+  "armorTraining": ["light", "medium", "shields"],
+  "weaponProficiencies": "Simple weapons, martial weapons",
+  "toolProficiencies": "Herbalism kit",
+  "languages": "Common, Elvish, Sylvan",
+  "appearance": "Tall and lean, with moss-green eyes."
 }
 ```
+
+**Sheet note fields (notes only; the server never derives values from them or clamps). Any violation returns 400 `BAD_REQUEST`:**
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `hitDie` | string \| null | `"d6"`, `"d8"`, `"d10"`, `"d12"`, or `null` |
+| `hitDiceMax` | integer | whole number 0-20 |
+| `hitDiceSpent` | integer | whole number 0 to the effective `hitDiceMax` (the request's `hitDiceMax` if sent, otherwise the stored one) |
+| `spellcastingAbility` | string \| null | `"INT"`, `"WIS"`, `"CHA"`, or `null` |
+| `armorTraining` | string[] | distinct subset of `"light"`, `"medium"`, `"heavy"`, `"shields"` |
+| `weaponProficiencies` | string | at most 200 characters (runes) |
+| `toolProficiencies` | string | at most 200 characters (runes) |
+| `languages` | string | at most 200 characters (runes); applies to all player kinds (pc, dm, companion) |
+| `appearance` | string | at most 2000 characters (runes) |
 
 ---
 
