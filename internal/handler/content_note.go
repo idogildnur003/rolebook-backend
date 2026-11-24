@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -68,6 +69,7 @@ func (h *ContentNoteHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 			return
 		}
+		activity.Describe(r, contentNoteDesc(targetType))
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -76,5 +78,6 @@ func (h *ContentNoteHandler) Upsert(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, contentNoteDesc(targetType))
 	writeJSON(w, http.StatusOK, note)
 }

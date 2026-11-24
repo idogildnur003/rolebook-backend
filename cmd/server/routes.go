@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/elad/rolebook-backend/config"
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/email"
@@ -32,6 +33,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	mapPinStore := store.NewMapPinStore(db)
 	initiativeStore := store.NewInitiativeStore(db)
 	initiativeBroadcast := initiativehub.New()
+	activityStore := store.NewActivityStore(db)
 
 	// Avatar storage (S3). Unconfigured in local dev — uploads disabled,
 	// avatarUri pass-through on Player reads.
@@ -47,7 +49,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	emailSender := email.New(cfg)
 	resetStore := resetstore.New(cfg)
 	authHandler := handler.NewAuthHandler(userStore, cfg.JWTSecret, emailSender, cfg.EmailVerificationEnabled, cfg.AdminUserIDs, resetStore)
-	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars)
+	campaignHandler := handler.NewCampaignHandler(campaignStore, playerStore, userStore, db, avatars, activityStore)
 	sessionHandler := handler.NewSessionHandler(campaignStore)
 	sessionNotesHandler := handler.NewSessionNotesHandler(campaignStore)
 	sessionScheduleHandler := handler.NewSessionScheduleHandler(campaignStore)
@@ -65,6 +67,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 	npcHandler := handler.NewNPCHandler(npcStore, locationStore, mapPinStore, campaignStore, avatars)
 	mapPinHandler := handler.NewMapPinHandler(mapPinStore, locationStore, npcStore, campaignStore)
 	initiativeHandler := handler.NewInitiativeHandler(initiativeStore, playerStore, campaignStore, avatars, initiativeBroadcast)
+	historyHandler := handler.NewHistoryHandler(activityStore, campaignStore)
 	uploadsHandler := handler.NewUploadsHandler(avatars, playerStore, campaignStore, arsenalCatalog, cfg.AdminUserIDs)
 
 	r.Route("/api", func(r chi.Router) {
@@ -99,6 +102,8 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 			if rl.Enabled {
 				r.Use(rl.User)
 			}
+			// Logs every successful mutation in this group, including future routes.
+			r.Use(activity.Record(activityStore, campaignStore, playerStore))
 
 			// Account
 			r.Post("/auth/change-password", authHandler.ChangePassword)
@@ -133,6 +138,10 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 			// Per-user session notes (any active member can write; any member can read).
 			r.Get("/campaigns/{campaignId}/my-session-notes", sessionNotesHandler.GetMine)
 			r.Put("/campaigns/{campaignId}/sessions/{sessionId}/my-notes", sessionNotesHandler.PutMine)
+
+			// Per-user change history (own entries only).
+			r.Get("/campaigns/{campaignId}/history", historyHandler.List)
+			r.Get("/campaigns/{campaignId}/history/sessions", historyHandler.Sessions)
 
 			// Uploads (presigned S3 URLs)
 			r.Post("/uploads/url", uploadsHandler.CreateURL)

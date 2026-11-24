@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
@@ -19,24 +20,25 @@ import (
 
 // CampaignHandler handles all campaign CRUD endpoints.
 type CampaignHandler struct {
-	campaigns *store.CampaignStore
-	players   *store.PlayerStore
-	users     *store.UserStore
-	db        *store.DB
-	avatars   *avatarstore.Store
+	campaigns   *store.CampaignStore
+	players     *store.PlayerStore
+	users       *store.UserStore
+	db          *store.DB
+	avatars     *avatarstore.Store
+	activityLog *store.ActivityStore
 }
 
 // NewCampaignHandler creates a CampaignHandler.
-func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore, users *store.UserStore, db *store.DB, avatars *avatarstore.Store) *CampaignHandler {
-	return &CampaignHandler{campaigns: campaigns, players: players, users: users, db: db, avatars: avatars}
+func NewCampaignHandler(campaigns *store.CampaignStore, players *store.PlayerStore, users *store.UserStore, db *store.DB, avatars *avatarstore.Store, activityLog *store.ActivityStore) *CampaignHandler {
+	return &CampaignHandler{campaigns: campaigns, players: players, users: users, db: db, avatars: avatars, activityLog: activityLog}
 }
 
 // campaignListItem is the slim shape returned by List.
 // myRole and myPlayerId reflect the caller. members is included only for DM callers.
 type campaignListItem struct {
-	ID          string                  `json:"id"`
-	MyRole      model.Role              `json:"myRole"`
-	MyPlayerID  string                  `json:"myPlayerId"`
+	ID             string                  `json:"id"`
+	MyRole         model.Role              `json:"myRole"`
+	MyPlayerID     string                  `json:"myPlayerId"`
 	Name           string                  `json:"name"`
 	ThemeImage     string                  `json:"themeImage"`
 	MapImageURI    *string                 `json:"mapImageUri,omitempty"`
@@ -260,6 +262,7 @@ func (h *CampaignHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	activity.Describe(r, campaignCreateDesc(campaign))
 	writeJSON(w, http.StatusCreated, toCampaignDetailWithImages(r.Context(), campaign, userID, h.avatars))
 }
 
@@ -323,6 +326,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("campaign %s: delete old map image %q: %v", id, oldMapKey, err)
 		}
 	}
+	activity.Describe(r, activity.Desc{Detail: updated.Name})
 	writeJSON(w, http.StatusOK, toCampaignDetailWithImages(r.Context(), updated, membership.UserID, h.avatars))
 }
 
@@ -404,6 +408,7 @@ func (h *CampaignHandler) SetPlayerActive(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	activity.Describe(r, playerActiveDesc(req.IsActive))
 	writeJSON(w, http.StatusOK, map[string]any{
 		"playerId": playerID,
 		"isActive": req.IsActive,
@@ -444,5 +449,28 @@ func (h *CampaignHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
+	// The history belongs to the campaign. The delete itself is logged at
+	// account level, so it survives this cascade without becoming an orphan.
+	if err := h.activityLog.DeleteByCampaign(ctx, id); err != nil {
+		log.Printf("campaign %s: delete history: %v", id, err)
+	}
+	activity.Describe(r, campaignDeleteDesc(membership.Campaign))
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func campaignCreateDesc(c *model.Campaign) activity.Desc {
+	return activity.Desc{CampaignID: c.ID, Detail: c.Name}
+}
+
+// campaignDeleteDesc leaves CampaignID empty: the registry marks this route
+// account-level so the entry outlives the campaign's history.
+func campaignDeleteDesc(c *model.Campaign) activity.Desc {
+	return activity.Desc{Detail: c.Name}
+}
+
+func playerActiveDesc(isActive bool) activity.Desc {
+	if isActive {
+		return activity.Desc{Title: "Player restored"}
+	}
+	return activity.Desc{Title: "Player archived"}
 }

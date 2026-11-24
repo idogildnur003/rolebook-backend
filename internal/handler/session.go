@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -61,6 +62,7 @@ func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, activity.Desc{Detail: created.Name})
 	writeJSON(w, http.StatusCreated, created)
 }
 
@@ -104,6 +106,7 @@ func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, activity.Desc{Detail: updated.Name})
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -130,5 +133,6 @@ func (h *SessionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionDesc(membership.Campaign, sessionID))
 	w.WriteHeader(http.StatusNoContent)
 }

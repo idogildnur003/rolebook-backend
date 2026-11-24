@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -123,6 +124,7 @@ func (h *InventoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, inventoryCreateDesc(playerItem))
 	writeJSON(w, http.StatusCreated, playerItem)
 }
 
@@ -157,6 +159,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "item not found in player inventory", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, inventoryUpdateDesc(access.Player.Inventory, equipmentID, req))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -179,5 +182,6 @@ func (h *InventoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "item not found in player inventory", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, inventoryDeleteDesc(access.Player.Inventory, equipmentID))
 	w.WriteHeader(http.StatusNoContent)
 }

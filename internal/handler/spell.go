@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/catalog"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
@@ -123,6 +124,7 @@ func (h *SpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, activity.Desc{Detail: playerSpell.Name})
 	writeJSON(w, http.StatusCreated, playerSpell)
 }
 
@@ -157,6 +159,7 @@ func (h *SpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "spell not found on player", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, spellDesc(access.Player.Spells, spellID, req))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -179,6 +182,7 @@ func (h *SpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "spell not found on player", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, spellDesc(access.Player.Spells, spellID, nil))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -207,5 +211,6 @@ func (h *SpellHandler) UpdateSpellSlots(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusNotFound, "player not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, spellSlotDesc(access.Player.SpellSlots, updated.SpellSlots))
 	writeJSON(w, http.StatusOK, updated)
 }

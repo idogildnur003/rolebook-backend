@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -89,6 +90,7 @@ func (h *CoinsHandler) Adjust(w http.ResponseWriter, r *http.Request) {
 		writeCoinStoreError(w, err)
 		return
 	}
+	activity.Describe(r, coinsAdjustDesc(*coins, deltas))
 	writeJSON(w, http.StatusOK, coins)
 }
 
@@ -126,5 +128,6 @@ func (h *CoinsHandler) Convert(w http.ResponseWriter, r *http.Request) {
 		writeCoinStoreError(w, err)
 		return
 	}
+	activity.Describe(r, coinsConvertDesc(*coins, req.From, req.To, req.Amount, gained))
 	writeJSON(w, http.StatusOK, coins)
 }

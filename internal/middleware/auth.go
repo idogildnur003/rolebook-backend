@@ -70,6 +70,11 @@ func Authenticate(jwtSecret string, users PasswordResetLookup) func(http.Handler
 	}
 }
 
+// ContextWithUserID returns ctx carrying userID the way Authenticate injects it.
+func ContextWithUserID(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, contextKeyUserID, userID)
+}
+
 // UserIDFromContext extracts the userID injected by Authenticate middleware.
 func UserIDFromContext(ctx context.Context) string {
 	v, _ := ctx.Value(contextKeyUserID).(string)

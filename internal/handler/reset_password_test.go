@@ -66,7 +66,9 @@ func TestResetPassword_WrongToken_400(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
 	}
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "INVALID_TOKEN" {
 		t.Errorf("code = %q, want INVALID_TOKEN", body.Code)
@@ -85,7 +87,9 @@ func TestResetPassword_WeakPassword_400(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
 	}
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "WEAK_PASSWORD" {
 		t.Errorf("code = %q, want WEAK_PASSWORD", body.Code)

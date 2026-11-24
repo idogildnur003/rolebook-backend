@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -184,7 +185,8 @@ func (h *LimitedUsesHandler) List(w http.ResponseWriter, r *http.Request) {
 // Create handles POST /api/players/:playerId/limited-uses.
 func (h *LimitedUsesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	body, ok := h.decodeBody(w, r)
@@ -202,13 +204,15 @@ func (h *LimitedUsesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, lu.ID, item))
 	writeJSON(w, http.StatusCreated, item)
 }
 
 // Update handles PATCH /api/players/:playerId/limited-uses/:limitedUseId.
 func (h *LimitedUsesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	body, ok := h.decodeBody(w, r)
@@ -225,26 +229,30 @@ func (h *LimitedUsesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }
 
 // Delete handles DELETE /api/players/:playerId/limited-uses/:limitedUseId.
 func (h *LimitedUsesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	if err := h.players.RemoveLimitedUse(r.Context(), playerID, chi.URLParam(r, "limitedUseId")); err != nil {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), nil))
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // Use handles POST /api/players/:playerId/limited-uses/:limitedUseId/use.
 func (h *LimitedUsesHandler) Use(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	item, removed, err := h.players.SpendLimitedUse(r.Context(), playerID, chi.URLParam(r, "limitedUseId"))
@@ -252,13 +260,19 @@ func (h *LimitedUsesHandler) Use(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	spent := item
+	if removed {
+		spent = nil
+	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), spent))
 	writeJSON(w, http.StatusOK, map[string]any{"item": item, "removed": removed})
 }
 
 // Restore handles POST /api/players/:playerId/limited-uses/:limitedUseId/restore.
 func (h *LimitedUsesHandler) Restore(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	item, err := h.players.RestoreLimitedUse(r.Context(), playerID, chi.URLParam(r, "limitedUseId"))
@@ -266,13 +280,15 @@ func (h *LimitedUsesHandler) Restore(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }
 
 // Reset handles POST /api/players/:playerId/limited-uses/:limitedUseId/reset.
 func (h *LimitedUsesHandler) Reset(w http.ResponseWriter, r *http.Request) {
 	playerID := chi.URLParam(r, "playerId")
-	if resolvePlayerAccess(w, r, h.players, h.campaigns, playerID) == nil {
+	access := resolvePlayerAccess(w, r, h.players, h.campaigns, playerID)
+	if access == nil {
 		return
 	}
 	item, err := h.players.ResetLimitedUse(r.Context(), playerID, chi.URLParam(r, "limitedUseId"))
@@ -280,5 +296,6 @@ func (h *LimitedUsesHandler) Reset(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
+	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }

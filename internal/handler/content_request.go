@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -168,6 +169,7 @@ func (h *ContentRequestHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body.ProposedByName = h.resolveName(r, campaignID, body.ProposedByUserID)
+	activity.Describe(r, requestWithdrawDesc(&body))
 	writeJSON(w, http.StatusCreated, body)
 }
 
@@ -254,6 +256,7 @@ func (h *ContentRequestHandler) Withdraw(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, requestWithdrawDesc(existing))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -416,6 +419,7 @@ func (h *ContentRequestHandler) Approve(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	updated.ProposedByName = h.resolveName(r, campaignID, updated.ProposedByUserID)
+	activity.Describe(r, requestDecisionDesc(req))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -451,6 +455,7 @@ func (h *ContentRequestHandler) Deny(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	updated.ProposedByName = h.resolveName(r, campaignID, updated.ProposedByUserID)
+	activity.Describe(r, requestDecisionDesc(existing))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -533,6 +538,7 @@ func (h *ContentRequestHandler) EditPending(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, requestDecisionDesc(updated))
 	writeJSON(w, http.StatusOK, h.withNamesAndImages(r, campaignID, []model.ContentRequest{*updated})[0])
 }
 

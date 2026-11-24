@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/middleware"
 	"github.com/elad/rolebook-backend/internal/model"
@@ -425,6 +426,7 @@ func (h *PlayerHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	activity.Describe(r, playerCreatedDesc(player))
 	writeJSON(w, http.StatusCreated, player)
 }
 
@@ -466,6 +468,7 @@ func (h *PlayerHandler) CreateNPC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	activity.Describe(r, playerCreatedDesc(player))
 	writeJSON(w, http.StatusCreated, player)
 }
 
@@ -554,6 +557,7 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("player %s: delete old avatar %q: %v", playerID, oldAvatarKey, err)
 		}
 	}
+	activity.Describe(r, playerUpdateDesc(access.Player, updated))
 	h.resolveAvatarURI(r.Context(), updated)
 	writeJSON(w, http.StatusOK, updated)
 }
@@ -588,5 +592,6 @@ func (h *PlayerHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			log.Printf("player %s: delete companions: %v", playerID, err)
 		}
 	}
+	activity.Describe(r, playerDeleteDesc(access.Player))
 	w.WriteHeader(http.StatusNoContent)
 }

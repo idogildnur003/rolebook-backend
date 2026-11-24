@@ -275,6 +275,52 @@ Returns `{ "notes": {} }` when the caller has no notes. Inactive (archived) memb
 
 ---
 
+## History
+
+A member's own change log for a campaign. Every successful mutating API call writes one entry. Entries only ever appear in the history of the person they concern, and request bodies are never stored.
+
+| Method | Path | Access | Description | Status |
+|---|---|---|---|---|
+| GET | `/campaigns/{{campaignId}}/history` | Any member (active or inactive) | Caller's entries, newest first | 200 |
+| GET | `/campaigns/{{campaignId}}/history/sessions` | Any member (active or inactive) | Caller's entries grouped by game session, with summaries | 200 |
+
+**List query params (all optional):**
+
+- `session`: a session ID, or `between` for entries outside any session
+- `category`: repeatable. `coins`, `hp`, `spells`, `items`, `abilities`, `notes`, `requests`, `schedule`, `combat`, `character`, `other`
+- `byDm`: `true` for changes the DM made to the caller's character
+- `q`: case-insensitive literal search over title and detail
+- `before`: the previous response's `nextCursor`. A malformed cursor returns `400 BAD_REQUEST`
+- `limit`: default 50, max 100
+
+**List response:**
+```json
+{
+  "items": [{
+    "id": "entry-1", "campaignId": "camp-1", "playerId": "player-1", "playerName": "Thalia",
+    "actorUserId": "user-dm", "actorRole": "dm", "actorName": "Gil",
+    "type": "player.update", "category": "hp", "title": "HP changed",
+    "changes": [{ "field": "max HP", "before": 38, "after": 42 }],
+    "sessionId": "sess-12", "createdAt": "2026-11-08T20:41:00Z"
+  }],
+  "nextCursor": null
+}
+```
+
+**Sessions response:**
+```json
+{
+  "sessions": [{
+    "sessionId": "sess-12", "name": "Session 12", "date": "2026-11-08", "count": 6, "dmCount": 2,
+    "summary": { "coinsGp": 105, "hpFirst": 38, "hpLast": 21, "itemsNet": 1, "slotsUsed": 1 }
+  }]
+}
+```
+
+`sessionId` is `null` for the "Between sessions" group. Summary fields are `null` when the session had no change of that kind, and always `null` for the DM.
+
+---
+
 ## Locations
 
 Per-campaign journal entries for places. Owned per-member: any campaign member can List and Create; only the owner can Update, Delete, or Share. Read visibility is owner-only by default; widened via `visibility.sharedWithAll` or `visibility.sharedPlayerIds`. Sub-locations are supported one level deep (a location with `parentLocationId` cannot itself be a parent).
