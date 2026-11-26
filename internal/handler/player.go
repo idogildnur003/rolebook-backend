@@ -79,6 +79,12 @@ func validateSheetNoteFields(req map[string]any, storedHitDiceMax int) error {
 			return errors.New("hitDiceSpent must be 0-hitDiceMax")
 		}
 	}
+	if v, ok := req["passivePerceptionBonus"]; ok {
+		n, ok := wholeInt(v)
+		if !ok || n < -model.PassivePerceptionBonusCap || n > model.PassivePerceptionBonusCap {
+			return fmt.Errorf("passivePerceptionBonus must be a whole number from -%d to %d", model.PassivePerceptionBonusCap, model.PassivePerceptionBonusCap)
+		}
+	}
 	if v, ok := req["spellcastingAbility"]; ok && v != nil {
 		s, ok := v.(string)
 		if !ok || (s != "INT" && s != "WIS" && s != "CHA") {

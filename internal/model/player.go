@@ -56,9 +56,12 @@ const (
 
 // Limits for the sheet note fields.
 const (
-	HitDiceMaxCap     = 20
-	SheetNoteTextMax  = 200
-	AppearanceTextMax = 2000
+	HitDiceMaxCap = 20
+	// PassivePerceptionBonusCap bounds the manual passive Perception bonus to
+	// -cap..cap.
+	PassivePerceptionBonusCap = 20
+	SheetNoteTextMax          = 200
+	AppearanceTextMax         = 2000
 )
 
 // CompanionTrait is a named passive trait on a companion's stat block.
@@ -122,16 +125,19 @@ type Player struct {
 	Size             string  `bson:"size"            json:"size"`
 
 	// Combat stats
-	CurrentHP          int `bson:"currentHp"          json:"currentHp"`
-	MaxHP              int `bson:"maxHp"              json:"maxHp"`
-	TempHP             int `bson:"tempHp"             json:"tempHp"`
-	AC                 int `bson:"ac"                 json:"ac"`
-	Speed              int `bson:"speed"              json:"speed"`
-	InitiativeBonus    int `bson:"initiativeBonus"    json:"initiativeBonus"`
-	ProficiencyBonus   int `bson:"proficiencyBonus"   json:"proficiencyBonus"`
-	ExpertiseBonus     int `bson:"expertiseBonus"     json:"expertiseBonus"`
-	DeathSaveSuccesses int `bson:"deathSaveSuccesses" json:"deathSaveSuccesses"`
-	DeathSaveFailures  int `bson:"deathSaveFailures"  json:"deathSaveFailures"`
+	CurrentHP       int `bson:"currentHp"          json:"currentHp"`
+	MaxHP           int `bson:"maxHp"              json:"maxHp"`
+	TempHP          int `bson:"tempHp"             json:"tempHp"`
+	AC              int `bson:"ac"                 json:"ac"`
+	Speed           int `bson:"speed"              json:"speed"`
+	InitiativeBonus int `bson:"initiativeBonus"    json:"initiativeBonus"`
+	// PassivePerceptionBonus is a manual extra added to passive Perception.
+	// The total is derived client-side and never stored.
+	PassivePerceptionBonus int `bson:"passivePerceptionBonus" json:"passivePerceptionBonus"`
+	ProficiencyBonus       int `bson:"proficiencyBonus"   json:"proficiencyBonus"`
+	ExpertiseBonus         int `bson:"expertiseBonus"     json:"expertiseBonus"`
+	DeathSaveSuccesses     int `bson:"deathSaveSuccesses" json:"deathSaveSuccesses"`
+	DeathSaveFailures      int `bson:"deathSaveFailures"  json:"deathSaveFailures"`
 
 	// HeroicInspiration reports whether the character currently holds Heroic
 	// Inspiration (RAW: at most one). Defaults false; toggled from the HUD.
