@@ -563,7 +563,11 @@ func (h *PlayerHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("player %s: delete old avatar %q: %v", playerID, oldAvatarKey, err)
 		}
 	}
-	activity.Describe(r, playerUpdateDesc(access.Player, updated))
+	if d := playerUpdateDesc(access.Player, updated); len(d.Changes) == 0 {
+		activity.Skip(r) // nothing visible changed, so no empty "Character updated" entry
+	} else {
+		activity.Describe(r, d)
+	}
 	h.resolveAvatarURI(r.Context(), updated)
 	writeJSON(w, http.StatusOK, updated)
 }

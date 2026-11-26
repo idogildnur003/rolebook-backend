@@ -180,6 +180,7 @@ func (h *InitiativeHandler) Start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, initiativeCallDesc(call))
 	wire := h.wireCall(r.Context(), call)
 	h.hub.Publish(campaignID, wire)
 	writeJSON(w, http.StatusOK, wire)
@@ -295,6 +296,7 @@ func (h *InitiativeHandler) Enemy(w http.ResponseWriter, r *http.Request) {
 		if body.ParticipantID != "" {
 			for i := range c.Participants {
 				if c.Participants[i].ID == body.ParticipantID {
+					activity.Describe(r, enemyInitiativeDesc(body.Name, c.Participants[i].Initiative, v))
 					c.Participants[i].Name = body.Name
 					c.Participants[i].Initiative = &v
 					c.Participants[i].SubmittedAt = &at
@@ -304,6 +306,7 @@ func (h *InitiativeHandler) Enemy(w http.ResponseWriter, r *http.Request) {
 			}
 			return http.StatusNotFound, "NOT_FOUND", "enemy participant not found"
 		}
+		activity.Describe(r, enemyInitiativeDesc(body.Name, nil, v))
 		c.Participants = append(c.Participants, model.InitiativeParticipant{
 			ID:                  uuid.NewString(),
 			ParticipantType:     "enemy",
@@ -346,6 +349,7 @@ func (h *InitiativeHandler) EndTurn(w http.ResponseWriter, r *http.Request) {
 		c.TurnOrderParticipantIDs = next
 		c.CurrentTurnParticipantID = next[0]
 		c.HasTurnCycleStarted = true
+		activity.Describe(r, endTurnDesc(c, order[0], next[0]))
 		return 0, "", ""
 	})
 }
@@ -366,7 +370,14 @@ func (h *InitiativeHandler) Resort(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.mutateWithRetry(w, r, campaignID, func(c *model.InitiativeCall) (int, string, string) {
+		before := initiative.TurnOrderParticipantIDs(c)
 		initiative.Resort(c)
+		d := resortDesc(c, before, initiative.TurnOrderParticipantIDs(c))
+		if len(d.Changes) == 0 {
+			activity.Skip(r)
+		} else {
+			activity.Describe(r, d)
+		}
 		return 0, "", ""
 	})
 }
@@ -391,6 +402,7 @@ func (h *InitiativeHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "no initiative call", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, initiativeCallDesc(call))
 	wire := h.wireCall(r.Context(), call)
 	h.hub.Publish(campaignID, wire)
 	writeJSON(w, http.StatusOK, wire)
@@ -461,6 +473,7 @@ func (h *InitiativeHandler) RemoveEnemy(w http.ResponseWriter, r *http.Request) 
 				if p.ParticipantType != "enemy" {
 					return http.StatusBadRequest, "BAD_REQUEST", "only enemies may be removed"
 				}
+				activity.Describe(r, activity.Desc{Detail: p.Name})
 				found = true
 				continue
 			}

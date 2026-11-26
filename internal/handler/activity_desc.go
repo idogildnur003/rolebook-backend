@@ -2,19 +2,29 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"slices"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
 // playerUpdateDesc describes a sheet edit. A change touching only hit points
-// gets the HP category so it appears under that filter.
+// gets the HP category, and one touching only spell slots is logged like the
+// spell-slots route, so each appears under its filter and session summary.
 func playerUpdateDesc(before, after *model.Player) activity.Desc {
 	changes := activity.DiffPlayerPatch(before, after)
 	d := activity.Desc{Category: model.ActivityCategoryCharacter, Changes: changes}
 	if len(changes) == 0 {
 		return d
+	}
+	if slots := activity.DiffSpellSlots(before.SpellSlots, after.SpellSlots); len(slots) == len(changes) {
+		sd := spellSlotDesc(before.SpellSlots, after.SpellSlots)
+		sd.Type, sd.Category = "spellslots.update", model.ActivityCategorySpells
+		return sd
 	}
 	for _, c := range changes {
 		if c.Field != "HP" && c.Field != "max HP" && c.Field != "temp HP" {
@@ -22,6 +32,67 @@ func playerUpdateDesc(before, after *model.Player) activity.Desc {
 		}
 	}
 	d.Category, d.Title = model.ActivityCategoryHP, "HP changed"
+	return d
+}
+
+// describeOrSkip records d, or no entry at all when the request changed nothing
+// a person could see.
+func describeOrSkip(r *http.Request, d activity.Desc) {
+	if len(d.Changes) == 0 {
+		activity.Skip(r)
+		return
+	}
+	activity.Describe(r, d)
+}
+
+// updateDesc names the edited entry and lists its changed fields.
+func updateDesc(name string, before, after any, hide ...string) activity.Desc {
+	return activity.Desc{Detail: name, Changes: activity.DiffFields(before, after, hide...)}
+}
+
+// campaignUpdateDesc leaves out the member and session lists, which change
+// through their own routes, and the map size, which follows the map image.
+func campaignUpdateDesc(before, after *model.Campaign) activity.Desc {
+	return updateDesc(after.Name, before, after, "sessions", "members", "mapImageWidth", "mapImageHeight")
+}
+
+// sessionUpdateDesc compares the session as it was in the campaign with the
+// updated one. Scheduling changes through its own routes.
+func sessionUpdateDesc(c *model.Campaign, after *model.Session) activity.Desc {
+	for i := range c.Sessions {
+		if c.Sessions[i].ID == after.ID {
+			return updateDesc(after.Name, &c.Sessions[i], after, "schedule")
+		}
+	}
+	return activity.Desc{Detail: after.Name}
+}
+
+// requestEditDesc lists the edited proposal fields. Review bookkeeping is
+// left out; it changes only when the DM decides.
+func requestEditDesc(before, after *model.ContentRequest) activity.Desc {
+	d := requestDecisionDesc(after)
+	d.Changes = activity.DiffFields(before, after, "status", "resolvedAt", "resolvedByUserId", "resultId",
+		"proposedByUserId", "proposedByName", "kind", "targetType")
+	return d
+}
+
+// limitedUseUpdateDesc lists edited fields. The private note's text is never
+// logged, only that it changed.
+func limitedUseUpdateDesc(list model.LimitedUseList, id string, after *model.LimitedUse) activity.Desc {
+	d := limitedUseDesc(list, id, after)
+	var before *model.LimitedUse
+	for i := range list {
+		if list[i].ID == id {
+			before = &list[i]
+		}
+	}
+	if before == nil || after == nil {
+		return d
+	}
+	d.Changes = activity.DiffFields(before, after, "note")
+	if before.Note != after.Note {
+		d.Changes = append(d.Changes, model.ActivityChange{Field: "note"})
+	}
 	return d
 }
 
@@ -41,29 +112,18 @@ func playerCreatedDesc(p *model.Player) activity.Desc {
 	}
 }
 
-// spellSlotDesc logs slots remaining per level.
+// spellSlotDesc logs slots remaining per level, and max where it changed.
 func spellSlotDesc(before, after map[string]model.SpellSlot) activity.Desc {
-	levels := make([]string, 0, len(after))
-	seen := map[string]bool{}
-	for _, m := range []map[string]model.SpellSlot{before, after} {
-		for level := range m {
-			if !seen[level] {
-				seen[level] = true
-				levels = append(levels, level)
-			}
-		}
-	}
-	sort.Strings(levels)
-	var d activity.Desc
+	d := activity.Desc{Changes: activity.DiffSpellSlots(before, after)}
 	spent, restored := false, false
-	for _, level := range levels {
-		was, now := before[level].Max-before[level].Used, after[level].Max-after[level].Used
-		if was == now {
+	for _, c := range d.Changes {
+		if strings.HasSuffix(c.Field, " max slots") {
 			continue
 		}
-		spent = spent || now < was
-		restored = restored || now > was
-		d.Changes = append(d.Changes, model.ActivityChange{Field: fmt.Sprintf("L%s slots", level), Before: was, After: now})
+		b, _ := c.Before.(int)
+		a, _ := c.After.(int)
+		spent = spent || a < b
+		restored = restored || a > b
 	}
 	switch {
 	case spent && !restored:
@@ -71,6 +131,20 @@ func spellSlotDesc(before, after map[string]model.SpellSlot) activity.Desc {
 	case restored && !spent:
 		d.Title = "Restored spell slots"
 	}
+	return d
+}
+
+// spellCastDesc names the spell. When a slot was spent it records that level's
+// remaining slots, deriving the before value from the atomically returned
+// after so a concurrent edit cannot make it wrong.
+func spellCastDesc(name string, slotLevel int, after map[string]model.SpellSlot) activity.Desc {
+	d := activity.Desc{Detail: name}
+	if slotLevel == 0 {
+		return d
+	}
+	level := strconv.Itoa(slotLevel)
+	now := after[level].Max - after[level].Used
+	d.Changes = []model.ActivityChange{{Field: "L" + level + " slots", Before: now + 1, After: now}}
 	return d
 }
 
@@ -183,6 +257,9 @@ func inventoryUpdateDesc(items []model.PlayerInventoryItem, id string, patch map
 	if qty, ok := toInt(patch["quantity"]); ok && qty != item.Quantity {
 		d.Changes = []model.ActivityChange{{Field: "qty", Before: item.Quantity, After: qty}}
 	}
+	if name, ok := patch["name"].(string); ok && name != item.Name {
+		d.Changes = append(d.Changes, model.ActivityChange{Field: "name", Before: item.Name, After: name})
+	}
 	return d
 }
 
@@ -262,6 +339,81 @@ func initiativeSkipDesc(p *model.InitiativeParticipant, skipped bool) activity.D
 	}
 	if p.ParticipantType == "player" {
 		d.PlayerID = p.PlayerID
+	}
+	return d
+}
+
+// maxListedNames caps how many combatants a history line names.
+const maxListedNames = 6
+
+// participantNames lists combatants by name in the given order: by ids when
+// ids is non-nil, else every participant.
+func participantNames(c *model.InitiativeCall, ids []string) string {
+	byID := make(map[string]string, len(c.Participants))
+	for _, p := range c.Participants {
+		byID[p.ID] = p.Name
+	}
+	if ids == nil {
+		for _, p := range c.Participants {
+			ids = append(ids, p.ID)
+		}
+	}
+	names := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if n := byID[id]; n != "" {
+			names = append(names, n)
+		}
+	}
+	if len(names) > maxListedNames {
+		return strings.Join(names[:maxListedNames], ", ") + fmt.Sprintf(" and %d more", len(names)-maxListedNames)
+	}
+	return strings.Join(names, ", ")
+}
+
+// initiativeCallDesc names everyone in the fight.
+func initiativeCallDesc(c *model.InitiativeCall) activity.Desc {
+	return activity.Desc{Detail: participantNames(c, nil)}
+}
+
+// enemyInitiativeDesc records the enemy's roll. A re-roll for an enemy already
+// in the fight keeps its previous value as before.
+func enemyInitiativeDesc(name string, before *int, after int) activity.Desc {
+	change := model.ActivityChange{Field: "initiative", After: after}
+	d := activity.Desc{Detail: name, Changes: []model.ActivityChange{change}}
+	if before != nil {
+		d.Changes[0].Before = *before
+		d.Title = "Re-rolled enemy initiative"
+	}
+	return d
+}
+
+// endTurnDesc files the entry under the character whose turn ended, so a DM
+// ending a player's turn shows in that player's history.
+func endTurnDesc(c *model.InitiativeCall, endedID, nextID string) activity.Desc {
+	var ended, next model.InitiativeParticipant
+	for _, p := range c.Participants {
+		switch p.ID {
+		case endedID:
+			ended = p
+		case nextID:
+			next = p
+		}
+	}
+	d := activity.Desc{Detail: ended.Name}
+	if endedID != nextID {
+		d.Changes = []model.ActivityChange{{Field: "turn", Before: ended.Name, After: next.Name}}
+	}
+	if ended.ParticipantType == "player" {
+		d.PlayerID = ended.PlayerID
+	}
+	return d
+}
+
+// resortDesc shows the turn order before and after. Same order: no changes.
+func resortDesc(c *model.InitiativeCall, before, after []string) activity.Desc {
+	d := activity.Desc{Detail: participantNames(c, after)}
+	if !slices.Equal(before, after) {
+		d.Changes = []model.ActivityChange{{Field: "turn order", Before: participantNames(c, before), After: participantNames(c, after)}}
 	}
 	return d
 }

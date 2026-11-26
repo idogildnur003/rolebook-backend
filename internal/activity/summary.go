@@ -109,7 +109,7 @@ func (t *summaryTotals) add(e *model.ActivityEntry) {
 		case strings.HasPrefix(e.Type, "inventory.") && c.Field == "qty":
 			t.items += after - before
 			t.hasItems = true
-		case e.Type == "spellslots.update" && hasBefore && hasAfter:
+		case (e.Type == "spellslots.update" || e.Type == "spell.cast") && !strings.HasSuffix(c.Field, " max slots") && hasBefore && hasAfter:
 			t.hasSlots = true
 			if before > after {
 				t.slots += before - after

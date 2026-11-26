@@ -20,6 +20,9 @@ var ErrDuplicateEntry = errors.New("duplicate entry")
 // handlers verify existence first.
 var ErrInsufficientCoins = errors.New("insufficient coins")
 
+// ErrNoSpellSlot means the player has no unused slot at the requested level.
+var ErrNoSpellSlot = errors.New("no spell slot available")
+
 // PlayerStore handles persistence for player characters.
 type PlayerStore struct {
 	col *mongo.Collection
@@ -302,6 +305,28 @@ func (s *PlayerStore) UpdateSpell(ctx context.Context, playerID, spellID string,
 		return false, err
 	}
 	return res.ModifiedCount > 0, nil
+}
+
+// SpendSpellSlot atomically marks one slot of the given level ("1"–"9") used and
+// returns the resulting slots. The guard lives in the filter, so two casts can
+// never spend the same last slot. Returns ErrNoSpellSlot when none is free.
+func (s *PlayerStore) SpendSpellSlot(ctx context.Context, playerID, level string) (map[string]model.SpellSlot, error) {
+	path := "spellSlots." + level
+	res := s.col.FindOneAndUpdate(ctx,
+		bson.M{"_id": playerID, "$expr": bson.M{"$lt": bson.A{"$" + path + ".used", "$" + path + ".max"}}},
+		bson.M{"$inc": bson.M{path + ".used": 1}, "$set": bson.M{"updatedAt": time.Now().UTC()}},
+		options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{"spellSlots": 1}),
+	)
+	var doc struct {
+		SpellSlots map[string]model.SpellSlot `bson:"spellSlots"`
+	}
+	if err := res.Decode(&doc); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, ErrNoSpellSlot
+		}
+		return nil, err
+	}
+	return doc.SpellSlots, nil
 }
 
 // --- Inventory array methods ---

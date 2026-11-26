@@ -164,6 +164,7 @@ func registerRoutes(r *chi.Mux, cfg config.Config, db *store.DB, rl *middleware.
 				r.Post("/spells", spellHandler.Create)
 				r.Patch("/spells/{spellId}", spellHandler.Update)
 				r.Delete("/spells/{spellId}", spellHandler.Delete)
+				r.Post("/spells/{spellId}/cast", spellHandler.Cast)
 
 				// Inventory sub-resource
 				r.Get("/inventory", inventoryHandler.List)

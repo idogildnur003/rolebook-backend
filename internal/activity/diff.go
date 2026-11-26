@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"reflect"
 	"slices"
 	"sort"
 
@@ -53,6 +54,7 @@ func DiffPlayerPatch(before, after *model.Player) []model.ActivityChange {
 		{"spell save DC", before.SpellcastingSaveDC, after.SpellcastingSaveDC},
 		{"spell modifier", before.SpellcastingModifier, after.SpellcastingModifier},
 		{"spell attack", before.SpellcastingAttackBonus, after.SpellcastingAttackBonus},
+		{"passive perception bonus", before.PassivePerceptionBonus, after.PassivePerceptionBonus},
 	} {
 		out = appendIntChange(out, f.field, f.b, f.a)
 	}
@@ -119,6 +121,51 @@ func DiffPlayerPatch(before, after *model.Player) []model.ActivityChange {
 		if f.b != f.a {
 			out = append(out, model.ActivityChange{Field: f.field})
 		}
+	}
+	for _, k := range unionKeys(before.AbilityTemporaryModifiers, after.AbilityTemporaryModifiers) {
+		out = appendIntChange(out, k+" temp modifier", before.AbilityTemporaryModifiers[k], after.AbilityTemporaryModifiers[k])
+	}
+	for _, k := range unionKeys(before.SkillTemporaryModifiers, after.SkillTemporaryModifiers) {
+		out = appendIntChange(out, k+" temp modifier", before.SkillTemporaryModifiers[k], after.SkillTemporaryModifiers[k])
+	}
+	out = appendIntChange(out, "fly speed", before.FlySpeed, after.FlySpeed)
+	out = appendIntChange(out, "climb speed", before.ClimbSpeed, after.ClimbSpeed)
+	out = appendIntChange(out, "swim speed", before.SwimSpeed, after.SwimSpeed)
+	for _, f := range []struct{ field, b, a string }{
+		{"creature type", before.CreatureType, after.CreatureType},
+		{"companion type", before.CompanionType, after.CompanionType},
+		{"other speeds", before.OtherSpeeds, after.OtherSpeeds},
+	} {
+		if f.b != f.a {
+			out = append(out, model.ActivityChange{Field: f.field, Before: optionalValue(&f.b), After: optionalValue(&f.a)})
+		}
+	}
+	if !reflect.DeepEqual(before.Traits, after.Traits) {
+		out = append(out, model.ActivityChange{Field: "traits"})
+	}
+	if !reflect.DeepEqual(before.Actions, after.Actions) {
+		out = append(out, model.ActivityChange{Field: "actions"})
+	}
+	if !reflect.DeepEqual(before.Spells, after.Spells) {
+		out = append(out, model.ActivityChange{Field: "spells"})
+	}
+	if !reflect.DeepEqual(before.Inventory, after.Inventory) {
+		out = append(out, model.ActivityChange{Field: "inventory"})
+	}
+	if !reflect.DeepEqual(before.EquipmentAssignments, after.EquipmentAssignments) {
+		out = append(out, model.ActivityChange{Field: "equipped items"})
+	}
+	out = append(out, DiffSpellSlots(before.SpellSlots, after.SpellSlots)...)
+	return out
+}
+
+// DiffSpellSlots returns slots remaining per level, plus max when it changed.
+func DiffSpellSlots(before, after map[string]model.SpellSlot) []model.ActivityChange {
+	var out []model.ActivityChange
+	for _, level := range unionKeys(before, after) {
+		b, a := before[level], after[level]
+		out = appendIntChange(out, "L"+level+" slots", b.Max-b.Used, a.Max-a.Used)
+		out = appendIntChange(out, "L"+level+" max slots", b.Max, a.Max)
 	}
 	return out
 }

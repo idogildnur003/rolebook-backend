@@ -106,7 +106,7 @@ func (h *SessionHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
-	activity.Describe(r, activity.Desc{Detail: updated.Name})
+	describeOrSkip(r, sessionUpdateDesc(membership.Campaign, updated))
 	writeJSON(w, http.StatusOK, updated)
 }
 

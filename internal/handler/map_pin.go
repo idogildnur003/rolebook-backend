@@ -184,7 +184,7 @@ func (h *MapPinHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "pin not found", "NOT_FOUND")
 		return
 	}
-	activity.Describe(r, worldDesc(updated.Title))
+	describeOrSkip(r, updateDesc(updated.Title, existing, updated))
 	writeJSON(w, http.StatusOK, updated)
 }
 

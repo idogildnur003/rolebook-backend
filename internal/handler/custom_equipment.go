@@ -232,8 +232,8 @@ func (h *CustomEquipmentHandler) Update(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
+	describeOrSkip(r, updateDesc(updated.Name, existing, updated))
 	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
-	activity.Describe(r, activity.Desc{Detail: updated.Name})
 	writeJSON(w, http.StatusOK, updated)
 }
 

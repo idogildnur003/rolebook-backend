@@ -229,7 +229,7 @@ func (h *LimitedUsesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
-	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
+	describeOrSkip(r, limitedUseUpdateDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }
 
@@ -264,7 +264,7 @@ func (h *LimitedUsesHandler) Use(w http.ResponseWriter, r *http.Request) {
 	if removed {
 		spent = nil
 	}
-	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), spent))
+	describeOrSkip(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), spent))
 	writeJSON(w, http.StatusOK, map[string]any{"item": item, "removed": removed})
 }
 
@@ -280,7 +280,7 @@ func (h *LimitedUsesHandler) Restore(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
-	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
+	describeOrSkip(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }
 
@@ -296,6 +296,6 @@ func (h *LimitedUsesHandler) Reset(w http.ResponseWriter, r *http.Request) {
 		writeLimitedUseStoreError(w, err)
 		return
 	}
-	activity.Describe(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
+	describeOrSkip(r, limitedUseDesc(access.Player.LimitedUses, chi.URLParam(r, "limitedUseId"), item))
 	writeJSON(w, http.StatusOK, item)
 }

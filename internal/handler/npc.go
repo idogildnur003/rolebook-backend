@@ -188,8 +188,8 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("npc %s/%s: delete old avatar %q: %v", campaignID, id, oldAvatarKey, err)
 		}
 	}
+	describeOrSkip(r, updateDesc(updated.Name, existing, updated))
 	updated.AvatarURI = h.avatars.ResolveImageURI(r.Context(), updated.AvatarURI)
-	activity.Describe(r, worldDesc(updated.Name))
 	writeJSON(w, http.StatusOK, updated)
 }
 
