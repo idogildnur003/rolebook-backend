@@ -26,6 +26,8 @@ func TestValidateSheetNoteFields(t *testing.T) {
 		{"weapon 200", map[string]any{"weaponProficiencies": r(200, "a")}, 0, false},
 		{"languages 200 runes", map[string]any{"languages": r(200, "é")}, 0, false},
 		{"appearance 2000", map[string]any{"appearance": r(2000, "a")}, 0, false},
+		{"passive bonus 20", map[string]any{"passivePerceptionBonus": 20.0}, 0, false},
+		{"passive bonus -20", map[string]any{"passivePerceptionBonus": -20.0}, 0, false},
 
 		{"hitDie d20", map[string]any{"hitDie": "d20"}, 0, true},
 		{"hitDie number", map[string]any{"hitDie": 6.0}, 0, true},
@@ -46,6 +48,11 @@ func TestValidateSheetNoteFields(t *testing.T) {
 		{"languages 201", map[string]any{"languages": r(201, "a")}, 0, true},
 		{"appearance 2001", map[string]any{"appearance": r(2001, "a")}, 0, true},
 		{"appearance number", map[string]any{"appearance": 7.0}, 0, true},
+		{"passive bonus 21", map[string]any{"passivePerceptionBonus": 21.0}, 0, true},
+		{"passive bonus -21", map[string]any{"passivePerceptionBonus": -21.0}, 0, true},
+		{"passive bonus 2.5", map[string]any{"passivePerceptionBonus": 2.5}, 0, true},
+		{"passive bonus nil", map[string]any{"passivePerceptionBonus": nil}, 0, true},
+		{"passive bonus string", map[string]any{"passivePerceptionBonus": "5"}, 0, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

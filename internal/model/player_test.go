@@ -171,3 +171,56 @@ func TestHeroicInspirationRoundTrips(t *testing.T) {
 		t.Fatalf("DefaultPlayer HeroicInspiration = true, want false")
 	}
 }
+
+// TestPassivePerceptionBonusRoundTrips covers the bson decode and JSON output
+// for the stored passive perception bonus, and the default for old documents.
+func TestPassivePerceptionBonusRoundTrips(t *testing.T) {
+	raw, err := bson.Marshal(bson.M{"passivePerceptionBonus": 5})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var withField Player
+	if err := bson.Unmarshal(raw, &withField); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if withField.PassivePerceptionBonus != 5 {
+		t.Fatalf("PassivePerceptionBonus = %d, want 5", withField.PassivePerceptionBonus)
+	}
+
+	// A JSON PATCH $set stores numbers as doubles, so 5.0 must decode to int 5.
+	rawDouble, err := bson.Marshal(bson.M{"passivePerceptionBonus": float64(5)})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var withDouble Player
+	if err := bson.Unmarshal(rawDouble, &withDouble); err != nil {
+		t.Fatalf("bson.Unmarshal (double): %v", err)
+	}
+	if withDouble.PassivePerceptionBonus != 5 {
+		t.Fatalf("PassivePerceptionBonus (double 5.0) = %d, want 5", withDouble.PassivePerceptionBonus)
+	}
+
+	legacy, err := bson.Marshal(bson.M{"name": "Old"})
+	if err != nil {
+		t.Fatalf("bson.Marshal: %v", err)
+	}
+	var withoutField Player
+	if err := bson.Unmarshal(legacy, &withoutField); err != nil {
+		t.Fatalf("bson.Unmarshal: %v", err)
+	}
+	if withoutField.PassivePerceptionBonus != 0 {
+		t.Fatalf("PassivePerceptionBonus (absent) = %d, want 0", withoutField.PassivePerceptionBonus)
+	}
+
+	out, err := json.Marshal(Player{PassivePerceptionBonus: 5})
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	var wire map[string]any
+	if err := json.Unmarshal(out, &wire); err != nil {
+		t.Fatalf("json.Unmarshal: %v", err)
+	}
+	if got, ok := wire["passivePerceptionBonus"]; !ok || got.(float64) != 5 {
+		t.Fatalf("JSON passivePerceptionBonus = %v (present=%v), want 5", got, ok)
+	}
+}

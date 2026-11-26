@@ -557,6 +557,7 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
   "ac": 15,
   "speed": 35,
   "initiativeBonus": 3,
+  "passivePerceptionBonus": 0,
   "proficiencyBonus": 3,
   "expertiseBonus": 4,
   "deathSaveSuccesses": 0,
@@ -589,6 +590,7 @@ The created Player has `kind: "pc"`. The DM's stub Player (`kind: "dm"`) is crea
 | `hitDie` | string \| null | `"d6"`, `"d8"`, `"d10"`, `"d12"`, or `null` |
 | `hitDiceMax` | integer | whole number 0-20 |
 | `hitDiceSpent` | integer | whole number 0 to the effective `hitDiceMax` (the request's `hitDiceMax` if sent, otherwise the stored one) |
+| `passivePerceptionBonus` | integer | whole number from -20 to 20 (default 0); manual extra added to passive Perception, the total is never stored |
 | `spellcastingAbility` | string \| null | `"INT"`, `"WIS"`, `"CHA"`, or `null` |
 | `armorTraining` | string[] | distinct subset of `"light"`, `"medium"`, `"heavy"`, `"shields"` |
 | `weaponProficiencies` | string | at most 200 characters (runes) |
