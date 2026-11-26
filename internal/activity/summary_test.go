@@ -100,6 +100,17 @@ func TestSummary_SlotsOnlyCountsSpend(t *testing.T) {
 	}
 }
 
+func TestSummary_CastsCountAndMaxChangesDoNot(t *testing.T) {
+	got := BuildSessionBuckets([]model.ActivityEntry{
+		entry("s", 3, "p", "spell.cast", chg("L1 slots", 2, 1)),
+		entry("s", 2, "p", "spellslots.update", chg("L2 max slots", 3, 1)),
+		entry("s", 1, "p", "player.update", chg("L2 slots", 3, 1)),
+	}, &model.Campaign{}, "p")
+	if n := got[0].Summary.SlotsUsed; n == nil || *n != 1 {
+		t.Fatalf("got %v", n)
+	}
+}
+
 func TestSummary_MongoNumberTypes(t *testing.T) {
 	got := BuildSessionBuckets([]model.ActivityEntry{
 		entry("s", 3, "p", "player.update", chg("HP", int32(30), int64(20))),

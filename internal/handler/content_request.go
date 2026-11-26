@@ -538,7 +538,7 @@ func (h *ContentRequestHandler) EditPending(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
-	activity.Describe(r, requestDecisionDesc(updated))
+	describeOrSkip(r, requestEditDesc(existing, updated))
 	writeJSON(w, http.StatusOK, h.withNamesAndImages(r, campaignID, []model.ContentRequest{*updated})[0])
 }
 

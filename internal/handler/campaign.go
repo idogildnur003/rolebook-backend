@@ -326,7 +326,7 @@ func (h *CampaignHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("campaign %s: delete old map image %q: %v", id, oldMapKey, err)
 		}
 	}
-	activity.Describe(r, activity.Desc{Detail: updated.Name})
+	describeOrSkip(r, campaignUpdateDesc(membership.Campaign, updated))
 	writeJSON(w, http.StatusOK, toCampaignDetailWithImages(r.Context(), updated, membership.UserID, h.avatars))
 }
 

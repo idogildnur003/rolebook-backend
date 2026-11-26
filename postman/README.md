@@ -610,6 +610,7 @@ Requires Bearer `{{token}}`. Spells are embedded in the player document as light
 | POST | `/players/{{playerId}}/spells` | Campaign DM or linked user | Add spell from arsenal → validates existence | 201 |
 | PATCH | `/players/{{playerId}}/spells/{{spellId}}` | Campaign DM or linked user | Update spell fields | 204 |
 | DELETE | `/players/{{playerId}}/spells/{{spellId}}` | Campaign DM or linked user | Remove spell | 204 |
+| POST | `/players/{{playerId}}/spells/{{spellId}}/cast` | Campaign DM or linked user | Cast a spell: spend one slot atomically and log it to history | 200 / 409 |
 | PUT | `/players/{{playerId}}/spell-slots` | Campaign DM or linked user | Replace all spell slots | 200 |
 
 **GET response:**
@@ -628,6 +629,13 @@ Requires Bearer `{{token}}`. Spells are embedded in the player document as light
 ```json
 { "isPrepared": true }
 ```
+
+**POST cast body (optional):**
+```json
+{ "slotLevel": 5 }
+```
+
+Spends one slot of the spell's own level, or of `slotLevel` to upcast (must be between the spell's level and 9). A cantrip spends no slot and rejects `slotLevel`. The spell is looked up in the arsenal, then the campaign's visible custom spells. The response is the player's `spellSlots` map. The history entry is "Cast spell" with the spell name and that level's remaining slots. `409 NO_SPELL_SLOT` when no slot of that level is free.
 
 **PUT spell-slots body:**
 ```json

@@ -159,7 +159,7 @@ func (h *InventoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "item not found in player inventory", "NOT_FOUND")
 		return
 	}
-	activity.Describe(r, inventoryUpdateDesc(access.Player.Inventory, equipmentID, req))
+	describeOrSkip(r, inventoryUpdateDesc(access.Player.Inventory, equipmentID, req))
 	w.WriteHeader(http.StatusNoContent)
 }
 

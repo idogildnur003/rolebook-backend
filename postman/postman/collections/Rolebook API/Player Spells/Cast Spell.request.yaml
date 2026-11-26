@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/players/{{playerId}}/spells/{{spellId}}/cast"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {}
+scripts:
+  - type: afterResponse
+    code: pm.test("Status 200", () => pm.response.to.have.status(200));
+    language: text/javascript
+order: 6000

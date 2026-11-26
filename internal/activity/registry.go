@@ -37,6 +37,7 @@ var Registry = map[string]RouteInfo{
 	"POST /api/players/{playerId}/spells":                                           {Type: "spell.create", Category: model.ActivityCategorySpells, Title: "Added spell"},
 	"PATCH /api/players/{playerId}/spells/{spellId}":                                {Type: "spell.update", Category: model.ActivityCategorySpells, Title: "Updated spell"},
 	"DELETE /api/players/{playerId}/spells/{spellId}":                               {Type: "spell.delete", Category: model.ActivityCategorySpells, Title: "Removed spell"},
+	"POST /api/players/{playerId}/spells/{spellId}/cast":                            {Type: "spell.cast", Category: model.ActivityCategorySpells, Title: "Cast spell"},
 	"PUT /api/players/{playerId}/spell-slots":                                       {Type: "spellslots.update", Category: model.ActivityCategorySpells, Title: "Spell slots changed"},
 	"POST /api/players/{playerId}/inventory":                                        {Type: "inventory.create", Category: model.ActivityCategoryItems, Title: "Added inventory item"},
 	"PATCH /api/players/{playerId}/inventory/{equipmentId}":                         {Type: "inventory.update", Category: model.ActivityCategoryItems, Title: "Updated inventory item"},

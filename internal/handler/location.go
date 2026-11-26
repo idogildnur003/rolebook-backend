@@ -238,8 +238,8 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 			log.Printf("location %s/%s: delete old thumbnail %q: %v", campaignID, id, oldThumbKey, err)
 		}
 	}
+	describeOrSkip(r, updateDesc(updated.Name, existing, updated))
 	updated.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), updated.ThumbnailURI)
-	activity.Describe(r, worldDesc(updated.Name))
 	writeJSON(w, http.StatusOK, updated)
 }
 

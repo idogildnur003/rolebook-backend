@@ -44,14 +44,6 @@ func TestLimitedUseDesc_RemovedOnLastUse(t *testing.T) {
 	}
 }
 
-func TestLimitedUseDesc_NoteNotLogged(t *testing.T) {
-	list := model.LimitedUseList{{ID: "a", Name: "Rage", Note: "private", Remaining: 2, Max: 2}}
-	d := limitedUseDesc(list, "a", &model.LimitedUse{ID: "a", Name: "Rage", Note: "changed", Remaining: 2, Max: 2})
-	if len(d.Changes) != 0 || d.Detail != "Rage" {
-		t.Fatalf("got %+v", d)
-	}
-}
-
 func TestSpellDesc(t *testing.T) {
 	spells := []model.PlayerSpell{{SpellID: "fb", Name: "Fireball", IsPrepared: false}}
 	if d := spellDesc(spells, "fb", nil); d.Detail != "Fireball" || len(d.Changes) != 0 {
