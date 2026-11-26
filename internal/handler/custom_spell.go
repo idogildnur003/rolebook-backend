@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -143,6 +144,7 @@ func (h *CustomSpellHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body.ImageURI = h.avatars.ResolveImageURI(r.Context(), body.ImageURI)
+	activity.Describe(r, activity.Desc{Detail: body.Name})
 	writeJSON(w, http.StatusCreated, body)
 }
 
@@ -230,6 +232,7 @@ func (h *CustomSpellHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updated.ImageURI = h.avatars.ResolveImageURI(r.Context(), updated.ImageURI)
+	activity.Describe(r, activity.Desc{Detail: updated.Name})
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -247,6 +250,11 @@ func (h *CustomSpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Read the name first: it is gone after the cascade. Best-effort, for history only.
+	var deletedName string
+	if existing, lookupErr := h.customSpells.GetByID(r.Context(), campaignID, id); lookupErr == nil && existing != nil {
+		deletedName = existing.Name
+	}
 	result, err := h.customSpells.DeleteWithCascade(r.Context(), campaignID, id, h.players)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
@@ -266,5 +274,6 @@ func (h *CustomSpellHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.contentNotes.DeleteForEntry(r.Context(), campaignID, "spell", id); err != nil {
 		log.Printf("[custom-spell] note cleanup failed for %s/%s after delete: %v", campaignID, id, err)
 	}
+	activity.Describe(r, activity.Desc{Detail: deletedName})
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -48,12 +48,12 @@ func (s *stubUserRepo) SetVerificationCode(_ context.Context, userID, codeHash s
 	return nil
 }
 
-func (s *stubUserRepo) Create(context.Context, *model.User) error         { return nil }
+func (s *stubUserRepo) Create(context.Context, *model.User) error { return nil }
 func (s *stubUserRepo) GetByID(_ context.Context, id string) (*model.User, error) {
 	return s.byID(id), nil
 }
 func (s *stubUserRepo) IncrementVerifyAttempts(context.Context, string) error { return nil }
-func (s *stubUserRepo) MarkVerified(context.Context, string) error           { return nil }
+func (s *stubUserRepo) MarkVerified(context.Context, string) error            { return nil }
 func (s *stubUserRepo) UpdatePasswordHash(context.Context, string, string) error {
 	return nil
 }

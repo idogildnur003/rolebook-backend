@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -125,6 +126,7 @@ func (h *MapPinHandler) Create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, worldDesc(pin.Title))
 	writeJSON(w, http.StatusCreated, pin)
 }
 
@@ -182,6 +184,7 @@ func (h *MapPinHandler) Update(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "pin not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, worldDesc(updated.Title))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -212,6 +215,7 @@ func (h *MapPinHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal server error", "INTERNAL_ERROR")
 		return
 	}
+	activity.Describe(r, worldDesc(existing.Title))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -295,6 +299,7 @@ func (h *MapPinHandler) Share(w http.ResponseWriter, r *http.Request) {
 		}
 		clones = append(clones, *clone)
 	}
+	activity.Describe(r, worldDesc(source.Title))
 	writeJSON(w, http.StatusOK, clones)
 }
 

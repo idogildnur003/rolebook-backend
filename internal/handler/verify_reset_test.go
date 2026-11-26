@@ -73,7 +73,9 @@ func TestVerifyResetCode_WrongCode_400IncrementsAttempts(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
 	}
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "INVALID_CODE" {
 		t.Errorf("code = %q, want INVALID_CODE", body.Code)
@@ -90,7 +92,9 @@ func TestVerifyResetCode_NoSession_400Generic(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
 	}
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "INVALID_CODE" {
 		t.Errorf("code = %q, want INVALID_CODE (generic)", body.Code)
@@ -107,7 +111,9 @@ func TestVerifyResetCode_TooManyAttempts_400(t *testing.T) {
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
 	}
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "TOO_MANY_ATTEMPTS" {
 		t.Errorf("code = %q, want TOO_MANY_ATTEMPTS", body.Code)
@@ -138,7 +144,9 @@ func TestVerifyResetCode_ConcurrentGuesses_CappedAtMaxAttempts(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 			w := doVerifyReset(t, h, email, "000000")
-			var body struct{ Code string `json:"code"` }
+			var body struct {
+				Code string `json:"code"`
+			}
 			_ = json.Unmarshal(w.Body.Bytes(), &body)
 			codes[i] = body.Code
 		}(i)
@@ -165,7 +173,9 @@ func TestVerifyResetCode_ConcurrentGuesses_CappedAtMaxAttempts(t *testing.T) {
 
 	// The correct code is now locked out too.
 	w := doVerifyReset(t, h, email, "123456")
-	var body struct{ Code string `json:"code"` }
+	var body struct {
+		Code string `json:"code"`
+	}
 	_ = json.Unmarshal(w.Body.Bytes(), &body)
 	if body.Code != "TOO_MANY_ATTEMPTS" {
 		t.Errorf("correct code after cap: code = %q, want TOO_MANY_ATTEMPTS", body.Code)

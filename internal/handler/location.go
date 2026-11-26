@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -108,6 +109,7 @@ func (h *LocationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	loc.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), loc.ThumbnailURI)
+	activity.Describe(r, worldDesc(loc.Name))
 	writeJSON(w, http.StatusCreated, loc)
 }
 
@@ -237,6 +239,7 @@ func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	updated.ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), updated.ThumbnailURI)
+	activity.Describe(r, worldDesc(updated.Name))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -292,6 +295,7 @@ func (h *LocationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		// Dangling pins are tolerated — UI degrades gracefully.
 		log.Printf("[location] pin cascade failed for %s/%s: %v", campaignID, id, err)
 	}
+	activity.Describe(r, worldDesc(existing.Name))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -365,6 +369,7 @@ func (h *LocationHandler) Share(w http.ResponseWriter, r *http.Request) {
 	for i := range clones {
 		clones[i].ThumbnailURI = h.avatars.ResolveImageURI(r.Context(), clones[i].ThumbnailURI)
 	}
+	activity.Describe(r, worldDesc(source.Name))
 	writeJSON(w, http.StatusOK, clones)
 }
 

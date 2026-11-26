@@ -12,6 +12,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/initiative"
 	"github.com/elad/rolebook-backend/internal/initiativehub"
@@ -250,6 +251,7 @@ func (h *InitiativeHandler) Submit(w http.ResponseWriter, r *http.Request) {
 		found := false
 		for i := range c.Participants {
 			if c.Participants[i].PlayerID == body.PlayerID {
+				activity.Describe(r, initiativeSubmitDesc(body.PlayerID, c.Participants[i].Initiative, body.Initiative))
 				v := body.Initiative
 				at := nowMillis()
 				c.Participants[i].Initiative = &v
@@ -424,6 +426,7 @@ func (h *InitiativeHandler) Skip(w http.ResponseWriter, r *http.Request) {
 		for i := range c.Participants {
 			if c.Participants[i].ID == participantID {
 				c.Participants[i].IsSkipped = body.Skipped
+				activity.Describe(r, initiativeSkipDesc(&c.Participants[i], body.Skipped))
 				found = true
 				break
 			}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
 )
@@ -120,6 +121,7 @@ func (h *SessionScheduleHandler) PutAvailability(w http.ResponseWriter, r *http.
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionDesc(m.Campaign, sessionID))
 	writeJSON(w, http.StatusOK, sess)
 }
 
@@ -148,6 +150,7 @@ func (h *SessionScheduleHandler) DeleteAvailability(w http.ResponseWriter, r *ht
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionDesc(m.Campaign, sessionID))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -221,6 +224,7 @@ func (h *SessionScheduleHandler) PutConfirmedSlot(w http.ResponseWriter, r *http
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionDesc(m.Campaign, sessionID))
 	writeJSON(w, http.StatusOK, sess)
 }
 
@@ -248,5 +252,6 @@ func (h *SessionScheduleHandler) DeleteConfirmedSlot(w http.ResponseWriter, r *h
 		writeError(w, http.StatusNotFound, "session not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionDesc(m.Campaign, sessionID))
 	w.WriteHeader(http.StatusNoContent)
 }

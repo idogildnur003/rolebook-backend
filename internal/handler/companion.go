@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/model"
 )
 
@@ -97,6 +98,7 @@ func (h *PlayerHandler) CreateCompanion(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.resolveAvatarURI(ctx, pet)
+	activity.Describe(r, playerCreatedDesc(pet))
 	writeJSON(w, http.StatusCreated, pet)
 }
 

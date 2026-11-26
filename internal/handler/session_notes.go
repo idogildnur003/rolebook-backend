@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/store"
 )
 
@@ -163,6 +164,7 @@ func (h *SessionNotesHandler) PutMine(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 			return
 		}
+		activity.Describe(r, sessionNoteDesc(membership.Campaign, sessionID))
 		writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: "", Direction: direction})
 		return
 	}
@@ -176,5 +178,6 @@ func (h *SessionNotesHandler) PutMine(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "campaign not found", "NOT_FOUND")
 		return
 	}
+	activity.Describe(r, sessionNoteDesc(membership.Campaign, sessionID))
 	writeJSON(w, http.StatusOK, sessionNotesPutResponse{SessionID: sessionID, Text: text, Direction: direction})
 }

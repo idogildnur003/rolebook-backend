@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/v2/bson"
 
+	"github.com/elad/rolebook-backend/internal/activity"
 	"github.com/elad/rolebook-backend/internal/avatarstore"
 	"github.com/elad/rolebook-backend/internal/model"
 	"github.com/elad/rolebook-backend/internal/store"
@@ -100,6 +101,7 @@ func (h *NPCHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	npc.AvatarURI = h.avatars.ResolveImageURI(r.Context(), npc.AvatarURI)
+	activity.Describe(r, worldDesc(npc.Name))
 	writeJSON(w, http.StatusCreated, npc)
 }
 
@@ -187,6 +189,7 @@ func (h *NPCHandler) Update(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	updated.AvatarURI = h.avatars.ResolveImageURI(r.Context(), updated.AvatarURI)
+	activity.Describe(r, worldDesc(updated.Name))
 	writeJSON(w, http.StatusOK, updated)
 }
 
@@ -221,6 +224,7 @@ func (h *NPCHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.pins.DeleteByEntity(r.Context(), campaignID, id); err != nil {
 		log.Printf("[npc] pin cascade failed for %s/%s: %v", campaignID, id, err)
 	}
+	activity.Describe(r, worldDesc(existing.Name))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -294,6 +298,7 @@ func (h *NPCHandler) Share(w http.ResponseWriter, r *http.Request) {
 	for i := range clones {
 		clones[i].AvatarURI = h.avatars.ResolveImageURI(r.Context(), clones[i].AvatarURI)
 	}
+	activity.Describe(r, worldDesc(source.Name))
 	writeJSON(w, http.StatusOK, clones)
 }
 
